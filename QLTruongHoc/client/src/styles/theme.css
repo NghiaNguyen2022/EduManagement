@@ -1,0 +1,63 @@
+:root {
+  --edu-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --edu-page-title-size: clamp(30px, 3vw, 42px);
+  --edu-page-title-weight: 800;
+  --edu-page-subtitle-size: 15px;
+  --edu-section-title-size: 18px;
+  --edu-body-size: 14px;
+  --edu-small-size: 12px;
+
+  --edu-page-max-width: 1500px;
+  --edu-content-padding-desktop: 32px 34px 52px;
+  --edu-content-padding-tablet: 28px 20px 44px;
+  --edu-content-padding-mobile: 22px 16px 36px;
+  --edu-sidebar-width: 276px;
+  --edu-sidebar-collapsed-width: 88px;
+  --edu-topbar-height: 82px;
+
+  --edu-radius-small: 10px;
+  --edu-radius-medium: 14px;
+  --edu-radius-large: 18px;
+  --edu-radius-pill: 999px;
+
+  --edu-shadow-none: none;
+  --edu-shadow-soft: 0 10px 26px rgba(31, 94, 137, 0.07);
+  --edu-shadow-medium: 0 16px 38px rgba(31, 94, 137, 0.10);
+  --edu-shadow-strong: 0 22px 54px rgba(31, 94, 137, 0.16);
+
+  --edu-color-background: #f3f9fc;
+  --edu-color-background-soft: #eef7fb;
+  --edu-color-surface: #ffffff;
+  --edu-color-surface-soft: #f7fbfd;
+  --edu-color-border: #d9eaf2;
+  --edu-color-border-strong: #bdd9e7;
+
+  --edu-color-text: #1d2b36;
+  --edu-color-text-muted: #607483;
+  --edu-color-text-soft: #8295a2;
+
+  --edu-color-primary: #2f9ed8;
+  --edu-color-primary-hover: #238bc2;
+  --edu-color-primary-soft: #e6f5fc;
+  --edu-color-primary-strong: #166b9b;
+
+  --edu-color-secondary: #55b8a6;
+  --edu-color-secondary-soft: #e8f8f4;
+
+  --edu-color-success: #2fa76f;
+  --edu-color-success-soft: #e8f7ef;
+  --edu-color-warning: #e2a23a;
+  --edu-color-warning-soft: #fff6e2;
+  --edu-color-danger: #d95d58;
+  --edu-color-danger-soft: #fdeeed;
+  --edu-color-info: #4f8fe7;
+  --edu-color-info-soft: #edf4fe;
+
+  --edu-sidebar-background: #173d5a;
+  --edu-sidebar-background-alt: #102f47;
+  --edu-sidebar-text: #eaf7ff;
+  --edu-sidebar-text-muted: #9dc2d6;
+  --edu-sidebar-active: #2f9ed8;
+  --edu-sidebar-active-text: #ffffff;
+}

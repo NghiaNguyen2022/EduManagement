@@ -1,0 +1,21 @@
+# Checklist UI Khung Sprint 0
+
+- [x] Header trang đúng 2 dòng.
+- [x] Header không đặt trong card.
+- [x] Title và subtitle căn giữa.
+- [x] Action chính đặt góc phải.
+- [x] Sidebar nhóm theo nghiệp vụ.
+- [x] Sidebar thu gọn trên desktop.
+- [x] Sidebar mobile dạng drawer.
+- [x] Bộ chọn trường/trung tâm trên topbar.
+- [x] Khu vực người dùng và thông báo.
+- [x] Dashboard tổng quan.
+- [x] Placeholder cho module chưa triển khai.
+- [x] Tone trắng/kem/amber.
+- [x] Không thêm dependency mới.
+- [ ] Kết nối danh sách đơn vị từ API.
+- [ ] Điều hướng bằng URL/router.
+- [ ] Menu theo vai trò và quyền.
+- [ ] Đăng nhập thật.
+- [ ] Lưu đơn vị đang làm việc.
+- [ ] Tách shared style dùng xuyên module.

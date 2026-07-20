@@ -1,0 +1,328 @@
+BUSINESS PROCESS DOCUMENT
+ỨNG DỤNG QUẢN LÝ TRƯỜNG HỌC & TRUNG TÂM ĐÀO TẠO
+Tận dụng kiến trúc ResidenceCore / App Lưu Xá
+Trạng thái: DRAFT NỀN TẢNG - dùng để phân tích, thiết kế và lập backlog
+1. Mục tiêu tài liệu
+Tài liệu này chuẩn hoá các yêu cầu ban đầu thành mô hình nghiệp vụ, phạm vi chức năng, vai trò, dữ liệu lõi, quy trình và checklist triển khai cho một nền tảng quản lý nhiều trường học và trung tâm đào tạo. Đây là tài liệu sống, được cập nhật nối tiếp theo từng quyết định nghiệp vụ và từng giai đoạn phát triển.
+Làm cơ sở thống nhất yêu cầu trước khi thiết kế database, API và giao diện.
+Phân biệt rõ phần dùng chung và phần riêng của trường mầm non, trung tâm ngoại ngữ, trung tâm tin học.
+Tái sử dụng những phần phù hợp từ ResidenceCore nhưng không sao chép nguyên trạng các nghiệp vụ đặc thù lưu xá.
+Bảo vệ các quy tắc đã chốt, tránh thay đổi sau làm mất logic hoặc gây regression.
+2. Tầm nhìn sản phẩm
+Xây dựng một nền tảng quản lý vận hành giáo dục theo mô hình đa đơn vị. Một tài khoản có thể được cấp quyền ở một hoặc nhiều trường/trung tâm; sau khi đăng nhập phải chọn đúng đơn vị làm việc. Mỗi đơn vị có dữ liệu, cấu hình, nhân sự, lớp học, tài chính và kênh phụ huynh riêng, trong khi chủ hệ thống có thể quan sát toàn bộ theo cây tổ chức.
+UI ưu tiên ngắn gọn, dễ hiểu, ít tầng điều hướng; các nghiệp vụ thường dùng phải thao tác nhanh.
+Nghiệp vụ đầy đủ nhưng triển khai theo module và mức độ trưởng thành, không dồn tất cả vào một màn hình.
+Thiết kế mở rộng theo loại hình đào tạo bằng cấu hình và module bổ sung, hạn chế tạo nhiều codebase.
+Tách dữ liệu theo đơn vị và phân quyền theo phạm vi, tránh người dùng nhìn nhầm hoặc thao tác nhầm dữ liệu trường khác.
+3. Phạm vi tổ chức đa trường / đa trung tâm
+Đăng nhập xác thực người dùng trước; sau đó chọn đơn vị làm việc nếu có nhiều quyền.
+Mọi truy vấn nghiệp vụ phải mang schoolId/centerId hoặc tenant context.
+Có thể cho phép chuyển đơn vị nhanh mà không đăng xuất, nhưng phải hiển thị rõ đơn vị hiện hành.
+Dữ liệu nhạy cảm và số liệu tài chính mặc định không tổng hợp xuyên đơn vị nếu người dùng không có quyền cấp hệ thống.
+4. Loại hình đào tạo
+5. Vai trò và phạm vi quyền
+6. Kiến trúc module đề xuất
+7. Quy trình nghiệp vụ cốt lõi
+7.1 Tuyển sinh và chuyển đổi thành học viên
+Vai trò: Tư vấn viên, tuyển sinh, phụ huynh, kế toán
+Điểm bắt đầu: Có lead mới hoặc phụ huynh đến đăng ký
+Luồng chính:
+Tạo lead và ghi nhận nguồn, nhu cầu, độ tuổi/trình độ, đơn vị quan tâm.
+Phân công tư vấn viên; tạo lịch gọi, lịch hẹn hoặc học thử.
+Tư vấn chương trình, học phí, lịch dự kiến; ghi nhận kết quả từng lần chăm sóc.
+Nếu cần, tổ chức kiểm tra đầu vào hoặc tham quan/trải nghiệm.
+Phụ huynh xác nhận đăng ký; nhập hồ sơ học viên và người giám hộ.
+Chọn chương trình/khóa/lớp dự kiến; tạo khoản phải thu hoặc yêu cầu đặt cọc.
+Kích hoạt hồ sơ và tạo tài khoản phụ huynh sau khi đạt điều kiện nhập học.
+Kết quả: Hồ sơ học viên chính thức, liên kết phụ huynh, tình trạng nhập học và công nợ ban đầu.
+Quy tắc trọng yếu:
+Lead không được tự động thành học viên nếu chưa xác nhận đăng ký.
+Một học viên có thể có nhiều người giám hộ nhưng phải xác định người liên hệ chính.
+Tài khoản phụ huynh phải liên kết theo guardian-person, không tạo tài khoản trùng cho từng con.
+Lịch sử chăm sóc phải được lưu, không ghi đè.
+7.2 Tạo lớp và xếp học viên
+Vai trò: Quản lý chuyên môn, admin, tuyển sinh
+Điểm bắt đầu: Có chương trình/khóa và nhu cầu mở lớp
+Luồng chính:
+Tạo lớp với loại hình, chương trình, cấp độ, cơ sở, phòng học, sĩ số tối đa.
+Gán giáo viên chính, giáo viên hỗ trợ/chủ nhiệm và thời gian hiệu lực.
+Thiết lập lịch học lặp hoặc các buổi học cụ thể.
+Kiểm tra xung đột giáo viên, phòng học và trùng lịch của học viên.
+Xếp học viên vào lớp; xác định ngày bắt đầu, trạng thái và chính sách học phí.
+Công bố lớp cho giáo viên và phụ huynh.
+Kết quả: Lớp sẵn sàng vận hành với danh sách học viên và lịch học.
+Quy tắc trọng yếu:
+Không vượt sĩ số nếu không có quyền phê duyệt.
+Không xếp học viên vào thời gian trước ngày nhập học hoặc sau ngày kết thúc/bảo lưu.
+Mọi chuyển lớp phải giữ lịch sử lớp cũ và ngày hiệu lực.
+Lớp mầm non ưu tiên lớp cố định; trung tâm có thể cho phép học viên học nhiều lớp/kỹ năng.
+7.3 Lịch học, lịch nghỉ và học bù
+Vai trò: Quản lý chuyên môn, giáo viên, admin
+Điểm bắt đầu: Lớp đã được tạo
+Luồng chính:
+Tạo lịch học theo tuần hoặc danh sách buổi.
+Áp dụng ngày nghỉ toàn hệ thống, theo đơn vị hoặc theo lớp.
+Khi hủy buổi, chọn không học bù hoặc tạo buổi học bù.
+Kiểm tra xung đột giáo viên, phòng và học viên.
+Gửi thay đổi tới giáo viên và phụ huynh.
+Ghi nhận trạng thái hoàn thành sau buổi học.
+Kết quả: Thời khóa biểu chính xác và lịch sử thay đổi có thể truy vết.
+Quy tắc trọng yếu:
+Ngày nghỉ không được xóa các buổi đã có dữ liệu điểm danh; phải đổi trạng thái.
+Giờ hiển thị và tính ngày theo Asia/Ho_Chi_Minh.
+Học bù phải liên kết với buổi gốc.
+Thay đổi lịch gần giờ học cần cơ chế thông báo ưu tiên.
+7.4 Điểm danh và xin phép nghỉ
+Vai trò: Giáo viên, phụ huynh, quản lý
+Điểm bắt đầu: Có buổi học trong ngày
+Luồng chính:
+Phụ huynh gửi đơn xin phép cho học viên, chọn ngày/buổi và lý do.
+Giáo viên mở danh sách lớp theo buổi học.
+Hệ thống gợi ý trạng thái có phép cho các đơn hợp lệ.
+Giáo viên xác nhận có mặt, đi trễ, vắng có phép, vắng không phép hoặc về sớm.
+Mầm non có thể ghi nhận giờ đón/trả, người đón và tình trạng sức khỏe.
+Sau khi khóa điểm danh, gửi cảnh báo hoặc thống kê cần thiết.
+Kết quả: Bản ghi chuyên cần theo từng học viên và từng buổi.
+Quy tắc trọng yếu:
+Điểm danh phải dựa trên enrollment có hiệu lực tại buổi học.
+Không cho phụ huynh xin phép cho học viên không thuộc quyền giám hộ.
+Sửa điểm danh sau khi khóa phải có quyền và lưu audit log.
+Không gộp điểm danh mầm non và trung tâm vào một màn hình quá nhiều trường dữ liệu; dùng cấu hình theo loại hình.
+7.5 Báo giảng, bài học và kết quả
+Vai trò: Giáo viên, quản lý chuyên môn
+Điểm bắt đầu: Giáo viên được phân công lớp/buổi
+Luồng chính:
+Giáo viên xem thời khóa biểu và kế hoạch chương trình.
+Nhập báo giảng/kế hoạch bài dạy trước buổi hoặc theo tuần.
+Sau buổi học, ghi nội dung đã dạy, bài tập, nhận xét và mức độ hoàn thành.
+Nhập kết quả bài kiểm tra hoặc đánh giá định kỳ.
+Quản lý chuyên môn theo dõi tiến độ so với chương trình.
+Phụ huynh nhận phần thông tin được phép công bố.
+Kết quả: Tiến độ lớp và hồ sơ học tập từng học viên.
+Quy tắc trọng yếu:
+Bài giảng có thể dùng mẫu để nhập nhanh.
+Kết quả phải phân loại theo thang điểm hoặc rubric cấu hình.
+Mầm non sử dụng quan sát phát triển và nhận xét thay vì ép dùng điểm số.
+Chỉ công bố dữ liệu đã duyệt hoặc thuộc phạm vi cho phép.
+7.6 Kỳ thu và thu học phí
+Vai trò: Kế toán, thu ngân, admin, phụ huynh
+Điểm bắt đầu: Có học viên đang học hoặc đăng ký mới
+Luồng chính:
+Tạo kỳ thu theo tháng, học kỳ, khóa hoặc đợt.
+Cấu hình các khoản phí: học phí, tiền ăn, giáo trình, đồng phục, dịch vụ, thi hoặc phí khác.
+Áp dụng kỳ thu cho lớp/học viên theo điều kiện và ngày hiệu lực.
+Sinh khoản phải thu chi tiết; hỗ trợ miễn giảm, ưu đãi, bảo lưu hoặc điều chỉnh.
+Ghi nhận thu một phần hoặc toàn bộ; phát hành biên nhận.
+Theo dõi công nợ và nhắc phí tới phụ huynh.
+Hoàn/hủy/điều chỉnh theo quy trình phê duyệt.
+Kết quả: Sổ công nợ học viên, giao dịch thu và báo cáo tài chính học vụ.
+Quy tắc trọng yếu:
+Tách “định nghĩa kỳ thu” và “khoản phải thu thật” như kiến trúc Finance của App Lưu Xá.
+Mỗi khoản phải thu phải truy về học viên, kỳ, lớp/chương trình và loại phí.
+Không xóa giao dịch đã thu; sử dụng hủy/hoàn/điều chỉnh có chứng từ.
+Phân quyền người lập, người thu và người duyệt để sẵn sàng mở rộng kiểm soát.
+7.7 Cổng phụ huynh
+Vai trò: Phụ huynh, giáo viên, kế toán
+Điểm bắt đầu: Học viên có guardian và tài khoản đã kích hoạt
+Luồng chính:
+Phụ huynh chọn con nếu tài khoản liên kết nhiều học viên.
+Xem lịch học, lớp, giáo viên, thay đổi lịch và ngày nghỉ.
+Nhận thông báo chung, theo lớp hoặc riêng học viên.
+Gửi xin phép nghỉ và theo dõi trạng thái.
+Xem chuyên cần, tiến độ, nhận xét, kết quả được công bố.
+Xem khoản phải thu, lịch sử thanh toán và biên nhận.
+Trao đổi với giáo viên/nhà trường trong phạm vi cho phép.
+Kết quả: Kênh thông tin thống nhất giữa đơn vị đào tạo và gia đình.
+Quy tắc trọng yếu:
+Một phụ huynh có thể quản lý nhiều con ở nhiều đơn vị nếu được liên kết hợp lệ.
+Không cho phép phụ huynh sửa dữ liệu học vụ hoặc tài chính.
+Tin nhắn cần lưu lịch sử, trạng thái đã đọc và người xử lý.
+Thông tin nhạy cảm của học viên khác trong cùng lớp không được hiển thị.
+8. Mô hình dữ liệu lõi đề xuất
+9. Tận dụng kiến trúc App Lưu Xá
+10. Nguyên tắc UX/UI
+Mỗi trang chỉ có một mục tiêu chính; tránh nhồi tab hoặc dashboard quá dày.
+Header đúng hai dòng: title và subtitle đặt giữa; action chính ở góc phải khi cần.
+Đơn vị đang làm việc phải luôn nhìn thấy rõ trên thanh điều hướng.
+Dùng quick actions cho nghiệp vụ hằng ngày: tạo lead, thêm học viên, điểm danh, thu phí, gửi thông báo.
+Lịch, ngày nghỉ, điểm danh và khoản thu phải dùng date/time picker chuẩn; không nhập ngày tự do.
+Tách Simple Mode và Detailed Mode nếu độ phức tạp tăng, nhưng mode là cấu hình thống nhất, không tự ý thay đổi giữa các module.
+Màn hình phụ huynh ưu tiên mobile-first, chữ rõ, ít thuật ngữ nội bộ.
+Thông báo lỗi phải nói đúng nghiệp vụ và cách xử lý, không chỉ hiển thị lỗi kỹ thuật.
+11. Yêu cầu phi chức năng
+12. Phạm vi MVP đề xuất
+13. Checklist yêu cầu tổng thể
+14. Checklist phân tích chi tiết cho từng module
+Mục tiêu nghiệp vụ và actor chính.
+Điểm bắt đầu, điều kiện trước, luồng chính, luồng ngoại lệ và kết quả.
+Danh sách trạng thái và quy tắc chuyển trạng thái.
+Phạm vi dữ liệu theo tenant, lớp, học viên và thời gian hiệu lực.
+Vai trò được xem/tạo/sửa/duyệt/hủy/in/xuất.
+Thông báo phát sinh và đối tượng nhận.
+Chứng từ hoặc báo cáo cần in/xuất.
+Dữ liệu bắt buộc, uniqueness, validation và audit log.
+Các trường riêng theo loại hình mầm non/ngoại ngữ/tin học.
+Checklist test runtime và regression trước khi đóng task.
+15. Các quyết định cần làm rõ ở phiên bản tiếp theo
+Mô hình thương mại: SaaS nhiều khách hàng hay một hệ thống nội bộ quản lý chuỗi trường?
+Một trường có nhiều cơ sở hay mỗi cơ sở được xem là một đơn vị độc lập?
+Phụ huynh đăng nhập bằng số điện thoại, email hay username; có dùng OTP hay không?
+Trung tâm ngoại ngữ thu học phí theo khóa, tháng, buổi hay kết hợp; quy tắc bảo lưu và hoàn phí?
+Mầm non cần quản lý bữa ăn, khẩu phần, sức khỏe, thuốc, xe đưa đón và camera ở mức nào?
+Giáo viên nhập điểm theo bài kiểm tra, kỹ năng, rubric hay nhận xét; ai duyệt trước khi phụ huynh xem?
+Trao đổi phụ huynh-giáo viên là chat realtime, hộp thư theo thread hay ghi chú có kiểm soát?
+Có cần tích hợp thanh toán online, SMS/Zalo/Email và hóa đơn điện tử trong MVP không?
+Có quản lý lương giáo viên theo buổi/giờ/lớp và chi phí vận hành trong phiên bản đầu không?
+Tên sản phẩm, domain, nhận diện và style riêng hay tiếp tục hệ thống appearance dùng chung?
+16. Quy tắc quản trị tài liệu và thay đổi
+BPD là nguồn yêu cầu nghiệp vụ chính; mỗi thay đổi phải ghi phiên bản và lý do.
+Không xoá yêu cầu cũ đã triển khai; đánh dấu superseded/deprecated nếu thay đổi.
+Mỗi module có checklist: requirement → schema → backend → frontend → test → documentation.
+Luôn lấy code mới nhất làm base; patch tối thiểu; không dùng file cũ để ghi đè.
+Các lỗi và quy tắc đã sửa được đưa vào protected regression list.
+Khi mở rộng loại hình, ưu tiên cấu hình/module extension; chỉ tách flow khi nghiệp vụ thực sự khác.
+17. Kết luận định hướng
+Kiến trúc ResidenceCore có thể tái sử dụng đáng kể ở các lớp nền tảng: người dùng, phân quyền, tổ chức, hồ sơ con người, lịch, thông báo, portal, tài chính theo kỳ và phong cách UI. Tuy nhiên ứng dụng trường học cần lấy lớp học, enrollment, class session, guardian và chương trình đào tạo làm trục dữ liệu trung tâm. Phương án phù hợp là phát triển một nền tảng chung đa đơn vị, sau đó kích hoạt các extension nghiệp vụ cho mầm non và trung tâm ngoại ngữ thay vì làm hai ứng dụng tách rời.
+---TABLE---
+Thuộc tính | Nội dung
+Phiên bản | 0.1 - Tài liệu nền tảng
+Ngày lập | 20/07/2026
+Phạm vi ưu tiên | Trung tâm tiếng Anh; Trường mầm non
+Mở rộng dự kiến | Trung tâm tin học và các mô hình đào tạo tương tự
+Định hướng sản phẩm | Đa đơn vị; thao tác đơn giản; nghiệp vụ đầy đủ; code gọn; tái sử dụng tối đa kiến trúc App Lưu Xá
+---TABLE---
+Cấp | Mô tả | Ví dụ
+Hệ thống / Tổ chức chủ quản | Chủ sở hữu toàn nền tảng; quản lý nhiều đơn vị và cấu hình chung. | Công ty giáo dục ABC
+Cụm / Khu vực (tuỳ chọn) | Nhóm các đơn vị theo thương hiệu, khu vực hoặc chuỗi. | Cụm TP.HCM
+Trường / Trung tâm | Đơn vị vận hành chính, có dữ liệu và nhân sự riêng. | Mầm non Ánh Dương; English Center Q8
+Cơ sở / Chi nhánh (tuỳ chọn) | Địa điểm vận hành trực thuộc đơn vị. | Cơ sở Nguyễn Văn Linh
+Khối / Chương trình | Phân nhóm chuyên môn. | Mầm; Chồi; Lá; IELTS; Giao tiếp
+Lớp học | Đơn vị tổ chức học tập và điểm danh. | Lá 1; IELTS 6.5 K12
+---TABLE---
+Nhóm nghiệp vụ | Dùng chung | Mầm non | Trung tâm ngoại ngữ / tin học
+Tuyển sinh | Lead, tư vấn, đăng ký, hồ sơ, xếp lớp | Thông tin sức khoẻ, người đón, ăn/ngủ, độ tuổi | Kiểm tra đầu vào, mục tiêu, trình độ, khóa học
+Lớp học | Danh sách lớp, giáo viên, lịch, sĩ số | Lớp theo độ tuổi/niên khóa, giáo viên chủ nhiệm | Lớp theo khóa/trình độ/ca học, có thể nhiều giảng viên
+Điểm danh | Có mặt, vắng, đi trễ, có phép | Đón/trả trẻ, ăn, ngủ, sức khỏe trong ngày | Điểm danh theo buổi/tiết, học bù, bảo lưu
+Học tập | Tiến độ, nhận xét, kết quả | Quan sát phát triển, kỹ năng, hoạt động | Điểm, bài kiểm tra, kỹ năng nghe-nói-đọc-viết, chuẩn đầu ra
+Phụ huynh | Lịch, thông báo, xin phép, trao đổi | Nhật ký ngày, sức khỏe, người đón | Lịch học, bài tập, kết quả, học phí, trao đổi giáo viên
+Tài chính | Kỳ thu, khoản phải thu, thu tiền, công nợ | Học phí, tiền ăn, dịch vụ, đồng phục | Học phí theo khóa/tháng/buổi, giáo trình, thi, học lại
+---TABLE---
+Vai trò | Phạm vi chính | Ghi chú
+System Owner / Super Admin | Toàn hệ thống, cây đơn vị, cấu hình, giám sát | Không tham gia nghiệp vụ hằng ngày nếu không được phân công
+School/Center Admin | Quản trị một đơn vị, người dùng, cấu hình, báo cáo | Có thể kiêm nhiệm ở đơn vị nhỏ
+Tuyển sinh | Lead, tư vấn, lịch hẹn, hồ sơ đăng ký | Không mặc định xem sổ kế toán chi tiết
+Tư vấn viên | Chăm sóc lead, tư vấn khóa/lớp, follow-up | Theo dõi KPI và chuyển đổi
+Kế toán / Thu ngân | Kỳ thu, phải thu, thu tiền, công nợ, phiếu | Phân biệt quyền lập, thu, duyệt, hoàn/hủy
+Quản lý chuyên môn | Chương trình, lớp, phân công, tiến độ | Có thể duyệt bài giảng và kết quả
+Giáo viên | Lịch dạy, điểm danh, bài giảng, nhận xét, kết quả | Chỉ lớp/môn được phân công
+Giáo viên chủ nhiệm | Quản lý tổng thể một lớp, phụ huynh, thông báo | Quan trọng với mầm non
+Phụ huynh / Người giám hộ | Xem thông tin con, xin phép, trao đổi, tài chính | Một tài khoản có thể quản lý nhiều con
+Học viên (tuỳ chọn) | Lịch, bài học, bài tập, kết quả | Ưu tiên cho học viên lớn tuổi/trung tâm
+---TABLE---
+Mã | Module | Nội dung chính | Ưu tiên
+M01 | Tổ chức & đơn vị | Cây trường/trung tâm/cơ sở; chọn tenant; cấu hình đơn vị | P0
+M02 | Người dùng & phân quyền | Tài khoản, vai trò, phạm vi đơn vị, khóa/reset mật khẩu | P0
+M03 | CRM tuyển sinh | Lead, nguồn, tư vấn, lịch hẹn, trạng thái, chuyển đổi | P1
+M04 | Hồ sơ học viên | Học sinh/học viên, phụ huynh, hồ sơ, tài liệu, trạng thái | P0
+M05 | Chương trình & khóa học | Chương trình, cấp độ, học phần, niên khóa, khóa | P0
+M06 | Lớp học & xếp lớp | Tạo lớp, sĩ số, giáo viên, học viên, chuyển lớp/bảo lưu | P0
+M07 | Thời khóa biểu | Lịch học, phòng, giáo viên, xung đột, học bù/nghỉ | P0
+M08 | Điểm danh | Điểm danh buổi/tiết; xin phép; đón/trả trẻ | P0
+M09 | Giảng dạy | Báo giảng, giáo án/bài giảng, nội dung buổi học, bài tập | P1
+M10 | Kết quả & tiến độ | Điểm, nhận xét, chuẩn đầu ra, báo cáo tiến độ | P1
+M11 | Thông báo & lịch nghỉ | Thông báo theo trường/lớp/học viên; ngày nghỉ | P0
+M12 | Tài chính học vụ | Kỳ thu, khoản phí, phải thu, thu tiền, công nợ | P0
+M13 | Cổng phụ huynh | Lịch, thông báo, xin phép, tiến độ, trao đổi, học phí | P0
+M14 | Trao đổi & chăm sóc | Hội thoại giáo viên-phụ huynh, ghi chú chăm sóc | P1
+M15 | Báo cáo & dashboard | Tuyển sinh, sĩ số, chuyên cần, học tập, tài chính | P1
+M16 | Cấu hình theo loại hình | Mầm non, ngoại ngữ, tin học, các trường dữ liệu bổ sung | P1
+---TABLE---
+Nhóm | Thực thể chính | Ghi chú thiết kế
+Đa đơn vị | Organization, Unit, Campus, UnitType, UnitSetting | Mọi dữ liệu nghiệp vụ gắn tenant/unit
+Người dùng | User, Role, Permission, UserUnitRole, SessionContext | Một user nhiều đơn vị/nhiều vai trò
+Con người | Person, Student, Guardian, Staff, Teacher | Tách Person để hạn chế trùng dữ liệu
+Tuyển sinh | Lead, LeadActivity, Consultation, TrialClass, Admission | Lưu lịch sử chuyển trạng thái
+Chương trình | Program, Course, Level, Subject, Curriculum, Term | Cấu hình theo loại hình
+Lớp học | Class, Enrollment, TeacherAssignment, Classroom | Enrollment có ngày hiệu lực và trạng thái
+Lịch | ScheduleTemplate, ClassSession, Holiday, MakeUpLink | Buổi học cụ thể là nguồn sự thật cho điểm danh
+Điểm danh | Attendance, LeaveRequest, PickupRecord, DailyHealth | Các bảng phụ mầm non tách riêng
+Giảng dạy | LessonPlan, TeachingLog, Assignment, Assessment, Result | Rubric/score schema cấu hình
+Thông báo | Announcement, Audience, Delivery, ReadReceipt | Target theo đơn vị/lớp/cá nhân
+Tài chính | FeePeriod, FeeItem, Receivable, Payment, Receipt, Adjustment | Tái sử dụng tư duy Finance hiện tại
+Trao đổi | Conversation, Participant, Message, Attachment | Kiểm soát phạm vi và audit
+Audit | AuditLog, Approval, StatusHistory | Bắt buộc cho sửa dữ liệu nhạy cảm
+---TABLE---
+Phần hiện có | Khả năng tái sử dụng | Điều chỉnh cần thiết
+User/Role/Session | Cao | Mở rộng tenant context và role theo đơn vị
+Members/Contacts | Cao | Chuyển thành Student/Guardian/Staff; giữ liên kết contact đúng chủ thể
+Organization tree | Trung bình-Cao | Đổi từ cơ cấu lưu xá sang hệ thống/cụm/trường/cơ sở/khối
+Study schedule | Cao | Nâng từ lịch cá nhân thành class session, phòng, giáo viên, học bù
+Daily Routine/Duties | Trung bình | Tái dùng pattern Today; nghiệp vụ đổi thành lịch dạy, điểm danh, việc cần xử lý
+Internal notifications | Cao | Mở audience cho phụ huynh, lớp, đơn vị và read receipt
+Finance periods/receivables | Rất cao | Đổi fee rules theo khóa/lớp/học viên; giữ kỳ thu → áp dụng → phải thu
+Portal resident | Cao | Chuyển thành Parent Portal/Student Portal
+Shared UI/style | Rất cao | Giữ header 2 dòng, tone premium, component chung, picker chuẩn
+Print receipts/forms | Cao | Mở rộng biên nhận học phí, phiếu thu, hồ sơ nhập học
+Protected patch workflow | Bắt buộc | Append-only decisions; patch tối thiểu; base code mới nhất
+---TABLE---
+Nhóm | Yêu cầu
+Bảo mật | Phân quyền theo đơn vị, vai trò và đối tượng; audit thao tác nhạy cảm; khóa tài khoản; reset mật khẩu.
+Tính đúng dữ liệu | Không dùng fallback mơ hồ cho trạng thái hiện hành; mọi enrollment, lịch, khoản thu có ngày hiệu lực.
+Hiệu năng | Danh sách có phân trang; dashboard dùng aggregate; không tải toàn bộ dữ liệu nhiều trường cùng lúc.
+Khả năng mở rộng | Module và cấu hình theo UnitType; không fork code cho từng loại hình nếu chưa cần.
+Tính sẵn sàng | Backup, log lỗi, kiểm soát migration; có môi trường dev/test/prod.
+Timezone | Asia/Ho_Chi_Minh là chuẩn nghiệp vụ mặc định.
+Tài liệu | Mọi quyết định cập nhật BPD, data dictionary, API contract và checklist regression.
+Tốc độ phát triển | Ưu tiên shared components, schema pattern, service/repository dùng lại; không tạo abstraction quá sớm.
+---TABLE---
+Giai đoạn | Kết quả bắt buộc
+MVP 0 - Nền tảng | Đa đơn vị; chọn trường/trung tâm; user/role; cấu hình loại hình; audit cơ bản.
+MVP 1 - Học vụ lõi | Hồ sơ học viên/phụ huynh; chương trình; lớp; xếp lớp; lịch học; ngày nghỉ; điểm danh.
+MVP 2 - Phụ huynh | Tài khoản phụ huynh; lịch; thông báo; xin phép; chuyên cần; trao đổi cơ bản.
+MVP 3 - Tài chính | Kỳ thu; khoản phí; áp dụng; phải thu; thu một phần/toàn phần; biên nhận; công nợ.
+MVP 4 - Giảng dạy | Báo giảng; teaching log; nhận xét; kết quả; tiến độ chương trình.
+MVP 5 - Tuyển sinh | Lead; tư vấn; lịch hẹn; học thử; chuyển đổi; dashboard tuyển sinh.
+MVP 6 - Nghiệp vụ chuyên ngành | Mầm non: đón/trả, sức khỏe, nhật ký ngày. Ngoại ngữ: đầu vào, kỹ năng, khóa, bảo lưu/học bù.
+---TABLE---
+Mã | Yêu cầu | Done | Ghi chú
+ORG-01 | Cây đa trường/trung tâm/cơ sở | ☐ | Chưa phân tích chi tiết
+ORG-02 | Chọn đơn vị khi đăng nhập và chuyển đơn vị an toàn | ☐ | Chưa phân tích chi tiết
+AUTH-01 | Vai trò theo từng đơn vị | ☐ | Chưa phân tích chi tiết
+AUTH-02 | Audit và khóa/reset tài khoản | ☐ | Chưa phân tích chi tiết
+ADM-01 | Lead và nguồn tuyển sinh | ☐ | Chưa phân tích chi tiết
+ADM-02 | Lịch sử tư vấn/hẹn/học thử | ☐ | Chưa phân tích chi tiết
+ADM-03 | Chuyển lead thành học viên | ☐ | Chưa phân tích chi tiết
+STD-01 | Hồ sơ học viên | ☐ | Chưa phân tích chi tiết
+STD-02 | Nhiều phụ huynh/người giám hộ | ☐ | Chưa phân tích chi tiết
+STD-03 | Một tài khoản phụ huynh quản lý nhiều con | ☐ | Chưa phân tích chi tiết
+CLS-01 | Chương trình/khóa/cấp độ | ☐ | Chưa phân tích chi tiết
+CLS-02 | Tạo lớp và sĩ số | ☐ | Chưa phân tích chi tiết
+CLS-03 | Xếp/chuyển/bảo lưu/ngừng học | ☐ | Chưa phân tích chi tiết
+SCH-01 | Lịch học và kiểm tra xung đột | ☐ | Chưa phân tích chi tiết
+SCH-02 | Ngày nghỉ/hủy/học bù | ☐ | Chưa phân tích chi tiết
+ATT-01 | Điểm danh theo buổi | ☐ | Chưa phân tích chi tiết
+ATT-02 | Xin phép nghỉ | ☐ | Chưa phân tích chi tiết
+ATT-03 | Đón/trả trẻ cho mầm non | ☐ | Chưa phân tích chi tiết
+TEA-01 | Phân công giáo viên | ☐ | Chưa phân tích chi tiết
+TEA-02 | Báo giảng/teaching log | ☐ | Chưa phân tích chi tiết
+TEA-03 | Bài tập/nhận xét/kết quả | ☐ | Chưa phân tích chi tiết
+TEA-04 | Theo dõi tiến độ chương trình | ☐ | Chưa phân tích chi tiết
+FIN-01 | Kỳ thu | ☐ | Chưa phân tích chi tiết
+FIN-02 | Khoản phí cấu hình | ☐ | Chưa phân tích chi tiết
+FIN-03 | Áp dụng và sinh phải thu | ☐ | Chưa phân tích chi tiết
+FIN-04 | Thu một phần/toàn phần | ☐ | Chưa phân tích chi tiết
+FIN-05 | Biên nhận, công nợ, điều chỉnh | ☐ | Chưa phân tích chi tiết
+COM-01 | Thông báo theo audience | ☐ | Chưa phân tích chi tiết
+COM-02 | Read receipt | ☐ | Chưa phân tích chi tiết
+PAR-01 | Portal phụ huynh mobile-first | ☐ | Chưa phân tích chi tiết
+PAR-02 | Lịch/lớp/thông báo | ☐ | Chưa phân tích chi tiết
+PAR-03 | Chuyên cần/tiến độ/kết quả | ☐ | Chưa phân tích chi tiết
+PAR-04 | Trao đổi giáo viên | ☐ | Chưa phân tích chi tiết
+REP-01 | Dashboard vận hành | ☐ | Chưa phân tích chi tiết
+REP-02 | Báo cáo tuyển sinh | ☐ | Chưa phân tích chi tiết
+REP-03 | Báo cáo chuyên cần/học tập | ☐ | Chưa phân tích chi tiết
+REP-04 | Báo cáo tài chính | ☐ | Chưa phân tích chi tiết
+TECH-01 | Tenant scoping toàn bộ query | ☐ | Chưa phân tích chi tiết
+TECH-02 | Timezone Việt Nam | ☐ | Chưa phân tích chi tiết
+TECH-03 | Shared style/components | ☐ | Chưa phân tích chi tiết
+TECH-04 | Regression checklist và append-only decisions | ☐ | Chưa phân tích chi tiết
