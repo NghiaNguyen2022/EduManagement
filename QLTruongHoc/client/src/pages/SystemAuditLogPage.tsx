@@ -5,6 +5,11 @@ import {
 } from "react";
 
 import {
+  DateField,
+  SelectField,
+  TextField,
+} from "../components/form";
+import {
   PageHeader,
 } from "../components/shared/PageHeader";
 import {
@@ -56,6 +61,10 @@ function actionLabel(action: string) {
       "Mở khóa tài khoản",
     "user.reset_password":
       "Reset mật khẩu",
+    "user.add_assignment":
+      "Thêm vai trò · đơn vị",
+    "user.remove_assignment":
+      "Xóa vai trò · đơn vị",
     "role.update_permissions":
       "Thay đổi phân quyền",
   };
@@ -186,10 +195,17 @@ export function SystemAuditLogPage() {
     setToDate("");
     setPage(1);
 
-    setTimeout(() => {
+    window.setTimeout(() => {
       void loadLogs(1);
     }, 0);
   }
+
+  const actionOptions = actions.map(
+    (item) => ({
+      value: item,
+      label: actionLabel(item),
+    }),
+  );
 
   return (
     <div className="page-stack">
@@ -209,95 +225,58 @@ export function SystemAuditLogPage() {
         subtitle="Tìm nhanh các thao tác cần kiểm tra."
       >
         <div className="audit-filter">
-          <label>
-            <span>Tìm kiếm</span>
-            <input
-              type="search"
-              value={search}
-              placeholder="Hành động, nội dung, người dùng..."
-              onChange={(event) =>
-                setSearch(
-                  event.target.value,
-                )
-              }
-            />
-          </label>
+          <TextField
+            label="Tìm kiếm"
+            type="search"
+            value={search}
+            placeholder="Hành động, nội dung, người dùng..."
+            onChange={setSearch}
+          />
 
-          <label>
-            <span>Hành động</span>
-            <select
-              value={action}
-              onChange={(event) =>
-                setAction(
-                  event.target.value,
-                )
-              }
-            >
-              <option value="">
-                Tất cả hành động
-              </option>
+          <SelectField
+            label="Hành động"
+            value={action}
+            placeholder="Tất cả hành động"
+            options={actionOptions}
+            onChange={setAction}
+          />
 
-              {actions.map((item) => (
-                <option
-                  key={item}
-                  value={item}
-                >
-                  {actionLabel(item)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectField
+            label="Mức độ"
+            value={level}
+            placeholder="Tất cả mức độ"
+            options={[
+              {
+                value: "thong_tin",
+                label: "Thông tin",
+              },
+              {
+                value: "canh_bao",
+                label: "Cảnh báo",
+              },
+              {
+                value: "loi",
+                label: "Lỗi",
+              },
+            ]}
+            onChange={setLevel}
+          />
 
-          <label>
-            <span>Mức độ</span>
-            <select
-              value={level}
-              onChange={(event) =>
-                setLevel(
-                  event.target.value,
-                )
-              }
-            >
-              <option value="">
-                Tất cả mức độ
-              </option>
-              <option value="thong_tin">
-                Thông tin
-              </option>
-              <option value="canh_bao">
-                Cảnh báo
-              </option>
-              <option value="loi">
-                Lỗi
-              </option>
-            </select>
-          </label>
+          <DateField
+            label="Từ ngày"
+            value={fromDate}
+            max={toDate || undefined}
+            helpText="Định dạng dd/mm/yyyy"
+            onChange={setFromDate}
+          />
 
-          <label>
-            <span>Từ ngày</span>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(event) =>
-                setFromDate(
-                  event.target.value,
-                )
-              }
-            />
-          </label>
-
-          <label>
-            <span>Đến ngày</span>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(event) =>
-                setToDate(
-                  event.target.value,
-                )
-              }
-            />
-          </label>
+          <DateField
+            label="Đến ngày"
+            value={toDate}
+            min={fromDate || undefined}
+            helpText="Định dạng dd/mm/yyyy"
+            onChange={setToDate}
+          />
 
           <div className="audit-filter__actions">
             {hasFilter ? (
@@ -436,11 +415,13 @@ export function SystemAuditLogPage() {
         </div>
 
         <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={(nextPage) => {
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={total}
+          onChange={(nextPage) => {
             void loadLogs(nextPage);
           }}
+          itemLabel="bản ghi"
         />
       </SectionCard>
 

@@ -1,17 +1,11 @@
-# Date and Number Format Standard
+# Vietnamese Date Picker
 
-## DateField
-- Hiển thị và nhập `dd/mm/yyyy`.
-- Giá trị trong state/API vẫn là ISO `yyyy-mm-dd`.
-- Không dùng native `input type=date` vì không kiểm soát được định dạng hiển thị.
-- Có kiểm tra ngày hợp lệ, min và max.
-
-## NumberInput
-- Số nguyên hiển thị `1.000.000`.
-- Hỗ trợ số thập phân kiểu Việt Nam khi bật `allowDecimal`.
-- Giá trị truyền giữa component và nghiệp vụ vẫn là number.
-
-## CurrencyInput
-- Tiền VND hiển thị `1.000.000 ₫`.
-- Không lưu chuỗi có dấu phân cách vào database.
-- Giá trị trả về luôn là number hoặc null.
+- DateField hỗ trợ nhập tay dd/mm/yyyy.
+- Có nút mở lịch.
+- Lịch hoàn toàn tiếng Việt.
+- Tuần bắt đầu từ Thứ 2.
+- Có Tháng trước/Tháng sau.
+- Có Hôm nay và Xóa.
+- Hỗ trợ min/max.
+- Giá trị API vẫn ISO yyyy-mm-dd.
+- Audit filter bỏ help text để giao diện gọn hơn.

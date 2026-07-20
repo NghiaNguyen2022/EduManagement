@@ -1,35 +1,27 @@
-# Fix Date + Number Format v0.1
+# Fix Audit Date Field Vietnamese v0.1
 
-## Chuẩn mới
+## Nguyên nhân
+
+Trang Nhật ký hệ thống vẫn dùng:
+
+```html
+<input type="date">
+```
+
+Trình duyệt tự hiển thị:
 
 ```text
-Ngày hiển thị: dd/mm/yyyy
-Ngày truyền API: yyyy-mm-dd
-
-Số: 1.000.000
-Tiền: 1.000.000 ₫
+mm/dd/yyyy
+July
+Clear
+Today
 ```
 
-## Áp dụng
+nên không thể đảm bảo chuẩn tiếng Việt.
 
-Chép đè toàn bộ patch vào project rồi chạy:
+## Sửa
 
-```powershell
-pnpm typecheck
-pnpm dev
-```
-
-## Ví dụ sử dụng DateField
-
-```tsx
-const [ngaySinh, setNgaySinh] = useState("");
-
-<DateField
-  label="Ngày sinh"
-  value={ngaySinh}
-  onChange={setNgaySinh}
-/>
-```
+Chuyển `Từ ngày` và `Đến ngày` sang shared `DateField`.
 
 Người dùng nhìn thấy:
 
@@ -37,32 +29,35 @@ Người dùng nhìn thấy:
 20/07/2026
 ```
 
-State nhận:
+API vẫn nhận:
 
 ```text
 2026-07-20
 ```
 
-## Ví dụ NumberInput
+## Áp dụng
 
-```tsx
-const [soLuong, setSoLuong] = useState<number | null>(null);
+Chép đè:
 
-<NumberInput
-  label="Số lượng"
-  value={soLuong}
-  onChange={setSoLuong}
-/>
+```text
+client/src/pages/SystemAuditLogPage.tsx
 ```
 
-## Ví dụ CurrencyInput
+Thêm vào `client/src/main.tsx`:
 
-```tsx
-const [hocPhi, setHocPhi] = useState<number | null>(null);
+```ts
+import "./styles/audit-date-field.css";
+```
 
-<CurrencyInput
-  label="Học phí"
-  value={hocPhi}
-  onChange={setHocPhi}
-/>
+Sau đó:
+
+```powershell
+pnpm typecheck
+pnpm dev
+```
+
+Refresh mạnh:
+
+```text
+Ctrl + F5
 ```

@@ -1,13 +1,14 @@
-# Shared Format Checklist
+# Vietnamese Date Picker Checklist
 
-- [x] DateField dd/mm/yyyy.
-- [x] Date value ISO yyyy-mm-dd.
-- [x] Validate real calendar date.
-- [x] NumberInput thousand separator.
-- [x] CurrencyInput thousand separator.
-- [x] VND suffix.
-- [x] Number value remains numeric.
-- [ ] Migrate Audit date filters to DateField.
-- [ ] Use NumberInput for quantities.
-- [ ] Use CurrencyInput for all fee/finance forms.
-- [ ] Runtime test typing and editing.
+- [x] Input dd/mm/yyyy.
+- [x] Calendar popup.
+- [x] Vietnamese month names.
+- [x] Vietnamese weekdays.
+- [x] Monday-first calendar.
+- [x] Hôm nay.
+- [x] Xóa.
+- [x] Min/max dates.
+- [x] Click outside closes.
+- [x] Theme compatible.
+- [ ] Runtime test Audit filter.
+- [ ] Runtime test mobile.
