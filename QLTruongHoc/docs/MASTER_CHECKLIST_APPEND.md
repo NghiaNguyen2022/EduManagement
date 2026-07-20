@@ -1,14 +1,10 @@
-# Vietnamese Date Picker Checklist
+# Audit Filter Layout Polish Checklist
 
-- [x] Input dd/mm/yyyy.
-- [x] Calendar popup.
-- [x] Vietnamese month names.
-- [x] Vietnamese weekdays.
-- [x] Monday-first calendar.
-- [x] Hôm nay.
-- [x] Xóa.
-- [x] Min/max dates.
-- [x] Click outside closes.
-- [x] Theme compatible.
-- [ ] Runtime test Audit filter.
-- [ ] Runtime test mobile.
+- [x] Remove legacy layout conflicts.
+- [x] Separate primary filter row.
+- [x] Separate date/action row.
+- [x] Stable label spacing.
+- [x] Stable control width.
+- [x] Responsive tablet.
+- [x] Responsive mobile.
+- [ ] Runtime visual confirmation.

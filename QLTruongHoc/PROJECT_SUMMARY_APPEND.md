@@ -1,11 +1,9 @@
-# Vietnamese Date Picker
+# Audit Filter Layout Polish v0.2
 
-- DateField hỗ trợ nhập tay dd/mm/yyyy.
-- Có nút mở lịch.
-- Lịch hoàn toàn tiếng Việt.
-- Tuần bắt đầu từ Thứ 2.
-- Có Tháng trước/Tháng sau.
-- Có Hôm nay và Xóa.
-- Hỗ trợ min/max.
-- Giá trị API vẫn ISO yyyy-mm-dd.
-- Audit filter bỏ help text để giao diện gọn hơn.
+- Bố cục bộ lọc tách thành hai nhóm độc lập.
+- Reset các class layout cũ gây xung đột.
+- Label có chiều cao và khoảng cách cố định.
+- Dòng trên gồm Tìm kiếm, Hành động, Mức độ.
+- Dòng dưới gồm Từ ngày, Đến ngày, nút thao tác.
+- Khoảng cách dọc 20px.
+- Responsive tablet/mobile.

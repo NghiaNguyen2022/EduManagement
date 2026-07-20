@@ -6,9 +6,7 @@ import {
   useState,
 } from "react";
 
-import {
-  FormField,
-} from "./FormField";
+import { FormField } from "./FormField";
 import {
   displayToIsoDate,
   isoToDisplayDate,
@@ -28,29 +26,14 @@ type DateFieldProps = {
   name?: string;
 };
 
-const monthNames = [
-  "Tháng 1",
-  "Tháng 2",
-  "Tháng 3",
-  "Tháng 4",
-  "Tháng 5",
-  "Tháng 6",
-  "Tháng 7",
-  "Tháng 8",
-  "Tháng 9",
-  "Tháng 10",
-  "Tháng 11",
-  "Tháng 12",
-];
-
 const weekdayNames = [
+  "CN",
   "T2",
   "T3",
   "T4",
   "T5",
   "T6",
   "T7",
-  "CN",
 ];
 
 function toIsoDate(date: Date): string {
@@ -76,63 +59,60 @@ function fromIsoDate(
     return null;
   }
 
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
   const date = new Date(
-    Number(match[1]),
-    Number(match[2]) - 1,
-    Number(match[3]),
+    year,
+    month - 1,
+    day,
   );
 
-  return Number.isNaN(
-    date.getTime(),
-  )
-    ? null
-    : date;
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
 }
 
 function sameDate(
-  a: Date,
-  b: Date,
+  first: Date,
+  second: Date,
 ): boolean {
   return (
-    a.getFullYear() ===
-      b.getFullYear() &&
-    a.getMonth() ===
-      b.getMonth() &&
-    a.getDate() ===
-      b.getDate()
+    first.getFullYear() ===
+      second.getFullYear() &&
+    first.getMonth() ===
+      second.getMonth() &&
+    first.getDate() ===
+      second.getDate()
   );
 }
 
 function buildCalendarDays(
   year: number,
   month: number,
-) {
+): Date[] {
   const firstDay = new Date(
     year,
     month,
     1,
   );
 
-  const nativeWeekday =
-    firstDay.getDay();
-
-  const mondayBasedOffset =
-    nativeWeekday === 0
-      ? 6
-      : nativeWeekday - 1;
-
   const start = new Date(
     year,
     month,
-    1 - mondayBasedOffset,
+    1 - firstDay.getDay(),
   );
 
   return Array.from(
     { length: 42 },
     (_, index) => {
-      const date = new Date(
-        start,
-      );
+      const date = new Date(start);
 
       date.setDate(
         start.getDate() + index,
@@ -159,12 +139,14 @@ export function DateField({
   const inputId =
     name || `date-field-${generatedId}`;
 
-  const containerRef =
+  const wrapperRef =
     useRef<HTMLDivElement | null>(null);
 
+  const selectedDate =
+    fromIsoDate(value);
+
   const initialDate =
-    fromIsoDate(value) ??
-    new Date();
+    selectedDate ?? new Date();
 
   const [
     displayValue,
@@ -197,9 +179,6 @@ export function DateField({
     initialDate.getMonth(),
   );
 
-  const selectedDate =
-    fromIsoDate(value);
-
   const today = new Date();
 
   const calendarDays =
@@ -209,10 +188,7 @@ export function DateField({
           viewYear,
           viewMonth,
         ),
-      [
-        viewYear,
-        viewMonth,
-      ],
+      [viewYear, viewMonth],
     );
 
   useEffect(() => {
@@ -220,26 +196,26 @@ export function DateField({
       isoToDisplayDate(value),
     );
 
-    const nextDate =
+    const date =
       fromIsoDate(value);
 
-    if (nextDate) {
+    if (date) {
       setViewYear(
-        nextDate.getFullYear(),
+        date.getFullYear(),
       );
       setViewMonth(
-        nextDate.getMonth(),
+        date.getMonth(),
       );
     }
   }, [value]);
 
   useEffect(() => {
-    function handleClickOutside(
+    function handleOutsideClick(
       event: MouseEvent,
     ) {
       if (
-        containerRef.current &&
-        !containerRef.current.contains(
+        wrapperRef.current &&
+        !wrapperRef.current.contains(
           event.target as Node,
         )
       ) {
@@ -249,18 +225,18 @@ export function DateField({
 
     document.addEventListener(
       "mousedown",
-      handleClickOutside,
+      handleOutsideClick,
     );
 
     return () => {
       document.removeEventListener(
         "mousedown",
-        handleClickOutside,
+        handleOutsideClick,
       );
     };
   }, []);
 
-  function isDateAllowed(
+  function isAllowed(
     isoValue: string,
   ) {
     if (
@@ -280,12 +256,8 @@ export function DateField({
     return true;
   }
 
-  function validateAndCommit(
-    nextDisplayValue: string,
-  ) {
-    if (
-      !nextDisplayValue.trim()
-    ) {
+  function commitText() {
+    if (!displayValue.trim()) {
       setInternalError("");
       onChange("");
       return;
@@ -293,7 +265,7 @@ export function DateField({
 
     const isoValue =
       displayToIsoDate(
-        nextDisplayValue,
+        displayValue,
       );
 
     if (!isoValue) {
@@ -303,11 +275,7 @@ export function DateField({
       return;
     }
 
-    if (
-      !isDateAllowed(
-        isoValue,
-      )
-    ) {
+    if (!isAllowed(isoValue)) {
       setInternalError(
         "Ngày nằm ngoài khoảng cho phép.",
       );
@@ -316,9 +284,7 @@ export function DateField({
 
     setInternalError("");
     setDisplayValue(
-      isoToDisplayDate(
-        isoValue,
-      ),
+      isoToDisplayDate(isoValue),
     );
     onChange(isoValue);
   }
@@ -329,19 +295,13 @@ export function DateField({
     const isoValue =
       toIsoDate(date);
 
-    if (
-      !isDateAllowed(
-        isoValue,
-      )
-    ) {
+    if (!isAllowed(isoValue)) {
       return;
     }
 
     setInternalError("");
     setDisplayValue(
-      isoToDisplayDate(
-        isoValue,
-      ),
+      isoToDisplayDate(isoValue),
     );
     onChange(isoValue);
     setCalendarOpen(false);
@@ -364,6 +324,15 @@ export function DateField({
     );
   }
 
+  function moveYear(
+    offset: number,
+  ) {
+    setViewYear(
+      (current) =>
+        current + offset,
+    );
+  }
+
   return (
     <FormField
       label={label}
@@ -376,22 +345,22 @@ export function DateField({
       htmlFor={inputId}
     >
       <div
-        className="vn-date-picker"
-        ref={containerRef}
+        className="premium-date-picker"
+        ref={wrapperRef}
       >
-        <div className="vn-date-picker__control">
+        <div className="premium-date-picker__input-wrap">
           <input
             id={inputId}
             name={name}
             className="form-control"
             type="text"
             inputMode="numeric"
+            autoComplete="off"
             value={displayValue}
             required={required}
             disabled={disabled}
             placeholder="dd/mm/yyyy"
             maxLength={10}
-            autoComplete="off"
             onChange={(event) => {
               const formatted =
                 normalizeDateTyping(
@@ -407,18 +376,12 @@ export function DateField({
                 onChange("");
               }
             }}
-            onBlur={() =>
-              validateAndCommit(
-                displayValue,
-              )
-            }
+            onBlur={commitText}
             onKeyDown={(event) => {
               if (
                 event.key === "Enter"
               ) {
-                validateAndCommit(
-                  displayValue,
-                );
+                commitText();
               }
 
               if (
@@ -428,13 +391,19 @@ export function DateField({
                 event.preventDefault();
                 setCalendarOpen(true);
               }
+
+              if (
+                event.key === "Escape"
+              ) {
+                setCalendarOpen(false);
+              }
             }}
           />
 
           <button
             type="button"
-            className="vn-date-picker__trigger"
-            aria-label="Mở lịch"
+            className="premium-date-picker__trigger"
+            aria-label="Mở lịch chọn ngày"
             disabled={disabled}
             onMouseDown={(event) =>
               event.preventDefault()
@@ -447,18 +416,28 @@ export function DateField({
             }
           >
             <span aria-hidden="true">
-              ▦
+              ▣
             </span>
           </button>
         </div>
 
         {calendarOpen ? (
           <section
-            className="vn-date-picker__popover"
+            className="premium-date-picker__popover"
             role="dialog"
-            aria-label="Chọn ngày"
+            aria-label="Lịch chọn ngày"
           >
-            <header className="vn-date-picker__header">
+            <header className="premium-date-picker__header">
+              <button
+                type="button"
+                aria-label="Năm trước"
+                onClick={() =>
+                  moveYear(-1)
+                }
+              >
+                «
+              </button>
+
               <button
                 type="button"
                 aria-label="Tháng trước"
@@ -470,11 +449,8 @@ export function DateField({
               </button>
 
               <strong>
-                {
-                  monthNames[
-                    viewMonth
-                  ]
-                }{" "}
+                Tháng{" "}
+                {viewMonth + 1}{" "}
                 {viewYear}
               </strong>
 
@@ -487,15 +463,23 @@ export function DateField({
               >
                 ›
               </button>
+
+              <button
+                type="button"
+                aria-label="Năm sau"
+                onClick={() =>
+                  moveYear(1)
+                }
+              >
+                »
+              </button>
             </header>
 
-            <div className="vn-date-picker__weekdays">
+            <div className="premium-date-picker__weekdays">
               {weekdayNames.map(
                 (weekday) => (
                   <span
-                    key={
-                      weekday
-                    }
+                    key={weekday}
                   >
                     {weekday}
                   </span>
@@ -503,15 +487,13 @@ export function DateField({
               )}
             </div>
 
-            <div className="vn-date-picker__days">
+            <div className="premium-date-picker__days">
               {calendarDays.map(
                 (date) => {
                   const isoValue =
-                    toIsoDate(
-                      date,
-                    );
+                    toIsoDate(date);
 
-                  const outsideMonth =
+                  const outside =
                     date.getMonth() !==
                     viewMonth;
 
@@ -523,14 +505,14 @@ export function DateField({
                         )
                       : false;
 
-                  const isToday =
+                  const currentDay =
                     sameDate(
                       date,
                       today,
                     );
 
-                  const disabledDay =
-                    !isDateAllowed(
+                  const unavailable =
+                    !isAllowed(
                       isoValue,
                     );
 
@@ -539,23 +521,21 @@ export function DateField({
                       type="button"
                       key={isoValue}
                       disabled={
-                        disabledDay
+                        unavailable
                       }
                       className={[
-                        "vn-date-picker__day",
-                        outsideMonth
-                          ? "vn-date-picker__day--outside"
+                        "premium-date-picker__day",
+                        outside
+                          ? "premium-date-picker__day--outside"
                           : "",
                         selected
-                          ? "vn-date-picker__day--selected"
+                          ? "premium-date-picker__day--selected"
                           : "",
-                        isToday
-                          ? "vn-date-picker__day--today"
+                        currentDay
+                          ? "premium-date-picker__day--today"
                           : "",
                       ]
-                        .filter(
-                          Boolean,
-                        )
+                        .filter(Boolean)
                         .join(" ")}
                       onClick={() =>
                         selectDate(
@@ -572,7 +552,7 @@ export function DateField({
               )}
             </div>
 
-            <footer className="vn-date-picker__footer">
+            <footer className="premium-date-picker__footer">
               <button
                 type="button"
                 className="text-button"
@@ -590,16 +570,12 @@ export function DateField({
                 type="button"
                 className="text-button"
                 disabled={
-                  !isDateAllowed(
-                    toIsoDate(
-                      today,
-                    ),
+                  !isAllowed(
+                    toIsoDate(today),
                   )
                 }
                 onClick={() =>
-                  selectDate(
-                    today,
-                  )
+                  selectDate(today)
                 }
               >
                 Hôm nay

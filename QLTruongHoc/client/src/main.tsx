@@ -20,6 +20,8 @@ import "./styles/section-card-actions.css";
 import "./styles/audit-log.css";
 import "./styles/user-assignment.css";
 import "./styles/form-components.css";
+import "./styles/premium-date-picker.css";
+import "./styles/audit-filter-layout.css";
 
 ReactDOM.createRoot(
   document.getElementById(
