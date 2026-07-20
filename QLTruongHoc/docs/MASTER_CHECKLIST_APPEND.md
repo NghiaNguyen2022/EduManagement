@@ -1,9 +1,13 @@
-# SectionCard Actions Checklist
+# Shared Format Checklist
 
-- [x] Thêm `actions?: React.ReactNode`.
-- [x] Render action ở header.
-- [x] Không ảnh hưởng card không có action.
-- [x] Responsive mobile.
-- [ ] Kiểm tra nút Điều chỉnh quyền.
-- [ ] Kiểm tra mở advanced permission.
-- [ ] Kiểm tra lưu thay đổi.
+- [x] DateField dd/mm/yyyy.
+- [x] Date value ISO yyyy-mm-dd.
+- [x] Validate real calendar date.
+- [x] NumberInput thousand separator.
+- [x] CurrencyInput thousand separator.
+- [x] VND suffix.
+- [x] Number value remains numeric.
+- [ ] Migrate Audit date filters to DateField.
+- [ ] Use NumberInput for quantities.
+- [ ] Use CurrencyInput for all fee/finance forms.
+- [ ] Runtime test typing and editing.

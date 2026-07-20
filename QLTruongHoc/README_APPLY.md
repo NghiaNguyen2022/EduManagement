@@ -1,41 +1,68 @@
-# Sprint 0C.4 — Nhật ký hệ thống
+# Fix Date + Number Format v0.1
 
-## Phạm vi
-
-- Danh sách nhật ký hệ thống theo đơn vị hiện tại.
-- Quản trị hệ thống xem được nhật ký toàn hệ thống.
-- Lọc theo:
-  - Từ khóa.
-  - Nhóm hành động.
-  - Mức độ.
-  - Khoảng ngày.
-- Phân trang.
-- Xem chi tiết nội dung và dữ liệu JSON.
-- API được bảo vệ bằng quyền.
-- Menu `Nhật ký hệ thống`.
-- Cập nhật PROJECT_SUMMARY và MASTER_CHECKLIST.
-
-## API
+## Chuẩn mới
 
 ```text
-GET /api/audit-logs
-GET /api/audit-logs/actions
-GET /api/audit-logs/:id
+Ngày hiển thị: dd/mm/yyyy
+Ngày truyền API: yyyy-mm-dd
+
+Số: 1.000.000
+Tiền: 1.000.000 ₫
 ```
 
 ## Áp dụng
 
-Chép toàn bộ patch vào:
-
-```text
-D:\Source\Git\QLTruongHoc
-```
-
-Sau đó chạy:
+Chép đè toàn bộ patch vào project rồi chạy:
 
 ```powershell
-pnpm install
+pnpm typecheck
 pnpm dev
 ```
 
-Không thay đổi database.
+## Ví dụ sử dụng DateField
+
+```tsx
+const [ngaySinh, setNgaySinh] = useState("");
+
+<DateField
+  label="Ngày sinh"
+  value={ngaySinh}
+  onChange={setNgaySinh}
+/>
+```
+
+Người dùng nhìn thấy:
+
+```text
+20/07/2026
+```
+
+State nhận:
+
+```text
+2026-07-20
+```
+
+## Ví dụ NumberInput
+
+```tsx
+const [soLuong, setSoLuong] = useState<number | null>(null);
+
+<NumberInput
+  label="Số lượng"
+  value={soLuong}
+  onChange={setSoLuong}
+/>
+```
+
+## Ví dụ CurrencyInput
+
+```tsx
+const [hocPhi, setHocPhi] = useState<number | null>(null);
+
+<CurrencyInput
+  label="Học phí"
+  value={hocPhi}
+  onChange={setHocPhi}
+/>
+```

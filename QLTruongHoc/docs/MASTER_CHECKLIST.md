@@ -1,63 +1,55 @@
 # MASTER CHECKLIST — QLTruongHoc
 
-## Sprint 0A
-- [x] PASS
+## Sprint 0D.1 — Shared UI + Routing + User Aggregation
 
-## Sprint 0B.1
-- [x] PASS
+### Shared components
+- [x] Form appearance config.
+- [x] FormField.
+- [x] TextField.
+- [x] SelectField.
+- [x] DateField.
+- [x] DateTimeField.
+- [x] CurrencyInput.
+- [x] Shared CSS.
+- [x] User page migrated to shared controls.
+- [ ] Audit page migrated to shared controls.
+- [ ] Role page migrated to shared controls.
+- [ ] Login page migrated to shared controls.
 
-## Sprint 0B.2
-- [ ] Runtime PASS
+### User aggregation
+- [x] Aggregate by user ID.
+- [x] Roles array.
+- [x] One row per user.
+- [x] Role badges.
+- [x] Reload user list after assignment panel closes.
+- [ ] Aggregate units summary.
+- [ ] Server-side pagination/search.
 
-## Sprint 0B.3
-- [ ] Runtime PASS
-
-## Sprint 0C.1
-- [ ] Runtime PASS
-
-## Sprint 0C.2
-- [ ] Runtime PASS
-
-## Sprint 0C.3
-- [ ] Runtime PASS
-
-## Sprint 0C.4 — Nhật ký hệ thống
-
-### Backend
-- [x] List audit logs.
-- [x] Filter theo đơn vị.
-- [x] Search.
-- [x] Filter hành động.
-- [x] Filter mức độ.
-- [x] Filter khoảng ngày.
-- [x] Pagination.
-- [x] List action values.
-- [x] Detail API.
-- [x] Protect cross-unit access.
-- [x] System admin xem toàn hệ thống.
-
-### Frontend
-- [x] Menu Nhật ký hệ thống.
-- [x] Trang danh sách.
-- [x] Bộ lọc.
-- [x] Phân trang.
-- [x] Mức độ trạng thái.
-- [x] Popup chi tiết.
-- [x] Hiển thị JSON bổ sung.
-- [x] Responsive.
+### Routing
+- [x] Add react-router-dom.
+- [x] BrowserRouter.
+- [x] Central appRoutes config.
+- [x] NavLink sidebar.
+- [x] Route per page.
+- [x] Reload preserves page.
+- [x] Browser back/forward.
+- [x] Root redirect.
+- [x] Unknown route redirect.
+- [ ] Route permission guard.
+- [ ] 403 page.
+- [ ] Breadcrumb.
 
 ### Runtime
-- [ ] Mở trang Nhật ký hệ thống.
-- [ ] Hiển thị login/logout.
-- [ ] Hiển thị thao tác user.
-- [ ] Hiển thị thay đổi phân quyền.
-- [ ] Search hoạt động.
-- [ ] Lọc ngày hoạt động.
-- [ ] User đơn vị không xem log đơn vị khác.
-- [ ] System admin xem toàn hệ thống.
-- [ ] Người dùng xác nhận PASS.
+- [ ] `pnpm install`.
+- [ ] `pnpm typecheck`.
+- [ ] Reload `/users`.
+- [ ] Reload `/roles`.
+- [ ] Reload `/audit-logs`.
+- [ ] One row per user.
+- [ ] Multiple role badges.
+- [ ] Shared controls display correctly.
+- [ ] User confirms PASS.
 
-## Sau Sprint 0C.4
-- [ ] Multi-role cho một user.
-- [ ] Multi-unit cho một user.
+## Next
+- [ ] Sprint 0D.2 Route Permission Guard.
 - [ ] Sprint 1 — Tuyển sinh.

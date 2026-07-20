@@ -1,0 +1,102 @@
+.form-field {
+  display: grid;
+  gap: var(--form-field-gap, 7px);
+}
+
+.form-field__label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.form-field__label b {
+  color: var(--edu-color-danger);
+}
+
+.form-control {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--edu-color-border);
+  border-radius: 10px;
+  background: var(--edu-color-surface);
+  color: var(--edu-color-text);
+  font: inherit;
+  outline: none;
+}
+
+textarea.form-control {
+  min-height: 96px;
+  padding-block: 10px;
+  resize: vertical;
+}
+
+.form-control:focus {
+  border-color: var(--edu-color-primary);
+  box-shadow: 0 0 0 3px var(--edu-color-primary-soft);
+}
+
+.form-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.form-control--number {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.form-field__help,
+.form-field__error {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.form-field__help {
+  color: var(--edu-color-text-muted);
+}
+
+.form-field__error {
+  color: var(--edu-color-danger);
+}
+
+.form-field--error .form-control {
+  border-color: var(--edu-color-danger);
+}
+
+.currency-control,
+.date-control {
+  position: relative;
+}
+
+.currency-control .form-control {
+  padding-right: 38px;
+}
+
+.currency-control > span {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  transform: translateY(-50%);
+  color: var(--edu-color-text-muted);
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.date-control .form-control {
+  padding-right: 92px;
+}
+
+.date-control__format {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  color: var(--edu-color-text-muted);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.date-control .form-control:not(:placeholder-shown) +
+.date-control__format {
+  display: none;
+}

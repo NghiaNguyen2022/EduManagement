@@ -1,7 +1,8 @@
 import {
-  useEffect,
-  useState,
-} from "react";
+  Navigate,
+  Route,
+  Routes,
+} from "react-router-dom";
 
 import {
   AppShell,
@@ -34,52 +35,11 @@ import {
   UserManagementPage,
 } from "./pages/UserManagementPage";
 
-type HealthResponse = {
-  ok: boolean;
-};
-
-export function App() {
-  const { auth, loading } =
-    useAuth();
-
-  const [
-    activeItem,
-    setActiveItem,
-  ] = useState("dashboard");
-  const [
-    activeLabel,
-    setActiveLabel,
-  ] = useState(
-    "Bảng điều hành",
-  );
-  const [
-    databaseConnected,
-    setDatabaseConnected,
-  ] = useState<
-    boolean | null
-  >(null);
-
-  useEffect(() => {
-    fetch("/api/health")
-      .then(
-        async (response) => {
-          const payload =
-            (await response.json()) as HealthResponse;
-
-          setDatabaseConnected(
-            Boolean(
-              response.ok &&
-                payload.ok,
-            ),
-          );
-        },
-      )
-      .catch(() => {
-        setDatabaseConnected(
-          false,
-        );
-      });
-  }, []);
+function ProtectedApp() {
+  const {
+    auth,
+    loading,
+  } = useAuth();
 
   if (loading) {
     return (
@@ -111,37 +71,136 @@ export function App() {
   }
 
   return (
-    <AppShell
-      activeItem={activeItem}
-      onNavigate={(
-        itemId,
-        label,
-      ) => {
-        setActiveItem(itemId);
-        setActiveLabel(label);
-      }}
-    >
-      {activeItem ===
-      "dashboard" ? (
-        <DashboardPage
-          databaseConnected={
-            databaseConnected
+    <AppShell>
+      <Routes>
+        <Route
+          path="/dashboard"
+          element={
+            <DashboardPage
+              databaseConnected={
+                true
+              }
+            />
           }
         />
-      ) : activeItem ===
-        "users" ? (
-        <UserManagementPage />
-      ) : activeItem ===
-        "roles" ? (
-        <RolePermissionPage />
-      ) : activeItem ===
-        "audit-logs" ? (
-        <SystemAuditLogPage />
-      ) : (
-        <PlaceholderPage
-          title={activeLabel}
+
+        <Route
+          path="/users"
+          element={
+            <UserManagementPage />
+          }
         />
-      )}
+
+        <Route
+          path="/roles"
+          element={
+            <RolePermissionPage />
+          }
+        />
+
+        <Route
+          path="/audit-logs"
+          element={
+            <SystemAuditLogPage />
+          }
+        />
+
+        <Route
+          path="/admissions"
+          element={
+            <PlaceholderPage
+              title="Hồ sơ tuyển sinh"
+            />
+          }
+        />
+
+        <Route
+          path="/consulting"
+          element={
+            <PlaceholderPage
+              title="Tư vấn tuyển sinh"
+            />
+          }
+        />
+
+        <Route
+          path="/students"
+          element={
+            <PlaceholderPage
+              title="Học sinh · Học viên"
+            />
+          }
+        />
+
+        <Route
+          path="/classes"
+          element={
+            <PlaceholderPage
+              title="Lớp học"
+            />
+          }
+        />
+
+        <Route
+          path="/schedule"
+          element={
+            <PlaceholderPage
+              title="Lịch học"
+            />
+          }
+        />
+
+        <Route
+          path="/attendance"
+          element={
+            <PlaceholderPage
+              title="Điểm danh"
+            />
+          }
+        />
+
+        <Route
+          path="/finance"
+          element={
+            <PlaceholderPage
+              title="Học phí · Công nợ"
+            />
+          }
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <PlaceholderPage
+              title="Cấu hình hệ thống"
+            />
+          }
+        />
+
+        <Route
+          path="/"
+          element={
+            <Navigate
+              to="/dashboard"
+              replace
+            />
+          }
+        />
+
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to="/dashboard"
+              replace
+            />
+          }
+        />
+      </Routes>
     </AppShell>
   );
+}
+
+export function App() {
+  return <ProtectedApp />;
 }

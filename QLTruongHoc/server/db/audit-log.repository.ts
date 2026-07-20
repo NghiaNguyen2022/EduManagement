@@ -8,6 +8,7 @@ import {
   lte,
   or,
   sql,
+  type SQL,
 } from "drizzle-orm";
 
 import {
@@ -28,8 +29,10 @@ export type AuditLogQuery = {
   pageSize: number;
 };
 
-function buildConditions(input: AuditLogQuery) {
-  const conditions = [];
+function buildConditions(
+  input: AuditLogQuery,
+): SQL[] {
+  const conditions: SQL[] = [];
 
   if (input.organizationId) {
     conditions.push(
@@ -42,13 +45,19 @@ function buildConditions(input: AuditLogQuery) {
 
   if (input.action) {
     conditions.push(
-      eq(nhatKyHeThong.hanhDong, input.action),
+      eq(
+        nhatKyHeThong.hanhDong,
+        input.action,
+      ),
     );
   }
 
   if (input.level) {
     conditions.push(
-      eq(nhatKyHeThong.mucDo, input.level),
+      eq(
+        nhatKyHeThong.mucDo,
+        input.level,
+      ),
     );
   }
 
@@ -73,46 +82,96 @@ function buildConditions(input: AuditLogQuery) {
   if (input.search) {
     const keyword = `%${input.search}%`;
 
-    conditions.push(
-      or(
-        like(nhatKyHeThong.hanhDong, keyword),
-        like(nhatKyHeThong.noiDung, keyword),
-        like(nhatKyHeThong.doiTuong, keyword),
-        like(nhatKyHeThong.doiTuongId, keyword),
-        like(nguoiDung.hoTen, keyword),
-        like(nguoiDung.tenDangNhap, keyword),
+    const searchCondition = or(
+      like(
+        nhatKyHeThong.hanhDong,
+        keyword,
+      ),
+      like(
+        nhatKyHeThong.noiDung,
+        keyword,
+      ),
+      like(
+        nhatKyHeThong.doiTuong,
+        keyword,
+      ),
+      like(
+        nhatKyHeThong.doiTuongId,
+        keyword,
+      ),
+      like(
+        nguoiDung.hoTen,
+        keyword,
+      ),
+      like(
+        nguoiDung.tenDangNhap,
+        keyword,
       ),
     );
+
+    if (searchCondition) {
+      conditions.push(searchCondition);
+    }
   }
 
   return conditions;
+}
+
+function combineConditions(
+  conditions: SQL[],
+): SQL | undefined {
+  if (conditions.length === 0) {
+    return undefined;
+  }
+
+  if (conditions.length === 1) {
+    return conditions[0];
+  }
+
+  return and(...conditions);
 }
 
 export async function listAuditLogs(
   input: AuditLogQuery,
 ) {
   const db = getDb();
-  const conditions = buildConditions(input);
+  const conditions =
+    buildConditions(input);
+  const whereCondition =
+    combineConditions(conditions);
   const offset =
-    (input.page - 1) * input.pageSize;
+    (input.page - 1) *
+    input.pageSize;
 
   const rows = await db
     .select({
       id: nhatKyHeThong.id,
-      nguoiDungId: nhatKyHeThong.nguoiDungId,
-      donViId: nhatKyHeThong.donViId,
-      hanhDong: nhatKyHeThong.hanhDong,
-      doiTuong: nhatKyHeThong.doiTuong,
-      doiTuongId: nhatKyHeThong.doiTuongId,
-      noiDung: nhatKyHeThong.noiDung,
-      mucDo: nhatKyHeThong.mucDo,
-      diaChiIp: nhatKyHeThong.diaChiIp,
-      createdAt: nhatKyHeThong.createdAt,
-      nguoiDungHoTen: nguoiDung.hoTen,
+      nguoiDungId:
+        nhatKyHeThong.nguoiDungId,
+      donViId:
+        nhatKyHeThong.donViId,
+      hanhDong:
+        nhatKyHeThong.hanhDong,
+      doiTuong:
+        nhatKyHeThong.doiTuong,
+      doiTuongId:
+        nhatKyHeThong.doiTuongId,
+      noiDung:
+        nhatKyHeThong.noiDung,
+      mucDo:
+        nhatKyHeThong.mucDo,
+      diaChiIp:
+        nhatKyHeThong.diaChiIp,
+      createdAt:
+        nhatKyHeThong.createdAt,
+      nguoiDungHoTen:
+        nguoiDung.hoTen,
       nguoiDungTenDangNhap:
         nguoiDung.tenDangNhap,
-      donViTen: donVi.tenDonVi,
-      donViMa: donVi.maDonVi,
+      donViTen:
+        donVi.tenDonVi,
+      donViMa:
+        donVi.maDonVi,
     })
     .from(nhatKyHeThong)
     .leftJoin(
@@ -124,20 +183,24 @@ export async function listAuditLogs(
     )
     .leftJoin(
       donVi,
-      eq(nhatKyHeThong.donViId, donVi.id),
+      eq(
+        nhatKyHeThong.donViId,
+        donVi.id,
+      ),
     )
-    .where(
-      conditions.length > 0
-        ? and(...conditions)
-        : undefined,
+    .where(whereCondition)
+    .orderBy(
+      desc(
+        nhatKyHeThong.createdAt,
+      ),
     )
-    .orderBy(desc(nhatKyHeThong.createdAt))
     .limit(input.pageSize)
     .offset(offset);
 
   const countRows = await db
     .select({
-      total: sql<number>`count(*)`,
+      total:
+        sql<number>`count(*)`,
     })
     .from(nhatKyHeThong)
     .leftJoin(
@@ -147,15 +210,13 @@ export async function listAuditLogs(
         nguoiDung.id,
       ),
     )
-    .where(
-      conditions.length > 0
-        ? and(...conditions)
-        : undefined,
-    );
+    .where(whereCondition);
 
   return {
     rows,
-    total: Number(countRows[0]?.total ?? 0),
+    total: Number(
+      countRows[0]?.total ?? 0,
+    ),
   };
 }
 
@@ -166,7 +227,8 @@ export async function listAuditActions(
 
   const rows = await db
     .select({
-      action: nhatKyHeThong.hanhDong,
+      action:
+        nhatKyHeThong.hanhDong,
     })
     .from(nhatKyHeThong)
     .where(
@@ -177,12 +239,21 @@ export async function listAuditActions(
           )
         : undefined,
     )
-    .groupBy(nhatKyHeThong.hanhDong)
-    .orderBy(asc(nhatKyHeThong.hanhDong));
+    .groupBy(
+      nhatKyHeThong.hanhDong,
+    )
+    .orderBy(
+      asc(
+        nhatKyHeThong.hanhDong,
+      ),
+    );
 
   return rows
     .map((row) => row.action)
-    .filter(Boolean);
+    .filter(
+      (action): action is string =>
+        Boolean(action),
+    );
 }
 
 export async function findAuditLogById(
@@ -193,21 +264,34 @@ export async function findAuditLogById(
   const rows = await db
     .select({
       id: nhatKyHeThong.id,
-      nguoiDungId: nhatKyHeThong.nguoiDungId,
-      donViId: nhatKyHeThong.donViId,
-      hanhDong: nhatKyHeThong.hanhDong,
-      doiTuong: nhatKyHeThong.doiTuong,
-      doiTuongId: nhatKyHeThong.doiTuongId,
-      noiDung: nhatKyHeThong.noiDung,
-      duLieu: nhatKyHeThong.duLieu,
-      mucDo: nhatKyHeThong.mucDo,
-      diaChiIp: nhatKyHeThong.diaChiIp,
-      createdAt: nhatKyHeThong.createdAt,
-      nguoiDungHoTen: nguoiDung.hoTen,
+      nguoiDungId:
+        nhatKyHeThong.nguoiDungId,
+      donViId:
+        nhatKyHeThong.donViId,
+      hanhDong:
+        nhatKyHeThong.hanhDong,
+      doiTuong:
+        nhatKyHeThong.doiTuong,
+      doiTuongId:
+        nhatKyHeThong.doiTuongId,
+      noiDung:
+        nhatKyHeThong.noiDung,
+      duLieu:
+        nhatKyHeThong.duLieu,
+      mucDo:
+        nhatKyHeThong.mucDo,
+      diaChiIp:
+        nhatKyHeThong.diaChiIp,
+      createdAt:
+        nhatKyHeThong.createdAt,
+      nguoiDungHoTen:
+        nguoiDung.hoTen,
       nguoiDungTenDangNhap:
         nguoiDung.tenDangNhap,
-      donViTen: donVi.tenDonVi,
-      donViMa: donVi.maDonVi,
+      donViTen:
+        donVi.tenDonVi,
+      donViMa:
+        donVi.maDonVi,
     })
     .from(nhatKyHeThong)
     .leftJoin(
@@ -219,9 +303,17 @@ export async function findAuditLogById(
     )
     .leftJoin(
       donVi,
-      eq(nhatKyHeThong.donViId, donVi.id),
+      eq(
+        nhatKyHeThong.donViId,
+        donVi.id,
+      ),
     )
-    .where(eq(nhatKyHeThong.id, logId))
+    .where(
+      eq(
+        nhatKyHeThong.id,
+        logId,
+      ),
+    )
     .limit(1);
 
   return rows[0] ?? null;

@@ -1,5 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import {
+  BrowserRouter,
+} from "react-router-dom";
 
 import {
   App,
@@ -15,6 +18,8 @@ import "./styles/sidebar-balance.css";
 import "./styles/role-permission.css";
 import "./styles/section-card-actions.css";
 import "./styles/audit-log.css";
+import "./styles/user-assignment.css";
+import "./styles/form-components.css";
 
 ReactDOM.createRoot(
   document.getElementById(
@@ -22,8 +27,10 @@ ReactDOM.createRoot(
   )!,
 ).render(
   <React.StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
   </React.StrictMode>,
 );

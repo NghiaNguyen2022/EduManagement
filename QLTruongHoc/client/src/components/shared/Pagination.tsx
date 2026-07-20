@@ -1,86 +1,188 @@
-import { educationAppearance } from "../../config/educationAppearance";
-
 type PaginationProps = {
-  page: number;
-  totalItems: number;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+
+  page?: number;
   pageSize?: number;
-  pageSizeOptions?: number[];
-  onPageChange: (page: number) => void;
-  onPageSizeChange?: (pageSize: number) => void;
+  total?: number;
+  onChange?: (page: number) => void;
+
+  itemLabel?: string;
 };
 
+function toSafeInteger(
+  value: unknown,
+  fallback: number,
+): number {
+  const numberValue = Number(value);
+
+  if (
+    !Number.isFinite(numberValue) ||
+    !Number.isInteger(numberValue)
+  ) {
+    return fallback;
+  }
+
+  return numberValue;
+}
+
+function clamp(
+  value: number,
+  min: number,
+  max: number,
+): number {
+  return Math.min(
+    Math.max(value, min),
+    max,
+  );
+}
+
 export function Pagination({
-  page,
-  totalItems,
-  pageSize = educationAppearance.pagination.defaultPageSize,
-  pageSizeOptions = educationAppearance.pagination.pageSizeOptions,
+  currentPage,
+  totalPages,
   onPageChange,
-  onPageSizeChange,
+  page,
+  pageSize,
+  total,
+  onChange,
+  itemLabel = "mục",
 }: PaginationProps) {
-  const totalPages = Math.max(
+  const safePageSize = Math.max(
     1,
-    Math.ceil(totalItems / pageSize),
+    toSafeInteger(pageSize, 10),
   );
 
-  const safePage = Math.min(
-    Math.max(page, 1),
-    totalPages,
+  const safeTotal = Math.max(
+    0,
+    toSafeInteger(total, 0),
   );
 
-  const from =
-    totalItems === 0
+  const calculatedTotalPages =
+    totalPages !== undefined
+      ? Math.max(
+          1,
+          toSafeInteger(totalPages, 1),
+        )
+      : Math.max(
+          1,
+          Math.ceil(
+            safeTotal / safePageSize,
+          ),
+        );
+
+  const rawCurrentPage =
+    currentPage ?? page ?? 1;
+
+  const safeCurrentPage = clamp(
+    toSafeInteger(rawCurrentPage, 1),
+    1,
+    calculatedTotalPages,
+  );
+
+  const changeHandler =
+    onPageChange ?? onChange;
+
+  const hasItemRange =
+    total !== undefined &&
+    pageSize !== undefined;
+
+  const startItem =
+    safeTotal === 0
       ? 0
-      : (safePage - 1) * pageSize + 1;
+      : (safeCurrentPage - 1) *
+          safePageSize +
+        1;
 
-  const to = Math.min(
-    safePage * pageSize,
-    totalItems,
-  );
+  const endItem =
+    safeTotal === 0
+      ? 0
+      : Math.min(
+          safeCurrentPage *
+            safePageSize,
+          safeTotal,
+        );
+
+  function goToPage(
+    nextPage: number,
+  ) {
+    if (!changeHandler) {
+      return;
+    }
+
+    changeHandler(
+      clamp(
+        nextPage,
+        1,
+        calculatedTotalPages,
+      ),
+    );
+  }
 
   return (
     <div className="pagination">
       <div className="pagination__summary">
-        Hiển thị <strong>{from}</strong>–<strong>{to}</strong> trong{" "}
-        <strong>{totalItems}</strong> mục
+        {hasItemRange ? (
+          <>
+            Hiển thị{" "}
+            <strong>
+              {startItem}–{endItem}
+            </strong>{" "}
+            trong{" "}
+            <strong>
+              {safeTotal}
+            </strong>{" "}
+            {itemLabel}
+          </>
+        ) : (
+          <>
+            Trang{" "}
+            <strong>
+              {safeCurrentPage}
+            </strong>{" "}
+            /{" "}
+            <strong>
+              {calculatedTotalPages}
+            </strong>
+          </>
+        )}
       </div>
 
       <div className="pagination__controls">
-        {onPageSizeChange ? (
-          <label className="pagination__page-size">
-            <span>Số dòng</span>
-            <select
-              value={pageSize}
-              onChange={(event) =>
-                onPageSizeChange(Number(event.target.value))
-              }
-            >
-              {pageSizeOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-
         <button
           type="button"
           className="pagination__button"
-          disabled={safePage <= 1}
-          onClick={() => onPageChange(safePage - 1)}
+          disabled={
+            safeCurrentPage <= 1
+          }
+          onClick={() =>
+            goToPage(
+              safeCurrentPage - 1,
+            )
+          }
+          aria-label="Trang trước"
         >
           ‹
         </button>
 
-        <span className="pagination__current">
-          Trang {safePage}/{totalPages}
+        <span className="pagination__page">
+          Trang {safeCurrentPage}/
+          {calculatedTotalPages}
         </span>
 
         <button
           type="button"
           className="pagination__button"
-          disabled={safePage >= totalPages}
-          onClick={() => onPageChange(safePage + 1)}
+          disabled={
+            safeCurrentPage >=
+            calculatedTotalPages
+          }
+          onClick={() =>
+            goToPage(
+              safeCurrentPage + 1,
+            )
+          }
+          aria-label="Trang sau"
         >
           ›
         </button>

@@ -1,0 +1,15 @@
+.role-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.role-badge {
+  width: fit-content;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--edu-color-primary-soft);
+  color: var(--edu-color-primary-strong);
+  font-size: 12px;
+  font-weight: 800;
+}

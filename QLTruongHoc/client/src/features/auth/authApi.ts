@@ -1,4 +1,6 @@
-import type { AuthContextData } from "./authTypes";
+import type {
+  AuthContextData,
+} from "./authTypes";
 
 type ApiResponse<T> = {
   ok: boolean;
@@ -6,20 +8,56 @@ type ApiResponse<T> = {
   error?: string;
 };
 
+async function readJsonSafely<T>(
+  response: Response,
+): Promise<ApiResponse<T>> {
+  const text = await response.text();
+
+  if (!text.trim()) {
+    throw new Error(
+      response.ok
+        ? "Máy chủ không trả dữ liệu."
+        : `Máy chủ lỗi HTTP ${response.status}.`,
+    );
+  }
+
+  try {
+    return JSON.parse(
+      text,
+    ) as ApiResponse<T>;
+  } catch {
+    throw new Error(
+      `Phản hồi từ máy chủ không hợp lệ (HTTP ${response.status}).`,
+    );
+  }
+}
+
 async function request<T>(
   url: string,
   options?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(url, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options?.headers ?? {}),
-    },
-    ...options,
-  });
+  let response: Response;
 
-  const payload = (await response.json()) as ApiResponse<T>;
+  try {
+    response = await fetch(url, {
+      credentials: "include",
+      headers: {
+        "Content-Type":
+          "application/json",
+        ...(options?.headers ?? {}),
+      },
+      ...options,
+    });
+  } catch {
+    throw new Error(
+      "Không kết nối được tới máy chủ API. Hãy kiểm tra backend port 3100.",
+    );
+  }
+
+  const payload =
+    await readJsonSafely<T>(
+      response,
+    );
 
   if (
     !response.ok ||
@@ -27,7 +65,8 @@ async function request<T>(
     payload.data === undefined
   ) {
     throw new Error(
-      payload.error || "Yêu cầu thất bại.",
+      payload.error ||
+        "Yêu cầu thất bại.",
     );
   }
 
@@ -38,27 +77,45 @@ export function loginApi(
   username: string,
   password: string,
 ) {
-  return request<AuthContextData>("/api/auth/login", {
-    method: "POST",
-    body: JSON.stringify({
-      username,
-      password,
-    }),
-  });
+  return request<AuthContextData>(
+    "/api/auth/login",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        username,
+        password,
+      }),
+    },
+  );
 }
 
 export function getMeApi() {
-  return request<AuthContextData>("/api/auth/me");
+  return request<AuthContextData>(
+    "/api/auth/me",
+  );
 }
 
 export async function logoutApi() {
-  const response = await fetch("/api/auth/logout", {
-    method: "POST",
-    credentials: "include",
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(
+      "/api/auth/logout",
+      {
+        method: "POST",
+        credentials: "include",
+      },
+    );
+  } catch {
+    throw new Error(
+      "Không kết nối được tới máy chủ API.",
+    );
+  }
 
   if (!response.ok) {
-    throw new Error("Đăng xuất thất bại.");
+    throw new Error(
+      "Đăng xuất thất bại.",
+    );
   }
 }
 
