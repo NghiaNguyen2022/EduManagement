@@ -9,9 +9,11 @@ import {
   checkDbConnection,
   closeDbConnection,
 } from "./db/connection.js";
+import { auditLogRouter } from "./routers/audit-log.router.js";
 import { authRouter } from "./routers/auth.router.js";
 import { healthRouter } from "./routers/health.router.js";
 import { organizationRouter } from "./routers/organization.router.js";
+import { roleRouter } from "./routers/role.router.js";
 import { userRouter } from "./routers/user.router.js";
 
 const app = express();
@@ -40,6 +42,8 @@ app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/organizations", organizationRouter);
 app.use("/api/users", userRouter);
+app.use("/api/roles", roleRouter);
+app.use("/api/audit-logs", auditLogRouter);
 
 if (env.nodeEnv === "production") {
   const clientDirectory = path.resolve(
@@ -76,7 +80,9 @@ async function startServer(): Promise<void> {
 }
 
 async function shutdown(signal: string): Promise<void> {
-  console.log(`Nhận ${signal}, đang đóng ứng dụng...`);
+  console.log(
+    `Nhận ${signal}, đang đóng ứng dụng...`,
+  );
   await closeDbConnection();
   process.exit(0);
 }
@@ -90,6 +96,9 @@ process.on("SIGTERM", () => {
 });
 
 startServer().catch((error) => {
-  console.error("Không thể khởi động ứng dụng:", error);
+  console.error(
+    "Không thể khởi động ứng dụng:",
+    error,
+  );
   process.exit(1);
 });

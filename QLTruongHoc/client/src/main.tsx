@@ -1,16 +1,25 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 
-import { App } from "./App";
-import { AuthProvider } from "./features/auth/AuthContext";
+import {
+  App,
+} from "./App";
+import {
+  AuthProvider,
+} from "./features/auth/AuthContext";
 import "./styles/theme.css";
 import "./styles.css";
 import "./styles/auth.css";
 import "./styles/user-management.css";
 import "./styles/sidebar-balance.css";
+import "./styles/role-permission.css";
+import "./styles/section-card-actions.css";
+import "./styles/audit-log.css";
 
 ReactDOM.createRoot(
-  document.getElementById("root")!,
+  document.getElementById(
+    "root",
+  )!,
 ).render(
   <React.StrictMode>
     <AuthProvider>

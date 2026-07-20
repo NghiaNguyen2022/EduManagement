@@ -1,8 +1,6 @@
-# Sidebar Balance Patch
+# SectionCard Actions Fix
 
-- Giữ nguyên cấu trúc và permission filtering của Sidebar.
-- Chuẩn hóa chiều rộng sidebar.
-- Cân lại khoảng cách brand, group và menu item.
-- Căn đồng đều icon và label.
-- Giảm khoảng cách dọc trên màn hình thấp.
-- Giới hạn sidebar mobile tối đa 310px.
+- Bổ sung prop `actions` cho `SectionCard`.
+- Nút Điều chỉnh quyền hiển thị ở góc phải header.
+- Giữ tương thích với toàn bộ SectionCard cũ.
+- Có responsive cho màn hình nhỏ.

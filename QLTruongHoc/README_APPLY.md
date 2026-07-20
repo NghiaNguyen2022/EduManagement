@@ -1,28 +1,41 @@
-# Sidebar Balance v0.1
+# Sprint 0C.4 — Nhật ký hệ thống
 
-Chép đè toàn bộ vào project:
+## Phạm vi
+
+- Danh sách nhật ký hệ thống theo đơn vị hiện tại.
+- Quản trị hệ thống xem được nhật ký toàn hệ thống.
+- Lọc theo:
+  - Từ khóa.
+  - Nhóm hành động.
+  - Mức độ.
+  - Khoảng ngày.
+- Phân trang.
+- Xem chi tiết nội dung và dữ liệu JSON.
+- API được bảo vệ bằng quyền.
+- Menu `Nhật ký hệ thống`.
+- Cập nhật PROJECT_SUMMARY và MASTER_CHECKLIST.
+
+## API
+
+```text
+GET /api/audit-logs
+GET /api/audit-logs/actions
+GET /api/audit-logs/:id
+```
+
+## Áp dụng
+
+Chép toàn bộ patch vào:
 
 ```text
 D:\Source\Git\QLTruongHoc
 ```
 
-Gồm:
-
-```text
-client/src/styles/sidebar-balance.css
-client/src/main.tsx
-```
-
 Sau đó chạy:
 
 ```powershell
+pnpm install
 pnpm dev
 ```
 
-Refresh mạnh:
-
-```text
-Ctrl + F5
-```
-
-Patch không thay đổi `Sidebar.tsx` và không ảnh hưởng logic permission.
+Không thay đổi database.

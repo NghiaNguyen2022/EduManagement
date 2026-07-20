@@ -1,12 +1,9 @@
-# Sidebar Balance Checklist
+# SectionCard Actions Checklist
 
-- [x] Không thay đổi logic quyền.
-- [x] Chuẩn hóa width sidebar desktop.
-- [x] Chuẩn hóa width sidebar mobile.
-- [x] Cân lại group label.
-- [x] Đồng bộ icon width.
-- [x] Đồng bộ chiều cao item.
-- [x] Tối ưu màn hình thấp.
-- [ ] Kiểm tra desktop.
-- [ ] Kiểm tra mobile.
-- [ ] Kiểm tra collapsed mode.
+- [x] Thêm `actions?: React.ReactNode`.
+- [x] Render action ở header.
+- [x] Không ảnh hưởng card không có action.
+- [x] Responsive mobile.
+- [ ] Kiểm tra nút Điều chỉnh quyền.
+- [ ] Kiểm tra mở advanced permission.
+- [ ] Kiểm tra lưu thay đổi.

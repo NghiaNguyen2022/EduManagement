@@ -1,9 +1,7 @@
-import { educationAppearance } from "../../config/educationAppearance";
-
 type SectionCardProps = {
   title?: string;
   subtitle?: string;
-  action?: React.ReactNode;
+  actions?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 };
@@ -11,38 +9,41 @@ type SectionCardProps = {
 export function SectionCard({
   title,
   subtitle,
-  action,
+  actions,
   children,
   className = "",
 }: SectionCardProps) {
-  const shadowClass =
-    `section-card--shadow-${educationAppearance.cards.defaultShadow}`;
-
-  const radiusClass =
-    `section-card--radius-${educationAppearance.cards.defaultRadius}`;
+  const hasHeader = Boolean(
+    title || subtitle || actions,
+  );
 
   return (
     <section
       className={[
         "section-card",
-        shadowClass,
-        radiusClass,
         className,
-      ].join(" ")}
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
-      {title || subtitle || action ? (
-        <div className="section-card__header">
-          <div>
-            {title ? <h2>{title}</h2> : null}
-            {subtitle ? <p>{subtitle}</p> : null}
+      {hasHeader ? (
+        <header className="section-card__header">
+          <div className="section-card__heading">
+            {title ? (
+              <h2>{title}</h2>
+            ) : null}
+
+            {subtitle ? (
+              <p>{subtitle}</p>
+            ) : null}
           </div>
 
-          {action ? (
-            <div className="section-card__action">
-              {action}
+          {actions ? (
+            <div className="section-card__actions">
+              {actions}
             </div>
           ) : null}
-        </div>
+        </header>
       ) : null}
 
       <div className="section-card__body">

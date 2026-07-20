@@ -1,0 +1,38 @@
+.section-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.section-card__heading {
+  min-width: 0;
+}
+
+.section-card__heading h2 {
+  margin: 0;
+}
+
+.section-card__heading p {
+  margin: 5px 0 0;
+  color: var(--edu-color-text-muted);
+}
+
+.section-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 680px) {
+  .section-card__header {
+    flex-direction: column;
+  }
+
+  .section-card__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
