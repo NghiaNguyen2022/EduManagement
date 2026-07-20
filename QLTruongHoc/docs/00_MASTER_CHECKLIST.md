@@ -1,22 +1,27 @@
 # MASTER CHECKLIST
 
+> Đây là checklist tổng toàn dự án (Sprint 0 → Sprint 7). Trạng thái A/B dưới đây được
+> đối chiếu lại với code thật ngày 2026-07-20 sau khi phát hiện `PROJECT_SUMMARY.md` và
+> `docs/MASTER_CHECKLIST.md` (file khác, dùng để track patch UI) đã bị ghi đè mất nội dung
+> Sprint 0. Chi tiết xem `PROJECT_SUMMARY.md` mục "Sprint 0 — Nền tảng đa đơn vị".
+
 ## A. Nền tảng và đa đơn vị
-- [ ] A01 Tạo cây đơn vị trường/trung tâm/cơ sở.
-- [ ] A02 Chọn đơn vị sau đăng nhập.
-- [ ] A03 Lưu đơn vị đang làm việc trong session/token.
-- [ ] A04 Phân quyền người dùng theo từng đơn vị.
-- [ ] A05 Chuyển đơn vị không cần đăng xuất nếu có quyền.
-- [ ] A06 Nhật ký thay đổi đơn vị và thao tác quan trọng.
+- [ ] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (Schema `DonVi` có `donViChaId` đã có; chưa có màn hình CRUD tạo/sửa đơn vị, mới seed sẵn 3 đơn vị mẫu.)
+- [x] A02 Chọn đơn vị sau đăng nhập.
+- [x] A03 Lưu đơn vị đang làm việc trong session/token. (`PhienDangNhap.donViHienTaiId`.)
+- [x] A04 Phân quyền người dùng theo từng đơn vị. (`NguoiDungVaiTroDonVi` + middleware `requirePermission`.)
+- [x] A05 Chuyển đơn vị không cần đăng xuất nếu có quyền. (`POST /api/organizations/select`.)
+- [x] A06 Nhật ký thay đổi đơn vị và thao tác quan trọng. (`NhatKyHeThong` ghi login/logout/select-org/user/role.)
 
 ## B. Người dùng và phân quyền
-- [ ] B01 Quản trị nền tảng.
-- [ ] B02 Quản lý đơn vị.
-- [ ] B03 Tuyển sinh/tư vấn.
-- [ ] B04 Kế toán.
-- [ ] B05 Giáo viên.
-- [ ] B06 Nhân viên học vụ.
-- [ ] B07 Phụ huynh/người giám hộ.
-- [ ] B08 Chính sách khóa/mở tài khoản.
+- [ ] B01 Quản trị nền tảng. (Vai trò `quan_tri_he_thong` chỉ gán được qua seed, chưa có UI gán vai trò phạm vi hệ thống — có chủ đích để tránh leo thang quyền.)
+- [x] B02 Quản lý đơn vị. (Vai trò `quan_ly_don_vi` gán được qua Quản lý người dùng.)
+- [ ] B03 Tuyển sinh/tư vấn. (Vai trò đã seed, gán được, nhưng chưa có màn hình nghiệp vụ tuyển sinh — xem mục C.)
+- [ ] B04 Kế toán. (Vai trò đã seed; chưa có màn hình nghiệp vụ tài chính — xem mục H.)
+- [ ] B05 Giáo viên. (Vai trò đã seed; chưa có màn hình giảng dạy — xem mục G.)
+- [ ] B06 Nhân viên học vụ. (Vai trò đã seed; chưa có màn hình lớp/lịch — xem mục E.)
+- [ ] B07 Phụ huynh/người giám hộ. (Vai trò đã seed; chưa có Portal phụ huynh thật — xem mục J.)
+- [x] B08 Chính sách khóa/mở tài khoản. (Khóa/mở tay qua Quản lý người dùng; khóa tạm tự động sau 5 lần đăng nhập sai liên tiếp, tự mở sau 15 phút.)
 
 ## C. Tuyển sinh
 - [ ] C01 Tiếp nhận khách hàng tiềm năng.
@@ -90,8 +95,8 @@
 
 ## K. Tài liệu và chất lượng
 - [ ] K01 Cập nhật BPD sau mỗi quyết định nghiệp vụ.
-- [ ] K02 Cập nhật PROJECT_SUMMARY.md.
-- [ ] K03 Cập nhật checklist sprint.
-- [ ] K04 Test multi-tenant và phân quyền.
+- [x] K02 Cập nhật PROJECT_SUMMARY.md. (Khôi phục 2026-07-20 sau khi phát hiện bị ghi đè mất nội dung Sprint 0 — xem `PROJECT_SUMMARY.md`.)
+- [x] K03 Cập nhật checklist sprint. (`docs/SPRINT_0_CHECKLIST.md`, `docs/UI_SHELL_CHECKLIST.md` đối chiếu lại với code thật 2026-07-20.)
+- [ ] K04 Test multi-tenant và phân quyền. (Đã review code và test tay luồng khóa đăng nhập; chưa có test tự động.)
 - [ ] K05 Test timezone Asia/Ho_Chi_Minh.
 - [ ] K06 Test regression module đã hoàn thành.

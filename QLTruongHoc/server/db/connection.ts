@@ -1,4 +1,5 @@
 import * as mysql from "mysql2/promise";
+import type { Pool as PromisePool } from "mysql2/promise";
 import * as schema from "../../drizzle/schema.js";
 import type { MySql2Database } from "drizzle-orm/mysql2";
 import { drizzle } from "drizzle-orm/mysql2";
@@ -19,7 +20,10 @@ const pool = mysql.createPool({
       dateStrings: true,
 });
 
-export const db: MySql2Database<typeof schema> = drizzle<typeof schema>(
+export const db: MySql2Database<typeof schema> = drizzle<
+      typeof schema,
+      PromisePool
+>(
       pool,
       {
             schema,

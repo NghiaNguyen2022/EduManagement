@@ -10,6 +10,9 @@ import {
 } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
+const now = () =>
+  new Date().toISOString().slice(0, 19).replace("T", " ");
+
 export async function listRoles() {
   const db = getDb();
 
@@ -110,6 +113,7 @@ export async function replaceRolePermissions(input: {
             (permissionId) => ({
               vaiTroId: input.roleId,
               quyenId: permissionId,
+              createdAt: now(),
             }),
           ),
         );

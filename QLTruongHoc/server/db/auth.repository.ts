@@ -72,6 +72,36 @@ export async function updatePassword(input: {
     .where(eq(nguoiDung.id, input.userId));
 }
 
+export async function setFailedLoginState(input: {
+  userId: number;
+  attempts: number;
+  lockUntil: string | null;
+}) {
+  const db = getDb();
+
+  await db
+    .update(nguoiDung)
+    .set({
+      soLanDangNhapSaiLienTiep: input.attempts,
+      khoaDangNhapDenLuc: input.lockUntil,
+      updatedAt: now(),
+    })
+    .where(eq(nguoiDung.id, input.userId));
+}
+
+export async function resetFailedLoginState(userId: number) {
+  const db = getDb();
+
+  await db
+    .update(nguoiDung)
+    .set({
+      soLanDangNhapSaiLienTiep: 0,
+      khoaDangNhapDenLuc: null,
+      updatedAt: now(),
+    })
+    .where(eq(nguoiDung.id, userId));
+}
+
 export async function createSession(input: {
   userId: number;
   tokenHash: string;
@@ -204,6 +234,7 @@ export async function getOrganizationsForUser(userId: number) {
         eq(nguoiDungVaiTroDonVi.nguoiDungId, userId),
         eq(nguoiDungVaiTroDonVi.dangHoatDong, true),
         eq(vaiTro.dangHoatDong, true),
+        eq(donVi.trangThai, "hoat_dong"),
       ),
     );
 

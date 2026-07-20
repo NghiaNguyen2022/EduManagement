@@ -10,6 +10,9 @@ import {
 } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
+const now = () =>
+  new Date().toISOString().slice(0, 19).replace("T", " ");
+
 export async function listUserAssignments(
   userId: number,
 ) {
@@ -112,6 +115,8 @@ export async function createAssignment(
       vaiTroId: input.roleId,
       donViId: input.organizationId,
       dangHoatDong: true,
+      createdAt: now(),
+      updatedAt: now(),
     });
 
   return findAssignment(

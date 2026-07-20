@@ -96,7 +96,7 @@ export function DashboardPage({
         <SectionCard
           title="Lịch học hôm nay"
           subtitle="Thứ Hai, 20 tháng 7"
-          action={
+          actions={
             <button type="button" className="text-button">
               Xem thời khóa biểu
             </button>

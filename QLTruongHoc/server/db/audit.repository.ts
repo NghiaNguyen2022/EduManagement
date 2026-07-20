@@ -1,6 +1,9 @@
 import { nhatKyHeThong } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
+const now = () =>
+  new Date().toISOString().slice(0, 19).replace("T", " ");
+
 export type AuditLevel = "thong_tin" | "canh_bao" | "loi";
 
 export async function createAuditLog(input: {
@@ -29,5 +32,6 @@ export async function createAuditLog(input: {
         : JSON.stringify(input.data),
     mucDo: input.level ?? "thong_tin",
     diaChiIp: input.ipAddress ?? null,
+    createdAt: now(),
   });
 }

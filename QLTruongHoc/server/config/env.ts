@@ -109,6 +109,11 @@ export const env = {
     name: getRequiredEnv(
       "DATABASE_NAME",
     ),
+
+    connectionLimit: getPositiveIntegerEnv(
+      "DATABASE_CONNECTION_LIMIT",
+      10,
+    ),
   },
 } as const;
 

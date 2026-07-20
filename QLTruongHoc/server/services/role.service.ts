@@ -56,7 +56,7 @@ export async function updateRolePermissions(input: {
     );
 
   if (
-    role.maVaiTro === "quan_tri_he_thong" &&
+    role.phamVi === "he_thong" &&
     !isSystemAdmin
   ) {
     throw new Error(

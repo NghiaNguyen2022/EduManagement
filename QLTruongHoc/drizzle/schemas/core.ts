@@ -3,6 +3,7 @@ import {
   boolean,
   datetime,
   index,
+  int,
   mysqlEnum,
   mysqlTable,
   uniqueIndex,
@@ -86,6 +87,14 @@ export const nguoiDung = mysqlTable(
     batBuocDoiMatKhau: boolean("batBuocDoiMatKhau")
       .notNull()
       .default(true),
+
+    soLanDangNhapSaiLienTiep: int("soLanDangNhapSaiLienTiep", {
+      unsigned: true,
+    })
+      .notNull()
+      .default(0),
+
+    khoaDangNhapDenLuc: datetime("khoaDangNhapDenLuc", { mode: "string" }),
 
     lanDangNhapCuoi: datetime("lanDangNhapCuoi", { mode: "string" }),
     createdAt: datetime("createdAt", { mode: "string" }).notNull(),

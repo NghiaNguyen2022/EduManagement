@@ -4,6 +4,8 @@ import {
 } from "bcryptjs";
 
 import {
+  AUTH_LOCKOUT_MINUTES,
+  AUTH_MAX_FAILED_ATTEMPTS,
   AUTH_SESSION_DAYS,
 } from "../auth/auth.constants.js";
 import {
@@ -23,8 +25,10 @@ import {
   findUserById,
   findUserByUsername,
   getOrganizationsForUser,
+  resetFailedLoginState,
   revokeOtherSessions,
   revokeSessionByHash,
+  setFailedLoginState,
   updateCurrentOrganization,
   updateLastLogin,
   updatePassword,
@@ -92,23 +96,71 @@ export async function login(input: {
     throw new Error("Tài khoản đang bị khóa hoặc đã ngừng hoạt động.");
   }
 
+  let failedAttempts = user.soLanDangNhapSaiLienTiep;
+  const lockUntil = user.khoaDangNhapDenLuc;
+
+  if (lockUntil && lockUntil > toDateTimeString(new Date())) {
+    await createAuditLog({
+      userId: user.id,
+      action: "auth.login_locked",
+      objectType: "NguoiDung",
+      objectId: String(user.id),
+      content: `Tài khoản đang tạm khóa đến ${lockUntil} do đăng nhập sai nhiều lần.`,
+      level: "canh_bao",
+      ipAddress: input.ipAddress,
+    });
+
+    throw new Error(
+      `Tài khoản đang tạm khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau ${AUTH_LOCKOUT_MINUTES} phút.`,
+    );
+  }
+
+  if (lockUntil) {
+    failedAttempts = 0;
+  }
+
   const passwordValid = await compare(
     input.password,
     user.matKhauHash,
   );
 
   if (!passwordValid) {
+    const nextAttempts = failedAttempts + 1;
+    const shouldLock = nextAttempts >= AUTH_MAX_FAILED_ATTEMPTS;
+
+    await setFailedLoginState({
+      userId: user.id,
+      attempts: shouldLock ? 0 : nextAttempts,
+      lockUntil: shouldLock
+        ? toDateTimeString(
+            new Date(
+              Date.now() + AUTH_LOCKOUT_MINUTES * 60 * 1000,
+            ),
+          )
+        : null,
+    });
+
     await createAuditLog({
       userId: user.id,
-      action: "auth.login_failed",
+      action: shouldLock ? "auth.login_locked" : "auth.login_failed",
       objectType: "NguoiDung",
       objectId: String(user.id),
-      content: "Sai mật khẩu.",
+      content: shouldLock
+        ? `Tài khoản bị tạm khóa ${AUTH_LOCKOUT_MINUTES} phút do đăng nhập sai ${AUTH_MAX_FAILED_ATTEMPTS} lần liên tiếp.`
+        : "Sai mật khẩu.",
       level: "canh_bao",
       ipAddress: input.ipAddress,
     });
 
-    throw new Error("Tên đăng nhập hoặc mật khẩu không đúng.");
+    throw new Error(
+      shouldLock
+        ? `Tài khoản tạm khóa ${AUTH_LOCKOUT_MINUTES} phút do đăng nhập sai quá nhiều lần.`
+        : "Tên đăng nhập hoặc mật khẩu không đúng.",
+    );
+  }
+
+  if (failedAttempts > 0 || user.khoaDangNhapDenLuc) {
+    await resetFailedLoginState(user.id);
   }
 
   const token = createSessionToken();
