@@ -4,6 +4,11 @@
 > đối chiếu lại với code thật ngày 2026-07-20 sau khi phát hiện `PROJECT_SUMMARY.md` và
 > `docs/MASTER_CHECKLIST.md` (file khác, dùng để track patch UI) đã bị ghi đè mất nội dung
 > Sprint 0. Chi tiết xem `PROJECT_SUMMARY.md` mục "Sprint 0 — Nền tảng đa đơn vị".
+>
+> Cập nhật 2026-07-21: đối chiếu lại C/D với code + `SHOW TABLES` trên DB dev thật — Sprint 1
+> (Tuyển sinh, mục C/D) **chưa bắt đầu thật sự**, dù đã có scaffold `hocSinh` mồ côi (chưa có
+> bảng trong DB, chưa có router, chưa có trang FE). Chi tiết và đề xuất bước tiếp theo xem
+> `PROJECT_SUMMARY.md` mục "Rà soát 2026-07-21".
 
 ## A. Nền tảng và đa đơn vị
 - [ ] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (Schema `DonVi` có `donViChaId` đã có; chưa có màn hình CRUD tạo/sửa đơn vị, mới seed sẵn 3 đơn vị mẫu.)
@@ -33,7 +38,7 @@
 - [ ] C07 Tạo tài khoản phụ huynh.
 
 ## D. Học sinh và phụ huynh
-- [ ] D01 Hồ sơ học sinh.
+- [ ] D01 Hồ sơ học sinh. (Có scaffold `drizzle/schemas/hocSinh.ts` + repository/service, nhưng bảng `HocSinh` chưa tồn tại trong DB, chưa có router, chưa có trang FE — không tính là đã xong.)
 - [ ] D02 Hồ sơ sức khỏe mầm non.
 - [ ] D03 Quan hệ phụ huynh/người giám hộ.
 - [ ] D04 Người liên hệ chính và người đón trẻ.

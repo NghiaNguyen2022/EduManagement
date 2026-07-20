@@ -100,3 +100,86 @@ cây đơn vị (CRUD `DonVi`), migration chính thức, test tự động.
 - Hàng 2: Từ ngày, Đến ngày, Xóa lọc, Áp dụng.
 - Không còn chồng lấn control.
 - Responsive tablet/mobile.
+
+---
+
+## Rà soát 2026-07-21 — Đối chiếu lại toàn bộ code thật, xác định bước tiếp theo
+
+Đối chiếu trực tiếp `git log`, toàn bộ cây thư mục `server/`/`client/`/`drizzle/`, và `SHOW
+TABLES` trên DB dev thật (`SchoolCenter`). Mục tiêu: xác nhận đúng cái gì đã xong, cái gì
+còn dở dang, để bước tiếp theo bám sát `docs/01_EXECUTION_PLAN.md` thay vì đoán.
+
+### Xác nhận lại: Sprint 0 vẫn đúng như mô tả ở trên
+
+`git log` cho thấy các sửa ngày 2026-07-20 đã được commit (`f639c04`). Working tree sạch.
+Không có module nghiệp vụ mới nào được thêm kể từ lần rà soát trước — cây thư mục
+`server/`, `client/` không đổi ngoài các sửa đã ghi nhận.
+
+### Phát hiện: `HocSinh` là scaffold mồ côi, chưa hoạt động được
+
+- `drizzle/schemas/hocSinh.ts`, `server/db/hocSinh.repository.ts`,
+  `server/services/hocSinh.service.ts` đã có code, nhưng:
+  - **Bảng `HocSinh` chưa tồn tại trong DB thật.** `SHOW TABLES` trên `SchoolCenter` chỉ có
+    8 bảng nền tảng (`DonVi`, `NguoiDung`, `VaiTro`, `Quyen`, `VaiTroQuyen`,
+    `NguoiDungVaiTroDonVi`, `PhienDangNhap`, `NhatKyHeThong`) — chưa từng chạy
+    `db:push`/migration cho `hocSinh`.
+  - **Không có router.** `server/index.ts` và `server/routers/` không import gì liên quan
+    `hocSinh` — `getHocSinhDetail()` không thể gọi được từ API nào.
+  - **Không có trang frontend thật.** Route `/students` trong `App.tsx` vẫn trỏ vào
+    `PlaceholderPage`, không dùng `hocSinh.service.ts`.
+- Kết luận: đây là code nền chuẩn bị trước cho Sprint 1, không tính là "đã xong" — không
+  gắn cờ hoàn thành cho mục D01 (Hồ sơ học sinh) trong checklist tổng.
+
+### Phát hiện: `database/001_*.sql` → `004_*.sql` là bản nháp cũ, chưa từng áp dụng
+
+- 4 file này định nghĩa đầy đủ `PhuHuynh`, `HocSinh`, `HocSinhPhuHuynh`, `ChuongTrinhDaoTao`,
+  `GiaoVien`, `LopHoc`, `LopHocGiaoVien`, `HocSinhLopHoc`, `LichHoc`, `BuoiHoc`, `DiemDanh`,
+  `DonXinPhep`, `BaoGiang`, `DanhGiaHocTap`, `DanhMucKhoanThu`, `KyThu`, `KyThuKhoanThu`,
+  `KhoanPhaiThu`, `KhoanPhaiThuChiTiet`, `PhieuThu`, `PhieuThuChiTiet` — đúng mô hình dữ liệu
+  trong BPD mục 8-9.
+- Nhưng **chưa từng chạy** trên DB dev hiện tại (bị bỏ qua khi Sprint 0B reset về
+  `005_reset_auth_foundation.sql`), và cột/kiểu dữ liệu của các file này (ví dụ không dùng
+  `bigint unsigned` nhất quán, không theo style `IX_`/`UQ_` như `drizzle/schemas/core.ts`)
+  không khớp quy ước đang dùng trong Drizzle.
+- Theo `docs/SCHEMA_SOURCE_OF_TRUTH.md`, các file này chỉ là **tham khảo mô hình dữ liệu**,
+  không phải nguồn để áp dụng nguyên trạng. Khi làm Sprint 1, phải viết lại thành
+  `drizzle/schemas/*.ts` theo đúng quy ước hiện tại (mode "string" cho datetime, index
+  `IX_`/`UQ_`, `donViId` bigint unsigned tham chiếu `DonVi`), rồi mới áp dụng — không chạy
+  thẳng SQL cũ.
+
+### Bảng tổng hợp tiến độ theo Sprint (đối chiếu `docs/01_EXECUTION_PLAN.md`)
+
+| Sprint | Nội dung | Trạng thái thật |
+| --- | --- | --- |
+| 0 — Foundation | Đa đơn vị, user/role/quyền, audit, layout | **Xong phần lõi.** Còn thiếu UI CRUD cây đơn vị (`DonVi`) và migration chính thức. |
+| 1 — Tuyển sinh & ghi danh | Lead, tư vấn, đăng ký, học sinh + phụ huynh, tài khoản phụ huynh | **Chưa bắt đầu.** Chỉ có scaffold `HocSinh` mồ côi (xem trên); chưa có Lead/Consultation, chưa có `PhuHuynh`. |
+| 2 — Chương trình, lớp, xếp lớp | `ChuongTrinhDaoTao`, `LopHoc`, xếp lớp | **Chưa bắt đầu.** Chỉ có trong bản nháp SQL chưa áp dụng. |
+| 3 — Lịch học & điểm danh | `LichHoc`, `BuoiHoc`, `DiemDanh`, học bù | **Chưa bắt đầu.** |
+| 4 — Báo giảng & tiến độ | `BaoGiang`, `DanhGiaHocTap` | **Chưa bắt đầu.** |
+| 5 — Kỳ thu & học phí | `KyThu`, `KhoanPhaiThu`, `PhieuThu` | **Chưa bắt đầu.** |
+| 6 — Thông báo & trao đổi | Thông báo, hội thoại phụ huynh-giáo viên | **Chưa bắt đầu.** |
+| 7 — Nghiệp vụ chuyên biệt | Mầm non (đón/trả, sức khỏe), ngoại ngữ (đầu vào, kỹ năng) | **Chưa bắt đầu.** |
+
+### Bước tiếp theo đề xuất — bám sát Sprint 1 (đúng thứ tự trong `01_EXECUTION_PLAN.md`)
+
+Sprint 0 đã đủ nền để bắt đầu Sprint 1. Thứ tự đề xuất, theo đúng vertical-slice
+(DB → Backend → Frontend → Test) đã cam kết trong `README.md`:
+
+1. **Chuẩn hóa schema Sprint 1 trong Drizzle** — viết `drizzle/schemas/tuyenSinh.ts` (Lead,
+   LeadActivity/lịch sử tư vấn) và `drizzle/schemas/hocSinh.ts` mở rộng (thêm `PhuHuynh`,
+   `HocSinhPhuHuynh`, các cột còn thiếu so với bản nháp: `tenThuongGoi`, `diaChi`,
+   `loaiHinhDaoTao`), theo đúng quy ước hiện tại (không copy nguyên `database/002_*.sql`).
+2. **Áp dụng schema** — `pnpm db:push` từ terminal thật, hoặc ALTER/CREATE tay đánh số
+   `database/010_*.sql` nếu không có TTY (xem `docs/SCHEMA_SOURCE_OF_TRUTH.md`).
+3. **Nối lại `HocSinh` module** — thêm `hocSinh.router.ts`, đăng ký vào `server/index.ts`,
+   thêm quyền tương ứng (`hoc_sinh.xem`/`hoc_sinh.quan_ly` đã có sẵn trong `Quyen` từ seed).
+4. **Trang Học sinh thật** — thay `PlaceholderPage` ở route `/students` bằng danh sách +
+   chi tiết học sinh, theo đúng nguyên tắc UX đã chốt (header 2 dòng, filter rõ).
+5. **Luồng tuyển sinh tối thiểu** — Lead → tư vấn → xác nhận đăng ký → tạo học sinh + liên
+   kết phụ huynh → tạo tài khoản phụ huynh (tái dùng `user.service.ts` hiện có, vai trò
+   `phu_huynh` đã seed sẵn).
+6. Cập nhật `docs/00_MASTER_CHECKLIST.md` mục C/D và `PROJECT_SUMMARY.md` sau mỗi bước,
+   đúng quy tắc append-only.
+
+Chưa triển khai bước nào ở trên trong lần rà soát này — đây là đề xuất thứ tự việc, chờ xác
+nhận trước khi code.
