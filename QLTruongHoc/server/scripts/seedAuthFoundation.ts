@@ -76,6 +76,8 @@ const permissionSeeds = [
   ["lop_hoc.quan_ly", "Quản lý lớp học", "Lớp học"],
   ["diem_danh.xem", "Xem điểm danh", "Điểm danh"],
   ["diem_danh.thuc_hien", "Thực hiện điểm danh", "Điểm danh"],
+  ["hoc_tap.xem", "Xem báo giảng", "Học tập"],
+  ["hoc_tap.ghi_nhan", "Ghi nhận báo giảng", "Học tập"],
   ["tai_chinh.xem", "Xem tài chính", "Tài chính"],
   ["tai_chinh.quan_ly", "Quản lý tài chính", "Tài chính"],
 ];

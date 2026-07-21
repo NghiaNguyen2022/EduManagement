@@ -32,6 +32,16 @@
 > (sinh lại mã tránh trùng). Hoàn tất D05/D06 (lịch sử trạng thái học tập, đồng bộ trạng
 > thái lớp khi đổi trạng thái tổng thể học sinh). Xem `PROJECT_SUMMARY.md`.
 >
+> Cập nhật 2026-07-21 (sáng sớm, hôm sau): mở Sprint 3, hoàn tất F01/F02/F04 (điểm danh theo
+> buổi học — trang `/attendance`, tích hợp nút điểm danh vào `ClassDetailPage`). F03/F05 để
+> sau vì cần Portal/module Thông báo chưa làm; F06 (mầm non đón/trả) để riêng. Xem
+> `PROJECT_SUMMARY.md` mục "F01/F02/F04 — Điểm danh theo buổi học".
+>
+> Cập nhật 2026-07-21 (sáng sớm, tiếp): hoàn tất G01/G02/G03 (báo giảng theo buổi, nhận xét
+> giáo viên) — cùng ngày với F. Seed thêm quyền `hoc_tap.xem`/`hoc_tap.ghi_nhan` (khác điểm
+> danh, chưa có quyền phù hợp để tái dùng). G04-G07 để sau vì cần mô hình dữ liệu riêng. Xem
+> `PROJECT_SUMMARY.md` mục "G01/G02/G03 — Báo giảng theo buổi, nhận xét giáo viên".
+>
 > Cập nhật 2026-07-21 (tối): phát hiện và sửa lỗi ở A04/A05 — `getOrganizationsForUser`
 > trước đây chỉ trả về đơn vị có dòng gán tường minh, kể cả với `he_thong.quan_tri`, nên
 > quản trị hệ thống không thấy/chuyển được sang các đơn vị mình chưa từng được gán, và
@@ -86,21 +96,21 @@
 - [x] E08 Thời khóa biểu giáo viên, học sinh, phụ huynh. (Theo lớp trong `ClassDetailPage`, theo giáo viên/đơn vị ở trang `/schedule`. **Chưa** làm theo học sinh/phụ huynh — thuộc Portal, module J.)
 
 ## F. Điểm danh và xin phép
-- [ ] F01 Điểm danh theo buổi học.
-- [ ] F02 Có mặt/vắng có phép/vắng không phép/đi trễ/về sớm.
-- [ ] F03 Phụ huynh gửi đơn xin phép.
-- [ ] F04 Giáo viên/học vụ duyệt hoặc ghi nhận.
-- [ ] F05 Thông báo vắng học cho phụ huynh.
-- [ ] F06 Mầm non: giờ đón/trả và người đón.
+- [x] F01 Điểm danh theo buổi học. (2026-07-21: trang `/attendance` + nút "Điểm danh" ngay trong `ClassDetailPage`. Xem `docs/analysis/F01_F02_F04_diem_danh.md`.)
+- [x] F02 Có mặt/vắng có phép/vắng không phép/đi trễ/về sớm. (Bảng `DiemDanh`, 5 trạng thái, mặc định "Có mặt" cho buổi chưa điểm danh.)
+- [ ] F03 Phụ huynh gửi đơn xin phép. (Cần Portal phụ huynh — module J, chưa làm.)
+- [x] F04 Giáo viên/học vụ duyệt hoặc ghi nhận. (Giáo viên ghi nhận qua `diem_danh.thuc_hien` đã seed sẵn từ Sprint 0; học vụ xem qua `diem_danh.xem` — đúng ma trận quyền có sẵn, không đổi.)
+- [ ] F05 Thông báo vắng học cho phụ huynh. (Cần module Thông báo — M11, chưa làm.)
+- [ ] F06 Mầm non: giờ đón/trả và người đón. (Để bước riêng, chưa cấp thiết cho MVP điểm danh chung.)
 
 ## G. Học tập
-- [ ] G01 Báo giảng theo buổi.
-- [ ] G02 Nội dung bài học và bài tập.
-- [ ] G03 Nhận xét giáo viên.
-- [ ] G04 Kết quả kiểm tra/đánh giá.
-- [ ] G05 Tiến độ theo chương trình.
-- [ ] G06 Ngoại ngữ: kỹ năng nghe/nói/đọc/viết.
-- [ ] G07 Mầm non: phát triển thể chất/nhận thức/ngôn ngữ/tình cảm-xã hội/thẩm mỹ.
+- [x] G01 Báo giảng theo buổi. (2026-07-21: bảng `BaoGiang`, 1 dòng/buổi, ghi ngay trong trang `/attendance`. Xem `docs/analysis/G01_G02_G03_bao_giang.md`.)
+- [x] G02 Nội dung bài học và bài tập. (2 trường tự do `noiDungBaiHoc`/`baiTap` trong `BaoGiang`.)
+- [x] G03 Nhận xét giáo viên. (Cột `nhanXet` thêm vào `DiemDanh` có sẵn — nhận xét riêng từng học sinh, lưu cùng lúc với điểm danh.)
+- [ ] G04 Kết quả kiểm tra/đánh giá. (Cần mô hình bài kiểm tra/điểm số riêng, để sau.)
+- [ ] G05 Tiến độ theo chương trình. (Cần cấu trúc chương/bài trong `ChuongTrinhDaoTao`, chưa có.)
+- [ ] G06 Ngoại ngữ: kỹ năng nghe/nói/đọc/viết. (Nghiệp vụ chuyên biệt theo loại hình, để sau.)
+- [ ] G07 Mầm non: phát triển thể chất/nhận thức/ngôn ngữ/tình cảm-xã hội/thẩm mỹ. (Nghiệp vụ chuyên biệt theo loại hình, để sau.)
 
 ## H. Tài chính
 - [ ] H01 Danh mục khoản thu.

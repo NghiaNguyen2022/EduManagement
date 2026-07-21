@@ -11,6 +11,9 @@ import {
   useAuth,
 } from "./features/auth/AuthContext";
 import {
+  AttendancePage,
+} from "./pages/AttendancePage";
+import {
   ChangePasswordPage,
 } from "./pages/ChangePasswordPage";
 import {
@@ -195,11 +198,7 @@ function ProtectedApp() {
 
         <Route
           path="/attendance"
-          element={
-            <PlaceholderPage
-              title="Điểm danh"
-            />
-          }
+          element={<AttendancePage />}
         />
 
         <Route

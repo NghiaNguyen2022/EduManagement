@@ -186,6 +186,15 @@ export function ClassDetailPage() {
     );
   }, [auth]);
 
+  const canXemDiemDanh = useMemo(() => {
+    const permissions = auth?.currentOrganization?.quyen ?? [];
+    return (
+      permissions.includes("he_thong.quan_tri") ||
+      permissions.includes("diem_danh.xem") ||
+      permissions.includes("diem_danh.thuc_hien")
+    );
+  }, [auth]);
+
   async function loadDetail() {
     setLoading(true);
     setError("");
@@ -1275,6 +1284,7 @@ export function ClassDetailPage() {
                 <th>Giáo viên</th>
                 <th>Loại</th>
                 <th>Trạng thái</th>
+                {canXemDiemDanh ? <th>Điểm danh</th> : null}
                 {canManage ? <th>Thao tác</th> : null}
               </tr>
             </thead>
@@ -1293,6 +1303,26 @@ export function ClassDetailPage() {
                   </td>
                   <td>{item.loaiBuoi === "bu" ? "Học bù" : "Thường"}</td>
                   <td>{TRANG_THAI_BUOI_HOC_LABEL[item.trangThai]}</td>
+                  {canXemDiemDanh ? (
+                    <td>
+                      {item.trangThai === "nghi" ||
+                      item.trangThai === "huy" ? (
+                        "—"
+                      ) : (
+                        <button
+                          type="button"
+                          className="text-button"
+                          onClick={() =>
+                            navigate(
+                              `/attendance?buoiHocId=${item.id}`,
+                            )
+                          }
+                        >
+                          Điểm danh
+                        </button>
+                      )}
+                    </td>
+                  ) : null}
                   {canManage ? (
                     <td>
                       {item.trangThai === "du_kien" ? (
@@ -1326,7 +1356,14 @@ export function ClassDetailPage() {
 
               {buoiHocList.length === 0 ? (
                 <tr>
-                  <td colSpan={canManage ? 7 : 6} className="empty-cell">
+                  <td
+                    colSpan={
+                      6 +
+                      (canXemDiemDanh ? 1 : 0) +
+                      (canManage ? 1 : 0)
+                    }
+                    className="empty-cell"
+                  >
                     Chưa có buổi học trong khoảng ngày này.
                   </td>
                 </tr>

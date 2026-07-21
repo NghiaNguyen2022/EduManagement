@@ -11,7 +11,9 @@ import {
 } from "./db/connection.js";
 import { auditLogRouter } from "./routers/audit-log.router.js";
 import { authRouter } from "./routers/auth.router.js";
+import { baoGiangRouter } from "./routers/baoGiang.router.js";
 import { chuongTrinhRouter } from "./routers/chuongTrinh.router.js";
+import { diemDanhRouter } from "./routers/diemDanh.router.js";
 import { donViRouter } from "./routers/donVi.router.js";
 import { giaoVienRouter } from "./routers/giaoVien.router.js";
 import { healthRouter } from "./routers/health.router.js";
@@ -60,6 +62,8 @@ app.use("/api/giao-vien", giaoVienRouter);
 app.use("/api/lop-hoc", lopHocRouter);
 app.use("/api/lop-hoc", lichHocRouter);
 app.use("/api/thoi-khoa-bieu", thoiKhoaBieuRouter);
+app.use("/api/diem-danh", diemDanhRouter);
+app.use("/api/bao-giang", baoGiangRouter);
 app.use("/api/users", userRouter);
 app.use("/api/users", userAssignmentRouter);
 app.use("/api/roles", roleRouter);

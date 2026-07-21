@@ -41,6 +41,8 @@ JOIN Quyen q
     'lop_hoc.quan_ly',
     'diem_danh.xem',
     'diem_danh.thuc_hien',
+    'hoc_tap.xem',
+    'hoc_tap.ghi_nhan',
     'tai_chinh.xem',
     'tai_chinh.quan_ly'
   )
@@ -85,7 +87,8 @@ JOIN Quyen q
     'hoc_sinh.quan_ly',
     'lop_hoc.xem',
     'lop_hoc.quan_ly',
-    'diem_danh.xem'
+    'diem_danh.xem',
+    'hoc_tap.xem'
   )
 WHERE vt.maVaiTro = 'hoc_vu'
   AND vt.dangHoatDong = 1
@@ -114,7 +117,9 @@ JOIN Quyen q
     'hoc_sinh.xem',
     'lop_hoc.xem',
     'diem_danh.xem',
-    'diem_danh.thuc_hien'
+    'diem_danh.thuc_hien',
+    'hoc_tap.xem',
+    'hoc_tap.ghi_nhan'
   )
 WHERE vt.maVaiTro = 'giao_vien'
   AND vt.dangHoatDong = 1

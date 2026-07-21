@@ -59,14 +59,18 @@
 .sidebar-group {
   display: grid;
   gap: 5px;
+  padding: 10px 8px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .sidebar-group + .sidebar-group {
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .sidebar-group__label {
-  padding: 0 10px;
+  padding: 0 4px;
   color: var(--edu-sidebar-text-muted);
   font-size: 11px;
   font-weight: 800;
@@ -131,6 +135,10 @@
 
 .sidebar--collapsed .sidebar__nav {
   padding-inline: 10px;
+}
+
+.sidebar--collapsed .sidebar-group {
+  padding: 8px 4px;
 }
 
 .sidebar--collapsed .sidebar-group + .sidebar-group {

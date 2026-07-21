@@ -710,3 +710,88 @@ verify lại qua API thật sau khi chuyển (PASS).
     trả `HocSinh`/`HocSinhLopHoc` về giá trị ban đầu).
   - `pnpm typecheck` (client + server) PASS.
 - Checklist: `docs/00_MASTER_CHECKLIST.md` mục D05, D06 đã tick.
+
+---
+
+## F01/F02/F04 — Điểm danh theo buổi học (2026-07-21)
+
+Mở đầu Sprint 3, đúng 4 bước. Phạm vi: điểm danh học sinh theo từng buổi học cụ thể
+(`BuoiHoc`, có từ E05-E08), 5 trạng thái điểm danh, giáo viên ghi nhận. **Chưa** gồm F03
+(phụ huynh gửi đơn xin phép — cần Portal, module J) và F05 (thông báo vắng học — cần module
+Thông báo, M11). F06 (mầm non đón/trả) để riêng.
+
+- Phân tích chi tiết: `docs/analysis/F01_F02_F04_diem_danh.md`.
+- Cập nhật BPD: mục 18.11 — bảng `DiemDanh` lưu một dòng duy nhất cho mỗi cặp (buổi học,
+  học sinh), khác nguyên tắc không ghi đè ở nơi khác vì điểm danh là sự kiện đã chốt tại
+  một buổi cụ thể; roster dựng từ `HocSinhLopHoc` theo đúng ngày học của buổi (không phụ
+  thuộc trạng thái ghi danh hiện tại); mặc định "Có mặt" cho buổi chưa điểm danh để giảm
+  thao tác; lưu điểm danh lần đầu tự chuyển `BuoiHoc` sang `da_hoc` (đúng như đã chốt ở mục
+  18.8); tái sử dụng đúng quyền `diem_danh.xem`/`diem_danh.thuc_hien` đã seed từ Sprint 0
+  (giáo viên thực hiện được, học vụ chỉ xem) — không tạo quyền mới, không đổi ma trận.
+- Database (`database/015_add_diem_danh.sql`): bảng `DiemDanh`
+  (`UQ_DiemDanh_buoiHocId_hocSinhId`). Đồng bộ `drizzle/schemas/diemDanh.ts`.
+- Backend: `diemDanh.repository/service/router.ts` (`/api/diem-danh`) — `GET
+  /buoi-hoc/:id` trả roster (học sinh đang ghi danh tại đúng ngày học + trạng thái điểm
+  danh, mặc định `co_mat` nếu chưa lưu lần nào); `POST /buoi-hoc/:id` lưu hàng loạt, validate
+  từng học sinh phải thuộc đúng roster, chặn nếu buổi đang `nghi`/`huy`, tự chuyển
+  `BuoiHoc.trangThai` sang `da_hoc`.
+- Frontend: `AttendancePage.tsx` thay `PlaceholderPage` ở `/attendance` — chọn ngày → danh
+  sách buổi học trong ngày (tái dùng `listThoiKhoaBieuApi` đã có) → chọn buổi → bảng điểm
+  danh (hỗ trợ deep-link qua query `?buoiHocId=`). Thêm nút "Điểm danh" vào bảng "Buổi học"
+  trong `ClassDetailPage.tsx`, liên kết thẳng sang đúng buổi.
+- Test tay qua API và UI thật (dùng chung server đang chạy, phục hồi đúng dữ liệu mẫu sau
+  khi test):
+  - Roster đúng 2 học sinh đang ghi danh tại ngày học của buổi, mặc định `co_mat` — PASS.
+  - Lưu điểm danh (1 vắng có phép có ghi chú, 1 có mặt) → buổi tự chuyển `da_hoc` — PASS.
+  - Đánh dấu buổi `nghi` rồi thử điểm danh → bị chặn đúng thông báo; mở lại buổi — PASS.
+  - Thao tác thật qua UI: đổi trạng thái trên `AttendancePage`, bấm "Lưu điểm danh" → lưu
+    đúng xuống DB, buổi chuyển `da_hoc` — PASS. Bấm nút "Điểm danh" từ `ClassDetailPage` →
+    điều hướng đúng sang đúng buổi trên `AttendancePage` — PASS.
+  - Phục hồi lại dữ liệu mẫu về trạng thái ban đầu sau khi test (xoá `DiemDanh` test, trả
+    `BuoiHoc.trangThai` về `du_kien`).
+  - `pnpm typecheck` (client + server) PASS.
+- Checklist: `docs/00_MASTER_CHECKLIST.md` mục F01, F02, F04 đã tick.
+
+---
+
+## G01/G02/G03 — Báo giảng theo buổi, nhận xét giáo viên (2026-07-21)
+
+Tiếp F01/F02/F04, cùng ngày, đúng 4 bước. Phạm vi: nội dung bài học + bài tập giao cho mỗi
+buổi học, kèm nhận xét riêng từng học sinh (dùng lại đúng màn điểm danh). **Chưa** gồm G04
+(kiểm tra/đánh giá), G05 (tiến độ theo chương trình), G06/G07 (nghiệp vụ chuyên biệt theo
+loại hình) — cần mô hình dữ liệu riêng phức tạp hơn.
+
+- Phân tích chi tiết: `docs/analysis/G01_G02_G03_bao_giang.md`.
+- Cập nhật BPD: mục 18.12 — bảng `BaoGiang` lưu đúng một dòng cho mỗi buổi (unique
+  `buoiHocId`), sửa lại là ghi đè, cùng nguyên tắc đã dùng cho điểm danh; nhận xét từng học
+  sinh thêm thẳng vào cột `nhanXet` của bảng `DiemDanh` có sẵn thay vì tạo bảng riêng — lưu
+  cùng lúc với điểm danh, đúng luồng làm việc thật của giáo viên sau mỗi buổi dạy.
+- **Seed quyền mới** `hoc_tap.xem`/`hoc_tap.ghi_nhan` — khác điểm danh, không tái dùng được
+  `lop_hoc.quan_ly` vì giáo viên chỉ có `lop_hoc.xem`. Gán cho `giao_vien` và
+  `quan_ly_don_vi` (cả hai quyền), `hoc_vu` (chỉ xem) — đúng nguyên tắc học vụ không ghi
+  nhận thay giáo viên đã áp dụng ở điểm danh. Cập nhật cả `server/scripts/seedAuthFoundation.ts`
+  và `database/008_seed_default_role_permissions.sql` để lần seed từ đầu có đủ quyền này; DB
+  dev hiện tại áp dụng trực tiếp qua migration.
+- Database (`database/016_add_bao_giang.sql`): bảng `BaoGiang`; `ALTER TABLE DiemDanh ADD
+  COLUMN nhanXet`; seed 2 quyền mới + gán vào 3 vai trò. Đồng bộ `drizzle/schemas/diemDanh.ts`
+  (thêm `baoGiang` + cột `nhanXet`).
+- Backend: `baoGiang.repository/service/router.ts` (`/api/bao-giang`, `GET`/`PUT` theo
+  `buoiHocId`, chặn nếu buổi `nghi`/`huy` — cùng nguyên tắc điểm danh). Cập nhật
+  `diemDanh.repository/service/router.ts` để nhận và lưu `nhanXet` cùng lúc với `trangThai`.
+- Frontend: thêm cột "Nhận xét" vào bảng điểm danh và mục "Báo giảng" (nội dung bài học, bài
+  tập, ghi chú) ngay trong `AttendancePage.tsx` — cùng màn hình với điểm danh của đúng buổi
+  đó, không tách trang riêng.
+- Test tay qua API và UI thật (dùng chung server đang chạy — server dev đã tắt giữa chừng
+  phiên làm việc dài, phải khởi động lại qua `preview_start` + đăng nhập lại trước khi test;
+  phục hồi đúng dữ liệu mẫu sau khi test):
+  - Lưu báo giảng lần đầu, xem lại đúng — PASS. Lưu đè lần hai → đúng 1 dòng duy nhất
+    (`id` giữ nguyên), không tạo dòng mới — PASS.
+  - Lưu điểm danh kèm nhận xét cho một học sinh → đúng dữ liệu, không ảnh hưởng học sinh
+    khác — PASS.
+  - Ghi báo giảng cho buổi đang `nghi` → bị chặn đúng thông báo — PASS.
+  - Thao tác thật qua UI: sửa nội dung bài học trên `AttendancePage`, bấm "Lưu báo giảng" →
+    lưu đúng xuống DB — PASS.
+  - Phục hồi lại dữ liệu mẫu về trạng thái ban đầu sau khi test (xoá `BaoGiang`/`DiemDanh`
+    test, trả `BuoiHoc.trangThai` về `du_kien`).
+  - `pnpm typecheck` (client + server) PASS.
+- Checklist: `docs/00_MASTER_CHECKLIST.md` mục G01, G02, G03 đã tick.
