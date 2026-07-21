@@ -32,6 +32,12 @@ import {
   SelectOrganizationPage,
 } from "./pages/SelectOrganizationPage";
 import {
+  StudentDetailPage,
+} from "./pages/StudentDetailPage";
+import {
+  StudentsPage,
+} from "./pages/StudentsPage";
+import {
   SystemAuditLogPage,
 } from "./pages/SystemAuditLogPage";
 import {
@@ -136,9 +142,14 @@ function ProtectedApp() {
         <Route
           path="/students"
           element={
-            <PlaceholderPage
-              title="Học sinh · Học viên"
-            />
+            <StudentsPage />
+          }
+        />
+
+        <Route
+          path="/students/:id"
+          element={
+            <StudentDetailPage />
           }
         />
 

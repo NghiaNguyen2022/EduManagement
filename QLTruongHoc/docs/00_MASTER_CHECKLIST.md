@@ -5,10 +5,12 @@
 > `docs/MASTER_CHECKLIST.md` (file khác, dùng để track patch UI) đã bị ghi đè mất nội dung
 > Sprint 0. Chi tiết xem `PROJECT_SUMMARY.md` mục "Sprint 0 — Nền tảng đa đơn vị".
 >
-> Cập nhật 2026-07-21: đối chiếu lại C/D với code + `SHOW TABLES` trên DB dev thật — Sprint 1
-> (Tuyển sinh, mục C/D) **chưa bắt đầu thật sự**, dù đã có scaffold `hocSinh` mồ côi (chưa có
-> bảng trong DB, chưa có router, chưa có trang FE). Chi tiết và đề xuất bước tiếp theo xem
-> `PROJECT_SUMMARY.md` mục "Rà soát 2026-07-21".
+> Cập nhật 2026-07-21 (sáng): đối chiếu lại C/D với code + `SHOW TABLES` trên DB dev thật —
+> Sprint 1 (Tuyển sinh, mục C/D) chưa bắt đầu thật sự, dù đã có scaffold `hocSinh` mồ côi.
+>
+> Cập nhật 2026-07-21 (chiều): đã hoàn tất D01/D03 (hồ sơ học sinh + phụ huynh, nối lại
+> scaffold `hocSinh`). Mục C (Lead/tuyển sinh) và D02/D05/D06 vẫn chưa làm. Chi tiết xem
+> `PROJECT_SUMMARY.md` mục "D01/D03 — Hồ sơ học sinh và phụ huynh".
 
 ## A. Nền tảng và đa đơn vị
 - [x] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)
@@ -38,10 +40,10 @@
 - [ ] C07 Tạo tài khoản phụ huynh.
 
 ## D. Học sinh và phụ huynh
-- [ ] D01 Hồ sơ học sinh. (Có scaffold `drizzle/schemas/hocSinh.ts` + repository/service, nhưng bảng `HocSinh` chưa tồn tại trong DB, chưa có router, chưa có trang FE — không tính là đã xong.)
-- [ ] D02 Hồ sơ sức khỏe mầm non.
-- [ ] D03 Quan hệ phụ huynh/người giám hộ.
-- [ ] D04 Người liên hệ chính và người đón trẻ.
+- [x] D01 Hồ sơ học sinh. (2026-07-21: API `/api/hoc-sinh` + trang `/students`, `/students/:id`. Mã học sinh tự sinh. Xem `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md`.)
+- [ ] D02 Hồ sơ sức khỏe mầm non. (Để Sprint 7.)
+- [x] D03 Quan hệ phụ huynh/người giám hộ. (2026-07-21: `PhuHuynh` + `HocSinhPhuHuynh`, tái sử dụng phụ huynh theo số điện thoại trong đơn vị, một liên hệ chính tại một thời điểm.)
+- [x] D04 Người liên hệ chính và người đón trẻ. (`laLienHeChinh`, `duocDonTre` trên `HocSinhPhuHuynh`; chưa có UI ghi nhận người đón thực tế theo buổi — để Sprint 3/7.)
 - [ ] D05 Lịch sử trạng thái học tập.
 - [ ] D06 Chuyển lớp/ngừng học/bảo lưu.
 

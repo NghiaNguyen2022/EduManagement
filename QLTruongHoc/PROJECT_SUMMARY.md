@@ -242,3 +242,51 @@ khác nhau theo loại hình đào tạo của đơn vị. Áp dụng đúng 4 b
   typecheck`/`pnpm build` PASS. Sẽ test runtime thật khi Sprint 7 thêm menu chuyên biệt đầu
   tiên (ví dụ "Đón/trả trẻ" chỉ cho `mam_non`).
 - Checklist: `docs/UI_SHELL_CHECKLIST.md` mục "Menu theo loại hình đào tạo" đã tick.
+
+---
+
+## D01/D03 — Hồ sơ học sinh và phụ huynh (2026-07-21)
+
+Bước đầu tiên của Sprint 1, đúng 4 bước đã thống nhất. Phạm vi: chỉ hồ sơ học sinh + phụ
+huynh + liên kết — **chưa** gồm tài khoản đăng nhập phụ huynh (C07) và **chưa** gồm luồng
+Lead/tuyển sinh (C01-C06), để lại làm bước riêng tiếp theo.
+
+- Phân tích chi tiết: `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md`.
+- Cập nhật BPD: mục 18.3 — chốt mã học sinh tự sinh (không nhập tay), phụ huynh tái sử
+  dụng theo số điện thoại trong cùng đơn vị (không tạo trùng), một liên hệ chính tại một
+  thời điểm, không xoá được liên kết cuối cùng hoặc liên hệ chính khi còn phụ huynh khác.
+- Database (`database/010_add_hoc_sinh_phu_huynh.sql`, áp dụng trực tiếp vì chưa có TTY
+  cho `db:push`): tạo `HocSinh` (trước đó chỉ là scaffold code, bảng thật chưa từng tồn
+  tại), `PhuHuynh`, `HocSinhPhuHuynh`. Đồng bộ `drizzle/schemas/hocSinh.ts` khớp đúng.
+- Backend: viết lại `server/db/hocSinh.repository.ts` (trước đó chỉ có
+  `findHocSinhById`), thêm `server/db/phuHuynh.repository.ts`,
+  `server/services/hocSinh.service.ts`, `server/services/phuHuynh.service.ts`,
+  `server/routers/hocSinh.router.ts` (đăng ký `/api/hoc-sinh` — nối lại scaffold mồ côi từ
+  lần rà soát trước). Quy tắc:
+  - Mã học sinh tự sinh `HS<năm><4 số>`, mã phụ huynh `PH<6 số>`.
+  - Thêm phụ huynh: dò theo `(donViId, dienThoai)` trước, tái sử dụng nếu đã có, chỉ tạo
+    mới khi chưa có và có họ tên.
+  - Đặt liên hệ chính mới tự bỏ đánh dấu liên hệ chính cũ.
+  - Chặn gỡ liên kết cuối cùng của học sinh.
+  - Chặn gỡ liên kết đang là liên hệ chính khi còn phụ huynh khác (yêu cầu chỉ định lại
+    trước).
+  - Ghi `NhatKyHeThong` cho create/update/đổi trạng thái/thêm-sửa-gỡ phụ huynh.
+- Frontend: `client/src/pages/StudentsPage.tsx` (`/students`, danh sách + tạo mới),
+  `client/src/pages/StudentDetailPage.tsx` (`/students/:id`, sửa hồ sơ, đổi trạng thái,
+  quản lý phụ huynh) thay `PlaceholderPage`.
+- Test tay (2 tài khoản smoke-test riêng tại TTNN-Q8 — vai trò `hoc_vu` và `tuyen_sinh`,
+  đã xoá sạch tài khoản + dữ liệu test sau khi xong):
+  - `tuyen_sinh` (không có `hoc_sinh.quan_ly`) gọi tạo học sinh → 403 — PASS.
+  - Tạo học sinh, mã tự sinh `HS20260001` — PASS.
+  - Thêm phụ huynh mới (số điện thoại chưa có) → tạo `PhuHuynh` mới — PASS.
+  - Thêm phụ huynh cho học sinh khác với số điện thoại trùng phụ huynh đã có trong đơn vị
+    → tái sử dụng đúng, không tạo trùng — PASS.
+  - Đặt liên hệ chính mới → liên hệ chính cũ tự bỏ đánh dấu — PASS.
+  - Gỡ liên kết không phải liên hệ chính khi còn liên kết khác → thành công — PASS.
+  - Gỡ liên kết cuối cùng của học sinh → bị chặn — PASS.
+  - Gỡ liên kết đang là liên hệ chính khi còn phụ huynh khác → bị chặn — PASS.
+  - `tuyen_sinh` gọi xoá liên kết → 403 — PASS.
+  - Tiếng Việt có dấu lưu đúng UTF-8 qua toàn luồng — PASS.
+  - `pnpm typecheck`, `pnpm build` — PASS.
+- Checklist: `docs/00_MASTER_CHECKLIST.md` mục D01, D03, D04 đã tick. D02 (sức khỏe mầm
+  non), D05/D06 (lịch sử học tập, chuyển lớp — phụ thuộc Sprint 2 lớp học) để lại sau.
