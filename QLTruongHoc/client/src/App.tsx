@@ -41,6 +41,9 @@ import {
   RolePermissionPage,
 } from "./pages/RolePermissionPage";
 import {
+  SchedulePage,
+} from "./pages/SchedulePage";
+import {
   SelectOrganizationPage,
 } from "./pages/SelectOrganizationPage";
 import {
@@ -187,11 +190,7 @@ function ProtectedApp() {
 
         <Route
           path="/schedule"
-          element={
-            <PlaceholderPage
-              title="Lịch học"
-            />
-          }
+          element={<SchedulePage />}
         />
 
         <Route

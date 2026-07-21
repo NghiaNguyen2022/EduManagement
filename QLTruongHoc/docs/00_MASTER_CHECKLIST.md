@@ -12,6 +12,10 @@
 > scaffold `hocSinh`). Mục C (Lead/tuyển sinh) và D02/D05/D06 vẫn chưa làm. Chi tiết xem
 > `PROJECT_SUMMARY.md` mục "D01/D03 — Hồ sơ học sinh và phụ huynh".
 >
+> Cập nhật 2026-07-21 (đêm): hoàn tất E05-E08 (lịch học lặp lại, kiểm tra trùng, nghỉ/học
+> bù, thời khóa biểu). Chi tiết xem `PROJECT_SUMMARY.md` mục "E05-E08 — Lịch học lặp lại và
+> thời khóa biểu".
+>
 > Cập nhật 2026-07-21 (tối): phát hiện và sửa lỗi ở A04/A05 — `getOrganizationsForUser`
 > trước đây chỉ trả về đơn vị có dòng gán tường minh, kể cả với `he_thong.quan_tri`, nên
 > quản trị hệ thống không thấy/chuyển được sang các đơn vị mình chưa từng được gán, và
@@ -60,10 +64,10 @@
 - [x] E02 Tạo lớp học. (API `/api/lop-hoc` + trang `/classes`, `/classes/:id`. Bao gồm hồ sơ giáo viên `/api/giao-vien` + trang `/teachers`.)
 - [x] E03 Xếp học sinh vào lớp. (Chặn vượt sĩ số, chặn học sinh ngừng học/hoàn thành, chuyển lớp giữ lịch sử — không ghi đè.)
 - [x] E04 Phân công giáo viên. (Chỉ một giáo viên chính hoạt động một lúc cho một lớp; giáo viên hỗ trợ không giới hạn.)
-- [ ] E05 Tạo lịch học lặp lại. (Bước tiếp theo — `LichHoc`/`BuoiHoc`.)
-- [ ] E06 Kiểm tra trùng giáo viên/phòng/lớp. (Phụ thuộc E05.)
-- [ ] E07 Lịch nghỉ và học bù. (Phụ thuộc E05.)
-- [ ] E08 Thời khóa biểu giáo viên, học sinh, phụ huynh. (Phụ thuộc E05.)
+- [x] E05 Tạo lịch học lặp lại. (2026-07-21: `LichHoc` (quy tắc theo tuần) + sinh `BuoiHoc` theo khoảng ngày, tách 2 bước lưu quy tắc/sinh buổi. Xem `docs/analysis/E05_E08_lich_hoc.md`.)
+- [x] E06 Kiểm tra trùng giáo viên/phòng/lớp. (Chặn cứng toàn bộ khi sinh buổi/tạo buổi bù nếu trùng phòng hoặc giáo viên trong cùng đơn vị.)
+- [x] E07 Lịch nghỉ và học bù. (Đánh dấu `nghi` (mở lại được), tạo `BuoiHoc` độc lập `loaiBuoi=bu`.)
+- [x] E08 Thời khóa biểu giáo viên, học sinh, phụ huynh. (Theo lớp trong `ClassDetailPage`, theo giáo viên/đơn vị ở trang `/schedule`. **Chưa** làm theo học sinh/phụ huynh — thuộc Portal, module J.)
 
 ## F. Điểm danh và xin phép
 - [ ] F01 Điểm danh theo buổi học.

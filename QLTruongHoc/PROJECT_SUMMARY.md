@@ -512,3 +512,98 @@ loại hình đào tạo hoạt động đúng song song.
 Đã verify qua DB sau khi chạy: toàn bộ mã tự sinh không trùng với dữ liệu thật hiện có
 ("Nguyen Khang", lead "Nguyen Nghia" — vẫn nguyên vẹn), phụ huynh "Phạm Văn Long" đúng liên
 kết 2 con. `pnpm typecheck`, `pnpm build` PASS.
+
+---
+
+## Sửa lỗi A04/A05 — Quản trị hệ thống không thấy hết đơn vị (2026-07-21)
+
+Người dùng phản ánh: quản trị hệ thống không thấy được dữ liệu của tất cả đơn vị, và không
+gán được vai trò cho người dùng khác vào đơn vị mà chính admin chưa từng có mặt. Rà lại thì
+đúng là lỗi thật, không phải yêu cầu mới — A04/A05 vốn đã tick `[x]` nhưng có lỗi che giấu.
+
+**Nguyên nhân gốc:** `getOrganizationsForUser` (`server/db/auth.repository.ts`) chỉ trả về
+đơn vị mà chính người dùng có dòng gán tường minh trong `NguoiDungVaiTroDonVi`, kể cả với
+`he_thong.quan_tri`. Hàm này quyết định: danh sách đơn vị sau đăng nhập/khi đổi đơn vị,
+dropdown "Đơn vị" khi gán vai trò cho người khác, và cờ `isSystemAdmin` ở mọi middleware
+(vì cờ này đọc từ `quyen` của đúng đơn vị đang đứng, không phải quyền toàn cục).
+
+**Sửa:** nếu người dùng có `he_thong.quan_tri` ở bất kỳ dòng gán nào, hàm trả về **toàn bộ
+đơn vị đang hoạt động** trong hệ thống, và luôn cấp `he_thong.quan_tri` vào `quyen` của từng
+đơn vị đó — để không mất quyền khi chuyển sang đơn vị chưa có dòng gán thật. Vai trò khác
+giữ nguyên hành vi cũ (chỉ thấy/gán được trong đúng đơn vị đã được phân công).
+
+Test tay qua trình duyệt: tài khoản `admin` (vốn chỉ gán tại `SYSTEM`) trước đó chỉ thấy 1
+đơn vị, sau khi sửa thấy đủ 3 đơn vị hoạt động; chuyển sang đơn vị chưa từng có dòng gán vẫn
+vào được, xem đúng dữ liệu, không bị 403; dropdown gán vai trò liệt kê đủ cả 3 đơn vị — PASS.
+
+## Sửa lỗi dữ liệu không tự tải lại khi đổi đơn vị (2026-07-21)
+
+Người dùng phản ánh: các trang Học sinh, Giáo viên, Lớp học... không tự cập nhật khi đổi
+đơn vị ở Topbar mà không rời trang. Nguyên nhân: các trang dùng
+`useEffect(() => { loadData() }, [])` — mảng phụ thuộc rỗng nên chỉ chạy đúng 1 lần lúc
+mount, đổi đơn vị không làm component mount lại nên không gọi lại API.
+
+Sửa bằng cách thêm `auth?.currentOrganization?.id` vào dependency của effect tải dữ liệu ở:
+`StudentsPage`, `TeachersPage`, `ClassesPage`, `LeadsPage`, `UserManagementPage`,
+`SystemAuditLogPage` (danh sách), và `StudentDetailPage`, `ClassDetailPage`,
+`LeadDetailPage` (chi tiết — tránh giữ dữ liệu đơn vị cũ khi đổi đơn vị giữa lúc đang xem
+chi tiết). Menu không cần sửa vì đã đọc thẳng từ context, tự động đúng từ trước.
+
+Test tay: đổi đơn vị ngay trên trang Học sinh/Giáo viên (không rời trang) → danh sách cập
+nhật đúng đơn vị mới ngay lập tức — PASS.
+
+## Làm lại giao diện sidebar (2026-07-21)
+
+Theo yêu cầu người dùng ("chuyên nghiệp, rõ ràng, trực quan"): thay 13 icon Unicode rời rạc
+bằng bộ icon SVG outline đồng nhất (`client/src/components/layout/sidebarIcons.tsx`, khoá
+theo `route.id`); sửa lỗi mục menu đang chọn không nổi bật (tên class CSS bị lệch giữa
+`styles.css` và `sidebar-balance.css` — cascade không bao giờ áp dụng); đổi màu sidebar từ
+xanh navy đậm sang xanh dương kế thừa trực tiếp `--edu-color-primary`/`-primary-strong` của
+theme (không bịa màu mới); gom các chỗ CSS hard-code màu trùng lặp (viền header, tiêu đề
+nhóm menu) về đúng biến theme để cấu hình một chỗ. Đã verify qua devtools (computed style
+đúng thiết kế, không lỗi console), `tsc` PASS.
+
+---
+
+## E05-E08 — Lịch học lặp lại và thời khóa biểu (2026-07-21)
+
+Tiếp Sprint 2 (sau E01-E04), đúng 4 bước. Phạm vi: quy tắc lịch học lặp lại theo tuần cho
+lớp, sinh buổi học cụ thể, kiểm tra trùng giáo viên/phòng/lớp, đánh dấu nghỉ và tạo buổi học
+bù, xem thời khóa biểu theo lớp/giáo viên. **Chưa** gồm điểm danh (F) hay báo giảng (G) —
+buổi học ở bước này chỉ là khung thời gian.
+
+- Phân tích chi tiết: `docs/analysis/E05_E08_lich_hoc.md`.
+- Cập nhật BPD: mục 18.8 — tách 2 tầng dữ liệu (`LichHoc` quy tắc, `BuoiHoc` buổi cụ thể,
+  không ghi đè, có lịch sử); tách hành động lưu quy tắc và sinh buổi thành hai bước để
+  người dùng chủ động kiểm soát sinh đến ngày nào; chặn cứng toàn bộ khi trùng phòng/giáo
+  viên (không sinh nửa vời); buổi đã `da_hoc` không sửa được qua màn lịch học nữa (thuộc
+  F/G); tái sử dụng quyền `lop_hoc.xem`/`lop_hoc.quan_ly`, không tạo quyền mới.
+- Database (`database/013_add_lich_hoc.sql`): tạo `LichHoc`, `BuoiHoc`. Đồng bộ
+  `drizzle/schemas/lichHoc.ts`.
+- Backend: `lichHoc.repository/service/router.ts` — mount `lichHocRouter` chung tiền tố
+  `/api/lop-hoc` (tạo/ngừng quy tắc, sinh buổi học, buổi học theo lớp, buổi học bù, đổi
+  trạng thái/sửa một buổi) và `thoiKhoaBieuRouter` riêng ở `/api/thoi-khoa-bieu` (thời khóa
+  biểu toàn đơn vị, lọc theo giáo viên/khoảng ngày). Quy tắc chính:
+  - Sinh buổi học: liệt kê ngày khớp thứ trong tuần trong khoảng áp dụng, bỏ qua ngày đã
+    sinh (idempotent), kiểm tra trùng toàn bộ trước khi ghi, có xung đột thì chặn hết.
+  - Trùng phòng/giáo viên: cùng đơn vị, cùng ngày, giờ chồng lấn, bỏ qua buổi `huy`/`nghi`.
+  - Buổi `da_hoc` không sửa/đổi trạng thái được qua API này.
+- Frontend: thêm section "Lịch học lặp lại" và "Buổi học" vào `ClassDetailPage.tsx`; thay
+  `PlaceholderPage` ở `/schedule` bằng `SchedulePage.tsx` (thời khóa biểu toàn đơn vị, lọc
+  theo khoảng ngày/giáo viên). Thêm `type="time"` cho `TextField` dùng chung.
+- Test tay qua API thật (dùng chung server đang chạy, dọn đúng dữ liệu vừa tạo sau khi
+  test — bảng `LichHoc`/`BuoiHoc` mới toanh nên xoá sạch an toàn, không đụng dữ liệu khác):
+  - Tạo 3 quy tắc (Thứ 3/5/7) cho một lớp có sẵn giáo viên chính — PASS, tự kế thừa phòng
+    và giáo viên từ lớp khi không chỉ định riêng.
+  - Sinh buổi học đến cuối tháng → đúng số buổi theo đúng ngày trong tuần; sinh lại lần hai
+    → không tạo trùng (idempotent) — PASS.
+  - Tạo buổi học bù trùng phòng/giờ với buổi đã sinh → bị chặn đúng thông báo; đổi phòng
+    khác → thành công — PASS.
+  - Đánh dấu nghỉ một buổi → phòng/giờ đó không còn tính là chiếm dụng, tạo buổi bù đúng
+    giờ đó thành công — PASS.
+  - Thời khóa biểu toàn đơn vị trả đúng số buổi trong khoảng ngày, gồm cả buổi nghỉ và buổi
+    bù — PASS.
+  - Giao diện `ClassDetailPage`/`SchedulePage` hiển thị đúng dữ liệu vừa tạo, không lỗi
+    console — PASS.
+  - `pnpm typecheck` PASS.
+- Checklist: `docs/00_MASTER_CHECKLIST.md` mục E05-E08 đã tick.

@@ -5,7 +5,7 @@ type TextFieldProps = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  type?: "text" | "email" | "password" | "search" | "tel";
+  type?: "text" | "email" | "password" | "search" | "tel" | "time";
   required?: boolean;
   disabled?: boolean;
   error?: string;

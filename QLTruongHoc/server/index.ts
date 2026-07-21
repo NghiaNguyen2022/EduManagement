@@ -17,6 +17,10 @@ import { giaoVienRouter } from "./routers/giaoVien.router.js";
 import { healthRouter } from "./routers/health.router.js";
 import { hocSinhRouter } from "./routers/hocSinh.router.js";
 import { leadRouter } from "./routers/lead.router.js";
+import {
+  lichHocRouter,
+  thoiKhoaBieuRouter,
+} from "./routers/lichHoc.router.js";
 import { lopHocRouter } from "./routers/lopHoc.router.js";
 import { organizationRouter } from "./routers/organization.router.js";
 import { roleRouter } from "./routers/role.router.js";
@@ -54,6 +58,8 @@ app.use("/api/leads", leadRouter);
 app.use("/api/chuong-trinh", chuongTrinhRouter);
 app.use("/api/giao-vien", giaoVienRouter);
 app.use("/api/lop-hoc", lopHocRouter);
+app.use("/api/lop-hoc", lichHocRouter);
+app.use("/api/thoi-khoa-bieu", thoiKhoaBieuRouter);
 app.use("/api/users", userRouter);
 app.use("/api/users", userAssignmentRouter);
 app.use("/api/roles", roleRouter);
