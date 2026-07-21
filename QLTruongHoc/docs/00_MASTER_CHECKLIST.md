@@ -16,6 +16,11 @@
 > bù, thời khóa biểu). Chi tiết xem `PROJECT_SUMMARY.md` mục "E05-E08 — Lịch học lặp lại và
 > thời khóa biểu".
 >
+> Cập nhật 2026-07-21 (khuya): chốt phạm vi nghiệp vụ tại đơn vị hệ thống (chỉ quản trị,
+> không mở lớp/học viên/lịch) + sinh dữ liệu mẫu lịch học. Xem `docs/analysis/A01_cay_don_vi.md`
+> mục 11 và `PROJECT_SUMMARY.md` mục "Phạm vi nghiệp vụ tại đơn vị hệ thống + dữ liệu mẫu
+> lịch học".
+>
 > Cập nhật 2026-07-21 (tối): phát hiện và sửa lỗi ở A04/A05 — `getOrganizationsForUser`
 > trước đây chỉ trả về đơn vị có dòng gán tường minh, kể cả với `he_thong.quan_tri`, nên
 > quản trị hệ thống không thấy/chuyển được sang các đơn vị mình chưa từng được gán, và

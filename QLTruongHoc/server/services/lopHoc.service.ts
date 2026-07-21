@@ -4,6 +4,7 @@ import {
 import { findChuongTrinhById } from "../db/chuongTrinh.repository.js";
 import { findGiaoVienById } from "../db/giaoVien.repository.js";
 import { findHocSinhById } from "../db/hocSinh.repository.js";
+import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
 import {
   closeEnrollment,
   countHocSinhDangHocTrongLop,
@@ -93,6 +94,8 @@ export async function createLopHocMoi(input: {
   actorUserId: number;
   ipAddress?: string;
 }) {
+  await assertDonViChoPhepNghiepVu(input.donViId);
+
   const maLop = input.maLop.trim().toUpperCase();
   const tenLop = input.tenLop.trim();
 

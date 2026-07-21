@@ -48,6 +48,22 @@ function validateLoaiHinhDaoTao(
   }
 }
 
+/**
+ * Đơn vị hệ thống (node gốc `SYSTEM`, `loaiDonVi = 'he_thong'`) chỉ dùng để quản trị:
+ * cây đơn vị, người dùng/vai trò. Không tạo dữ liệu nghiệp vụ (chương trình, hồ sơ giáo
+ * viên, lớp học, học sinh, tuyển sinh) tại đơn vị này — dữ liệu đó luôn phải thuộc một
+ * trường/trung tâm/cơ sở cụ thể.
+ */
+export async function assertDonViChoPhepNghiepVu(donViId: number) {
+  const donVi = await findDonViById(donViId);
+
+  if (donVi?.loaiDonVi === "he_thong") {
+    throw new Error(
+      "Đơn vị hệ thống chỉ dùng để quản trị (đơn vị, người dùng, vai trò), không tạo dữ liệu nghiệp vụ tại đây. Vui lòng chuyển sang trường/trung tâm cụ thể.",
+    );
+  }
+}
+
 export async function getDonViTree(input: {
   isSystemAdmin: boolean;
   actorOrganizationIds: number[];

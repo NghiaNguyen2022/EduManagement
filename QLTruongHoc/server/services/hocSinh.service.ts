@@ -12,6 +12,7 @@ import {
 import {
   listGuardianLinksByHocSinh,
 } from "../db/phuHuynh.repository.js";
+import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
 
 type TrangThaiHocSinh =
   | "tiep_nhan"
@@ -91,6 +92,8 @@ export async function createHocSinhMoi(input: {
   actorUserId: number;
   ipAddress?: string;
 }) {
+  await assertDonViChoPhepNghiepVu(input.donViId);
+
   const hoTen = input.hoTen.trim();
 
   if (!hoTen) {

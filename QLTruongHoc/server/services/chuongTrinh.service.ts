@@ -9,6 +9,7 @@ import {
   setChuongTrinhTrangThai,
   updateChuongTrinh,
 } from "../db/chuongTrinh.repository.js";
+import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
 
 export async function listChuongTrinh(donViId: number) {
   return listChuongTrinhByDonVi(donViId);
@@ -25,6 +26,8 @@ export async function createChuongTrinhMoi(input: {
   actorUserId: number;
   ipAddress?: string;
 }) {
+  await assertDonViChoPhepNghiepVu(input.donViId);
+
   const maChuongTrinh = input.maChuongTrinh.trim().toUpperCase();
   const tenChuongTrinh = input.tenChuongTrinh.trim();
 

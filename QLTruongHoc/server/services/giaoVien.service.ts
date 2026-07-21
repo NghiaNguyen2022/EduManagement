@@ -9,6 +9,7 @@ import {
   setGiaoVienTrangThai,
   updateGiaoVien,
 } from "../db/giaoVien.repository.js";
+import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
 
 async function sinhMaGiaoVien(donViId: number) {
   const total = await countGiaoVienTheoMaPrefix(donViId, "GV");
@@ -29,6 +30,8 @@ export async function createGiaoVienMoi(input: {
   actorUserId: number;
   ipAddress?: string;
 }) {
+  await assertDonViChoPhepNghiepVu(input.donViId);
+
   const hoTen = input.hoTen.trim();
 
   if (!hoTen) {

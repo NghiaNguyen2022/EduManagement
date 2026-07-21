@@ -607,3 +607,35 @@ buổi học ở bước này chỉ là khung thời gian.
     console — PASS.
   - `pnpm typecheck` PASS.
 - Checklist: `docs/00_MASTER_CHECKLIST.md` mục E05-E08 đã tick.
+
+---
+
+## Phạm vi nghiệp vụ tại đơn vị hệ thống + dữ liệu mẫu lịch học (2026-07-21)
+
+Người dùng xác nhận lại: đơn vị gốc `SYSTEM` (`loaiDonVi = 'he_thong'`) chỉ dùng để quản
+trị (cây đơn vị, người dùng/vai trò), không mở lớp học, không tạo học viên/lớp/lịch. Vẫn có
+thể tạo tài khoản (kể cả vai trò giáo viên) và gán về đơn vị nghiệp vụ cụ thể — luồng "trụ
+sở tạo tài khoản → phân bổ nhân sự về từng trường/trung tâm".
+
+- Phân tích chi tiết: `docs/analysis/A01_cay_don_vi.md` mục 11 (bổ sung).
+- Cập nhật BPD: mục 18.9.
+- Backend: thêm `assertDonViChoPhepNghiepVu` (`server/services/donVi.service.ts`), gọi ở
+  đầu `createChuongTrinhMoi`, `createGiaoVienMoi`, `createLopHocMoi`, `createHocSinhMoi`,
+  `createLeadMoi` — chặn nếu đơn vị đang đứng là `he_thong`. `LichHoc`/`BuoiHoc` không cần
+  chặn riêng vì luôn phụ thuộc một `LopHoc` có sẵn (đã chặn gián tiếp từ nguồn). Tạo tài
+  khoản người dùng và gán vai trò/đơn vị (`NguoiDung`, `NguoiDungVaiTroDonVi`) **không** bị
+  chặn — đúng chủ đích cho phép quản trị nhân sự tại đơn vị hệ thống.
+- Test tay qua API: đứng tại `SYSTEM`, tạo lớp/chương trình → bị chặn đúng thông báo; tạo
+  tài khoản vai trò giáo viên tại `SYSTEM` → vẫn thành công (201) — PASS. Đứng tại đơn vị
+  nghiệp vụ bình thường → không ảnh hưởng, tạo được như cũ — PASS (không cần test lại toàn
+  bộ vì logic tạo không đổi, chỉ thêm một bước kiểm tra đầu hàm).
+- Dữ liệu mẫu bổ sung: sinh `LichHoc`/`BuoiHoc` cho 3 lớp mẫu đã có (IELTS Sáng Thứ 2-4-6,
+  Giao tiếp Tối Thứ 3-5-7 tại TTNN-Q8; Lá 1 tại MN-HOA-NANG) qua API thật — 11 quy tắc, 34
+  buổi học, đến hết tháng 8/2026. Thêm tài khoản demo `demo_ketoan_mn` (vai trò `ke_toan`,
+  mật khẩu tạm `Edu@123Qaz`) minh hoạ vị trí kế toán cho Mầm Non — vai trò "lễ tân" **chưa
+  seed** (chưa có trong `VaiTro`, để phân tích quyền hạn riêng khi thật sự cần).
+  Đồng thời cập nhật `server/scripts/seedSampleData.ts` để lần seed từ đầu (DB mới hoàn
+  toàn) tự sinh đủ lịch học + tài khoản này — DB dev hiện tại đã có sẵn dữ liệu nền nên
+  populate trực tiếp qua API thay vì chạy lại script (script có guard bỏ qua toàn bộ nếu
+  chương trình mẫu đã tồn tại, đúng chủ đích thiết kế ban đầu — không phải lỗi).
+- `pnpm typecheck` (client + server) PASS.

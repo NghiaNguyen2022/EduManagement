@@ -13,6 +13,7 @@ import {
   updateLeadInfo,
   updateLeadTrangThai,
 } from "../db/lead.repository.js";
+import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
 import { createHocSinhMoi } from "./hocSinh.service.js";
 import { addGuardianToStudent } from "./phuHuynh.service.js";
 
@@ -115,6 +116,8 @@ export async function createLeadMoi(input: {
   actorUserId: number;
   ipAddress?: string;
 }) {
+  await assertDonViChoPhepNghiepVu(input.donViId);
+
   const hoTen = input.hoTen.trim();
   const soDienThoai = input.soDienThoai.trim();
 

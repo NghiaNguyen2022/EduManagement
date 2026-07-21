@@ -117,3 +117,28 @@ sau khi có nhu cầu để `don_vi.quan_ly` tự tạo `co_so` (chi nhánh) dư
       này ở màn hình chọn đơn vị (regression cho Việc 009).
 - [ ] `don_vi.quan_ly` không gọi được API tạo/sửa/ngừng hoạt động (403).
 - [ ] `pnpm typecheck` và `pnpm build` pass.
+
+## 11. Phạm vi nghiệp vụ tại đơn vị hệ thống (bổ sung 2026-07-21)
+
+> Theo yêu cầu người dùng xác nhận lại 2026-07-21.
+
+Đơn vị `loaiDonVi = 'he_thong'` (node gốc `SYSTEM`) **chỉ dùng để quản trị**, không phải nơi
+vận hành nghiệp vụ đào tạo/tuyển sinh thật:
+
+- **Được phép tại đơn vị hệ thống:** quản lý cây đơn vị (A01), tạo/khoá tài khoản người
+  dùng và gán vai trò vào bất kỳ đơn vị nào (A04/B01/B02) — kể cả gán vai trò `giao_vien`,
+  `ke_toan`... cho một tài khoản rồi chuyển (gán thêm) tài khoản đó sang đơn vị nghiệp vụ
+  cụ thể. Đây là luồng "trụ sở tạo tài khoản → phân bổ nhân sự về từng trường/trung tâm".
+- **Không được phép tại đơn vị hệ thống:** tạo chương trình đào tạo, hồ sơ giáo viên
+  (`GiaoVien` — khác tài khoản đăng nhập), lớp học, lịch học, học sinh, lead/tuyển sinh.
+  Những dữ liệu này luôn phải thuộc một trường/trung tâm/cơ sở cụ thể.
+
+**Thực thi:** `assertDonViChoPhepNghiepVu` (`server/services/donVi.service.ts`) chặn ở tầng
+service, gọi đầu mỗi hàm tạo: `createChuongTrinhMoi`, `createGiaoVienMoi`,
+`createLopHocMoi`, `createHocSinhMoi`, `createLeadMoi`. `LichHoc`/`BuoiHoc` (E05-E08) không
+cần chặn riêng vì luôn phụ thuộc một `LopHoc` có sẵn — đã bị chặn gián tiếp từ nguồn.
+
+**Vị trí nhân sự cho trung tâm:** vai trò `ke_toan` đã có sẵn, dùng chung cho mọi
+trường/trung tâm khi cần. Vai trò "lễ tân" **chưa được định nghĩa** trong `VaiTro` — nếu
+sau này cần (ví dụ tiếp đón/ghi nhận điểm danh tại quầy), phải phân tích quyền hạn cụ thể
+(xem gì, làm gì) trước khi seed vai trò mới, tránh cấp quyền tuỳ tiện.

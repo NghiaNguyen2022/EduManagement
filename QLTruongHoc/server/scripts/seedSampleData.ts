@@ -20,6 +20,10 @@ import {
   createLopHocMoi,
   xepHocSinhVaoLop,
 } from "../services/lopHoc.service.js";
+import {
+  sinhBuoiHoc,
+  taoQuyTacLichHoc,
+} from "../services/lichHoc.service.js";
 import { addGuardianToStudent } from "../services/phuHuynh.service.js";
 import { createTemporaryPassword } from "../services/user.service.js";
 
@@ -43,6 +47,14 @@ const STAFF_ACCOUNTS = [
     username: "demo_giaovien",
     fullName: "Tài khoản demo Giáo viên",
     roleCode: "giao_vien",
+  },
+] as const;
+
+const MAM_NON_STAFF_ACCOUNTS = [
+  {
+    username: "demo_ketoan_mn",
+    fullName: "Tài khoản demo Kế toán (Mầm non)",
+    roleCode: "ke_toan",
   },
 ] as const;
 
@@ -162,6 +174,39 @@ async function main() {
     tuNgay: "2026-08-04",
     actorUserId,
   });
+
+  // Lịch học lặp lại (E05) — sáng Thứ 2-4-6 cho IELTS, tối Thứ 3-5-7 cho Giao tiếp, đúng
+  // theo tên lớp. Sinh sẵn 4 tuần buổi học để có dữ liệu minh hoạ thời khóa biểu/điểm danh.
+  const lichLop1 = await taoQuyTacLichHoc({
+    donViId: ttnn.id,
+    lopHocId: lop1.id,
+    thuTrongTuanList: [2, 4, 6],
+    gioBatDau: "08:00",
+    gioKetThuc: "09:30",
+    ngayApDungTu: lop1.ngayBatDau ?? "2026-08-03",
+    ngayApDungDen: lop1.ngayKetThuc,
+    actorUserId,
+  });
+
+  const lichLop2 = await taoQuyTacLichHoc({
+    donViId: ttnn.id,
+    lopHocId: lop2.id,
+    thuTrongTuanList: [3, 5, 7],
+    gioBatDau: "18:00",
+    gioKetThuc: "19:30",
+    ngayApDungTu: lop2.ngayBatDau ?? "2026-08-04",
+    ngayApDungDen: lop2.ngayKetThuc,
+    actorUserId,
+  });
+
+  for (const rule of [...lichLop1, ...lichLop2]) {
+    await sinhBuoiHoc({
+      donViId: ttnn.id,
+      lichHocId: rule.id,
+      denNgay: "2026-08-29",
+      actorUserId,
+    });
+  }
 
   const hs1 = await createHocSinhMoi({
     donViId: ttnn.id,
@@ -331,6 +376,27 @@ async function main() {
     actorUserId,
   });
 
+  // Lịch học lặp lại — mầm non học cả tuần (Thứ 2 - Thứ 6), giờ đón/trả cả ngày.
+  const lichMam = await taoQuyTacLichHoc({
+    donViId: mamNon.id,
+    lopHocId: lopMam.id,
+    thuTrongTuanList: [2, 3, 4, 5, 6],
+    gioBatDau: "07:30",
+    gioKetThuc: "16:30",
+    ngayApDungTu: lopMam.ngayBatDau ?? "2026-08-01",
+    ngayApDungDen: null,
+    actorUserId,
+  });
+
+  for (const rule of lichMam) {
+    await sinhBuoiHoc({
+      donViId: mamNon.id,
+      lichHocId: rule.id,
+      denNgay: "2026-08-14",
+      actorUserId,
+    });
+  }
+
   const hsMam1 = await createHocSinhMoi({
     donViId: mamNon.id,
     hoTen: "Vũ Bảo Nam",
@@ -418,6 +484,36 @@ async function main() {
       fullName: account.fullName,
       roleId: role.id,
       organizationId: ttnn.id,
+    });
+
+    createdAccounts.push(account.username);
+  }
+
+  // ---- Tài khoản demo theo vai trò (MN-HOA-NANG) ----
+
+  for (const account of MAM_NON_STAFF_ACCOUNTS) {
+    const role = await findRoleByCode(account.roleCode);
+
+    if (!role) {
+      console.warn(`Bỏ qua ${account.username}: chưa có vai trò ${account.roleCode}.`);
+      continue;
+    }
+
+    const existingUser = await findUserByUsername(account.username);
+
+    if (existingUser) {
+      console.log(`${account.username} đã tồn tại — bỏ qua.`);
+      continue;
+    }
+
+    const passwordHash = await hash(createTemporaryPassword(), 12);
+
+    await createUserWithRole({
+      username: account.username,
+      passwordHash,
+      fullName: account.fullName,
+      roleId: role.id,
+      organizationId: mamNon.id,
     });
 
     createdAccounts.push(account.username);
