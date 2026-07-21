@@ -25,6 +25,7 @@ export type LopHocItem = {
   siSoToiDa: number | null;
   phongHoc: string | null;
   trangThai: TrangThaiLopHoc;
+  donVi?: { id: number; maDonVi: string; tenDonVi: string };
 };
 
 export type LopHocFormInput = {

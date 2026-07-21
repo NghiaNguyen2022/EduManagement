@@ -37,8 +37,14 @@ async function request<T>(
   return payload.data as T;
 }
 
-export function listLeadApi() {
-  return request<LeadItem[]>("/api/leads");
+export async function listLeadApi() {
+  const rows = await request<
+    (LeadItem | { lead: LeadItem; donVi: LeadItem["donVi"] })[]
+  >("/api/leads");
+
+  return rows.map((row) =>
+    "lead" in row ? { ...row.lead, donVi: row.donVi } : row,
+  );
 }
 
 export function createLeadApi(input: LeadFormInput) {

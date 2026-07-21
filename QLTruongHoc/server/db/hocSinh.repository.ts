@@ -1,6 +1,10 @@
-import { and, count, eq, like } from "drizzle-orm";
+import { and, count, desc, eq, like } from "drizzle-orm";
 
-import { hocSinh } from "../../drizzle/schema.js";
+import {
+  donVi,
+  hocSinh,
+  hocSinhTrangThaiLichSu,
+} from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
 const now = () =>
@@ -14,6 +18,25 @@ export async function listHocSinhByDonVi(donViId: number) {
     .from(hocSinh)
     .where(eq(hocSinh.donViId, donViId))
     .orderBy(hocSinh.hoTen);
+}
+
+/** Dùng cho đơn vị hệ thống — xem gộp toàn bộ đơn vị đang hoạt động, kèm đơn vị sở hữu. */
+export async function listHocSinhAllDonVi() {
+  const db = getDb();
+
+  return db
+    .select({
+      hocSinh,
+      donVi: {
+        id: donVi.id,
+        maDonVi: donVi.maDonVi,
+        tenDonVi: donVi.tenDonVi,
+      },
+    })
+    .from(hocSinh)
+    .innerJoin(donVi, eq(hocSinh.donViId, donVi.id))
+    .where(eq(donVi.trangThai, "hoat_dong"))
+    .orderBy(donVi.tenDonVi, hocSinh.hoTen);
 }
 
 export async function findHocSinhById(
@@ -154,4 +177,46 @@ export async function updateHocSinhTrangThai(input: {
     .limit(1);
 
   return rows[0] ?? null;
+}
+
+export async function createTrangThaiLichSu(input: {
+  hocSinhId: number;
+  trangThaiCu:
+    | "tiep_nhan"
+    | "dang_hoc"
+    | "bao_luu"
+    | "ngung_hoc"
+    | "hoan_thanh"
+    | null;
+  trangThaiMoi:
+    | "tiep_nhan"
+    | "dang_hoc"
+    | "bao_luu"
+    | "ngung_hoc"
+    | "hoan_thanh";
+  lyDo: string | null;
+  ngayHieuLuc: string;
+  actorUserId: number | null;
+}) {
+  const db = getDb();
+
+  await db.insert(hocSinhTrangThaiLichSu).values({
+    hocSinhId: input.hocSinhId,
+    trangThaiCu: input.trangThaiCu,
+    trangThaiMoi: input.trangThaiMoi,
+    lyDo: input.lyDo,
+    ngayHieuLuc: input.ngayHieuLuc,
+    actorUserId: input.actorUserId,
+    createdAt: now(),
+  });
+}
+
+export async function listTrangThaiLichSuByHocSinh(hocSinhId: number) {
+  const db = getDb();
+
+  return db
+    .select()
+    .from(hocSinhTrangThaiLichSu)
+    .where(eq(hocSinhTrangThaiLichSu.hocSinhId, hocSinhId))
+    .orderBy(desc(hocSinhTrangThaiLichSu.createdAt));
 }

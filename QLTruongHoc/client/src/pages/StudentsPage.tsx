@@ -46,13 +46,17 @@ export function StudentsPage() {
   const [searchText, setSearchText] = useState("");
   const [form, setForm] = useState<HocSinhFormInput>(emptyForm);
 
+  const isHeThong =
+    auth?.currentOrganization?.loaiDonVi === "he_thong";
+
   const canManage = useMemo(() => {
     const permissions = auth?.currentOrganization?.quyen ?? [];
     return (
-      permissions.includes("he_thong.quan_tri") ||
-      permissions.includes("hoc_sinh.quan_ly")
+      !isHeThong &&
+      (permissions.includes("he_thong.quan_tri") ||
+        permissions.includes("hoc_sinh.quan_ly"))
     );
-  }, [auth]);
+  }, [auth, isHeThong]);
 
   const filteredStudents = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
@@ -119,7 +123,11 @@ export function StudentsPage() {
     <div className="page-stack">
       <PageHeader
         title="Học sinh · Học viên"
-        subtitle="Quản lý hồ sơ học sinh trong đơn vị đang làm việc"
+        subtitle={
+          isHeThong
+            ? "Xem gộp học sinh của tất cả đơn vị (chỉ xem — đơn vị hệ thống không quản lý học sinh)"
+            : "Quản lý hồ sơ học sinh trong đơn vị đang làm việc"
+        }
       />
 
       {error ? <div className="form-error">{error}</div> : null}
@@ -226,6 +234,7 @@ export function StudentsPage() {
                 <th>Ngày sinh</th>
                 <th>Ngày nhập học</th>
                 <th>Trạng thái</th>
+                {isHeThong ? <th>Đơn vị</th> : null}
               </tr>
             </thead>
 
@@ -233,12 +242,16 @@ export function StudentsPage() {
               {filteredStudents.map((student) => (
                 <tr key={student.id}>
                   <td>
-                    <Link
-                      to={`/students/${student.id}`}
-                      className="text-button"
-                    >
+                    {isHeThong ? (
                       <strong>{student.hoTen}</strong>
-                    </Link>
+                    ) : (
+                      <Link
+                        to={`/students/${student.id}`}
+                        className="text-button"
+                      >
+                        <strong>{student.hoTen}</strong>
+                      </Link>
+                    )}
                     <small>{student.maHocSinh}</small>
                   </td>
 
@@ -252,12 +265,16 @@ export function StudentsPage() {
                       {TRANG_THAI_LABEL[student.trangThai]}
                     </span>
                   </td>
+
+                  {isHeThong ? (
+                    <td>{student.donVi?.tenDonVi ?? "—"}</td>
+                  ) : null}
                 </tr>
               ))}
 
               {!loading && filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="empty-cell">
+                  <td colSpan={isHeThong ? 5 : 4} className="empty-cell">
                     Chưa có học sinh nào.
                   </td>
                 </tr>

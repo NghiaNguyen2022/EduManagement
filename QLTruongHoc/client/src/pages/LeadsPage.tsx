@@ -55,13 +55,17 @@ export function LeadsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [form, setForm] = useState<LeadFormInput>(emptyForm);
 
+  const isHeThong =
+    auth?.currentOrganization?.loaiDonVi === "he_thong";
+
   const canManage = useMemo(() => {
     const permissions = auth?.currentOrganization?.quyen ?? [];
     return (
-      permissions.includes("he_thong.quan_tri") ||
-      permissions.includes("tuyen_sinh.quan_ly")
+      !isHeThong &&
+      (permissions.includes("he_thong.quan_tri") ||
+        permissions.includes("tuyen_sinh.quan_ly"))
     );
-  }, [auth]);
+  }, [auth, isHeThong]);
 
   const filteredLeads = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
@@ -130,7 +134,11 @@ export function LeadsPage() {
     <div className="page-stack">
       <PageHeader
         title="Tuyển sinh"
-        subtitle="Tiếp nhận và chăm sóc khách hàng tiềm năng đến khi xác nhận đăng ký"
+        subtitle={
+          isHeThong
+            ? "Xem gộp lead của tất cả đơn vị (chỉ xem — đơn vị hệ thống không tiếp nhận tuyển sinh)"
+            : "Tiếp nhận và chăm sóc khách hàng tiềm năng đến khi xác nhận đăng ký"
+        }
       />
 
       {error ? <div className="form-error">{error}</div> : null}
@@ -250,6 +258,7 @@ export function LeadsPage() {
                 <th>Số điện thoại</th>
                 <th>Nguồn</th>
                 <th>Trạng thái</th>
+                {isHeThong ? <th>Đơn vị</th> : null}
               </tr>
             </thead>
 
@@ -257,12 +266,16 @@ export function LeadsPage() {
               {filteredLeads.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    <Link
-                      to={`/admissions/${item.id}`}
-                      className="text-button"
-                    >
+                    {isHeThong ? (
                       <strong>{item.hoTen}</strong>
-                    </Link>
+                    ) : (
+                      <Link
+                        to={`/admissions/${item.id}`}
+                        className="text-button"
+                      >
+                        <strong>{item.hoTen}</strong>
+                      </Link>
+                    )}
                     <small>{item.maLead}</small>
                   </td>
 
@@ -276,12 +289,16 @@ export function LeadsPage() {
                       {TRANG_THAI_LABEL[item.trangThai]}
                     </span>
                   </td>
+
+                  {isHeThong ? (
+                    <td>{item.donVi?.tenDonVi ?? "—"}</td>
+                  ) : null}
                 </tr>
               ))}
 
               {!loading && filteredLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="empty-cell">
+                  <td colSpan={isHeThong ? 5 : 4} className="empty-cell">
                     Chưa có lead nào.
                   </td>
                 </tr>

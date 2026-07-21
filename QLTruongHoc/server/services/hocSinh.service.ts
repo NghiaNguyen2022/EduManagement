@@ -4,11 +4,20 @@ import {
 import {
   countHocSinhTheoMaPrefix,
   createHocSinh,
+  createTrangThaiLichSu,
   findHocSinhById,
+  listHocSinhAllDonVi,
   listHocSinhByDonVi,
+  listTrangThaiLichSuByHocSinh,
   updateHocSinh,
   updateHocSinhTrangThai,
 } from "../db/hocSinh.repository.js";
+import {
+  closeEnrollment,
+  listActiveEnrollmentsByHocSinh,
+  listEnrollmentsByHocSinh,
+  setEnrollmentTrangThai,
+} from "../db/lopHoc.repository.js";
 import {
   listGuardianLinksByHocSinh,
 } from "../db/phuHuynh.repository.js";
@@ -43,7 +52,11 @@ async function sinhMaHocSinh(donViId: number) {
   throw new Error("Không thể sinh mã học sinh, vui lòng thử lại.");
 }
 
-export async function listHocSinh(donViId: number) {
+export async function listHocSinh(donViId: number, loaiDonVi?: string) {
+  if (loaiDonVi === "he_thong") {
+    return listHocSinhAllDonVi();
+  }
+
   return listHocSinhByDonVi(donViId);
 }
 
@@ -65,10 +78,22 @@ export async function getHocSinhDetail(
     throw new Error("Không tìm thấy học sinh trong đơn vị hiện tại.");
   }
 
-  const guardianLinks = await listGuardianLinksByHocSinh(hocSinhId);
+  const [guardianLinks, lichSu, enrollments] = await Promise.all([
+    listGuardianLinksByHocSinh(hocSinhId),
+    listTrangThaiLichSuByHocSinh(hocSinhId),
+    listEnrollmentsByHocSinh(hocSinhId),
+  ]);
 
   return {
     hocSinh: student,
+    lichSuTrangThai: lichSu,
+    lopHoc: enrollments.map((row) => ({
+      enrollmentId: row.enrollment.id,
+      ngayVaoLop: row.enrollment.ngayVaoLop,
+      ngayRoiLop: row.enrollment.ngayRoiLop,
+      trangThai: row.enrollment.trangThai,
+      lopHoc: row.lopHoc,
+    })),
     phuHuynh: guardianLinks.map((row) => ({
       lienKetId: row.lienKet.id,
       moiQuanHe: row.lienKet.moiQuanHe,
@@ -130,6 +155,15 @@ export async function createHocSinhMoi(input: {
   if (!created) {
     throw new Error("Không thể tạo hồ sơ học sinh.");
   }
+
+  await createTrangThaiLichSu({
+    hocSinhId: created.id,
+    trangThaiCu: null,
+    trangThaiMoi: "tiep_nhan",
+    lyDo: null,
+    ngayHieuLuc: created.createdAt.slice(0, 10),
+    actorUserId: input.actorUserId,
+  });
 
   await createAuditLog({
     userId: input.actorUserId,
@@ -204,6 +238,8 @@ export async function setHocSinhTrangThai(input: {
   donViId: number;
   id: number;
   trangThai: string;
+  lyDo?: string | null;
+  ngayHieuLuc?: string | null;
   actorUserId: number;
   ipAddress?: string;
 }) {
@@ -219,6 +255,14 @@ export async function setHocSinhTrangThai(input: {
 
   const trangThai = input.trangThai as TrangThaiHocSinh;
 
+  if (trangThai === existing.trangThai) {
+    throw new Error("Học sinh đã ở đúng trạng thái này.");
+  }
+
+  const lyDo = input.lyDo?.trim() || null;
+  const ngayHieuLuc =
+    input.ngayHieuLuc || new Date().toISOString().slice(0, 10);
+
   const updated = await updateHocSinhTrangThai({
     id: input.id,
     trangThai,
@@ -228,13 +272,54 @@ export async function setHocSinhTrangThai(input: {
     throw new Error("Không thể cập nhật trạng thái học sinh.");
   }
 
+  await createTrangThaiLichSu({
+    hocSinhId: input.id,
+    trangThaiCu: existing.trangThai,
+    trangThaiMoi: trangThai,
+    lyDo,
+    ngayHieuLuc,
+    actorUserId: input.actorUserId,
+  });
+
+  // Đồng bộ trạng thái ở tất cả lớp học sinh đang theo học — tránh lệch giữa hồ sơ chung
+  // và trạng thái theo từng lớp (D06).
+  if (
+    trangThai === "ngung_hoc" ||
+    trangThai === "hoan_thanh" ||
+    trangThai === "bao_luu"
+  ) {
+    const activeEnrollments = await listActiveEnrollmentsByHocSinh(
+      input.id,
+    );
+
+    for (const enrollment of activeEnrollments) {
+      if (trangThai === "bao_luu") {
+        if (enrollment.trangThai === "dang_hoc") {
+          await setEnrollmentTrangThai({
+            id: enrollment.id,
+            trangThai: "bao_luu",
+          });
+        }
+
+        continue;
+      }
+
+      await closeEnrollment({
+        id: enrollment.id,
+        ngayRoiLop: ngayHieuLuc,
+        lyDoRoiLop: lyDo,
+        trangThai,
+      });
+    }
+  }
+
   await createAuditLog({
     userId: input.actorUserId,
     organizationId: input.donViId,
     action: "hoc_sinh.set_status",
     objectType: "HocSinh",
     objectId: String(updated.id),
-    content: `Đổi trạng thái học sinh ${updated.hoTen} (${updated.maHocSinh}) sang ${trangThai}.`,
+    content: `Đổi trạng thái học sinh ${updated.hoTen} (${updated.maHocSinh}) từ ${existing.trangThai} sang ${trangThai}.`,
     ipAddress: input.ipAddress,
   });
 

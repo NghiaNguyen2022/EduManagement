@@ -1,6 +1,6 @@
 import { and, count, eq, like } from "drizzle-orm";
 
-import { giaoVien } from "../../drizzle/schema.js";
+import { donVi, giaoVien } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
 const now = () =>
@@ -14,6 +14,25 @@ export async function listGiaoVienByDonVi(donViId: number) {
     .from(giaoVien)
     .where(eq(giaoVien.donViId, donViId))
     .orderBy(giaoVien.hoTen);
+}
+
+/** Dùng cho đơn vị hệ thống — xem gộp toàn bộ đơn vị đang hoạt động, kèm đơn vị sở hữu. */
+export async function listGiaoVienAllDonVi() {
+  const db = getDb();
+
+  return db
+    .select({
+      giaoVien,
+      donVi: {
+        id: donVi.id,
+        maDonVi: donVi.maDonVi,
+        tenDonVi: donVi.tenDonVi,
+      },
+    })
+    .from(giaoVien)
+    .innerJoin(donVi, eq(giaoVien.donViId, donVi.id))
+    .where(eq(donVi.trangThai, "hoat_dong"))
+    .orderBy(donVi.tenDonVi, giaoVien.hoTen);
 }
 
 export async function findGiaoVienById(

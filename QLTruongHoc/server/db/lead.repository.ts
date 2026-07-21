@@ -1,6 +1,6 @@
 import { and, count, desc, eq, like } from "drizzle-orm";
 
-import { lead, leadHoatDong } from "../../drizzle/schema.js";
+import { donVi, lead, leadHoatDong } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
 const now = () =>
@@ -14,6 +14,25 @@ export async function listLeadByDonVi(donViId: number) {
     .from(lead)
     .where(eq(lead.donViId, donViId))
     .orderBy(desc(lead.createdAt));
+}
+
+/** Dùng cho đơn vị hệ thống — xem gộp toàn bộ đơn vị đang hoạt động, kèm đơn vị sở hữu. */
+export async function listLeadAllDonVi() {
+  const db = getDb();
+
+  return db
+    .select({
+      lead,
+      donVi: {
+        id: donVi.id,
+        maDonVi: donVi.maDonVi,
+        tenDonVi: donVi.tenDonVi,
+      },
+    })
+    .from(lead)
+    .innerJoin(donVi, eq(lead.donViId, donVi.id))
+    .where(eq(donVi.trangThai, "hoat_dong"))
+    .orderBy(donVi.tenDonVi, desc(lead.createdAt));
 }
 
 export async function findLeadById(

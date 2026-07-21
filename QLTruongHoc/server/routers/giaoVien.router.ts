@@ -27,6 +27,7 @@ giaoVienRouter.get(
   async (req, res) => {
     const rows = await listGiaoVien(
       req.auth!.currentOrganization!.id,
+      req.auth!.currentOrganization!.loaiDonVi,
     );
 
     res.json({ ok: true, data: rows });

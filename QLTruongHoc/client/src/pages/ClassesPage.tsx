@@ -74,13 +74,17 @@ export function ClassesPage() {
   );
   const [savingClass, setSavingClass] = useState(false);
 
+  const isHeThong =
+    auth?.currentOrganization?.loaiDonVi === "he_thong";
+
   const canManage = useMemo(() => {
     const permissions = auth?.currentOrganization?.quyen ?? [];
     return (
-      permissions.includes("he_thong.quan_tri") ||
-      permissions.includes("lop_hoc.quan_ly")
+      !isHeThong &&
+      (permissions.includes("he_thong.quan_tri") ||
+        permissions.includes("lop_hoc.quan_ly"))
     );
-  }, [auth]);
+  }, [auth, isHeThong]);
 
   const programsById = useMemo(() => {
     const map = new Map<number, ChuongTrinhItem>();
@@ -179,7 +183,11 @@ export function ClassesPage() {
     <div className="page-stack">
       <PageHeader
         title="Lớp học"
-        subtitle="Quản lý chương trình đào tạo và lớp học trong đơn vị đang làm việc"
+        subtitle={
+          isHeThong
+            ? "Xem gộp chương trình và lớp học của tất cả đơn vị (chỉ xem — đơn vị hệ thống không mở lớp)"
+            : "Quản lý chương trình đào tạo và lớp học trong đơn vị đang làm việc"
+        }
       />
 
       {error ? <div className="form-error">{error}</div> : null}
@@ -286,6 +294,7 @@ export function ClassesPage() {
                   <th>Cấp độ</th>
                   <th>Tổng buổi / giờ</th>
                   <th>Trạng thái</th>
+                  {isHeThong ? <th>Đơn vị</th> : null}
                 </tr>
               </thead>
 
@@ -310,12 +319,15 @@ export function ClassesPage() {
                           : "Ngừng hoạt động"}
                       </span>
                     </td>
+                    {isHeThong ? (
+                      <td>{program.donVi?.tenDonVi ?? "—"}</td>
+                    ) : null}
                   </tr>
                 ))}
 
                 {programs.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="empty-cell">
+                    <td colSpan={isHeThong ? 5 : 4} className="empty-cell">
                       Chưa có chương trình nào.
                     </td>
                   </tr>
@@ -451,6 +463,7 @@ export function ClassesPage() {
                 <th>Chương trình</th>
                 <th>Sĩ số tối đa</th>
                 <th>Trạng thái</th>
+                {isHeThong ? <th>Đơn vị</th> : null}
               </tr>
             </thead>
 
@@ -458,12 +471,16 @@ export function ClassesPage() {
               {filteredClasses.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    <Link
-                      to={`/classes/${item.id}`}
-                      className="text-button"
-                    >
+                    {isHeThong ? (
                       <strong>{item.tenLop}</strong>
-                    </Link>
+                    ) : (
+                      <Link
+                        to={`/classes/${item.id}`}
+                        className="text-button"
+                      >
+                        <strong>{item.tenLop}</strong>
+                      </Link>
+                    )}
                     <small>{item.maLop}</small>
                   </td>
 
@@ -483,12 +500,16 @@ export function ClassesPage() {
                       {TRANG_THAI_LOP_LABEL[item.trangThai]}
                     </span>
                   </td>
+
+                  {isHeThong ? (
+                    <td>{item.donVi?.tenDonVi ?? "—"}</td>
+                  ) : null}
                 </tr>
               ))}
 
               {!loading && filteredClasses.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="empty-cell">
+                  <td colSpan={isHeThong ? 5 : 4} className="empty-cell">
                     Chưa có lớp học nào.
                   </td>
                 </tr>

@@ -35,6 +35,7 @@ export type LeadItem = {
   trangThai: TrangThaiLead;
   lyDoKhongTiepTuc: string | null;
   hocSinhId: number | null;
+  donVi?: { id: number; maDonVi: string; tenDonVi: string };
 };
 
 export type LeadHoatDongItem = {

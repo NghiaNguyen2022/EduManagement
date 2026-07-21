@@ -43,8 +43,19 @@ function toApiInput(input: ChuongTrinhFormInput) {
   };
 }
 
-export function listChuongTrinhApi() {
-  return request<ChuongTrinhItem[]>("/api/chuong-trinh");
+export async function listChuongTrinhApi() {
+  const rows = await request<
+    (
+      | ChuongTrinhItem
+      | { chuongTrinh: ChuongTrinhItem; donVi: ChuongTrinhItem["donVi"] }
+    )[]
+  >("/api/chuong-trinh");
+
+  return rows.map((row) =>
+    "chuongTrinh" in row
+      ? { ...row.chuongTrinh, donVi: row.donVi }
+      : row,
+  );
 }
 
 export function createChuongTrinhApi(input: ChuongTrinhFormInput) {

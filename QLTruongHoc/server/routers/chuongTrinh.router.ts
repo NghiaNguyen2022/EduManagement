@@ -27,6 +27,7 @@ chuongTrinhRouter.get(
   async (req, res) => {
     const rows = await listChuongTrinh(
       req.auth!.currentOrganization!.id,
+      req.auth!.currentOrganization!.loaiDonVi,
     );
 
     res.json({ ok: true, data: rows });

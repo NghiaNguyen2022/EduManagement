@@ -8,6 +8,7 @@ export type ChuongTrinhItem = {
   tongSoGio: string | null;
   moTa: string | null;
   trangThai: "hoat_dong" | "ngung_hoat_dong";
+  donVi?: { id: number; maDonVi: string; tenDonVi: string };
 };
 
 export type ChuongTrinhFormInput = {

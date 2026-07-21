@@ -35,6 +35,7 @@ hocSinhRouter.get(
   async (req, res) => {
     const rows = await listHocSinh(
       req.auth!.currentOrganization!.id,
+      req.auth!.currentOrganization!.loaiDonVi,
     );
 
     res.json({ ok: true, data: rows });
@@ -150,6 +151,10 @@ hocSinhRouter.patch(
         donViId: req.auth!.currentOrganization!.id,
         id: Number(req.params.id),
         trangThai: String(req.body?.trangThai ?? ""),
+        lyDo: req.body?.lyDo ? String(req.body.lyDo) : null,
+        ngayHieuLuc: req.body?.ngayHieuLuc
+          ? String(req.body.ngayHieuLuc)
+          : null,
         actorUserId: req.auth!.user.id,
         ipAddress: req.ip,
       });

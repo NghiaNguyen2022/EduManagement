@@ -44,6 +44,7 @@ lopHocRouter.get(
   async (req, res) => {
     const rows = await listLopHoc(
       req.auth!.currentOrganization!.id,
+      req.auth!.currentOrganization!.loaiDonVi,
     );
 
     res.json({ ok: true, data: rows });

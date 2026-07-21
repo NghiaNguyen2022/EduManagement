@@ -21,6 +21,17 @@
 > mục 11 và `PROJECT_SUMMARY.md` mục "Phạm vi nghiệp vụ tại đơn vị hệ thống + dữ liệu mẫu
 > lịch học".
 >
+> Cập nhật 2026-07-21 (khuya, tiếp): ẩn form tạo/sửa + xem gộp dữ liệu theo đơn vị (kèm cột
+> "Đơn vị") ở 4 trang Học sinh/Lớp học/Giáo viên/Tuyển sinh khi đứng ở đơn vị hệ thống. Phát
+> hiện 2 bản ghi dữ liệu thật của người dùng (học sinh "Nguyen Khang", lead "Nguyen Nghia")
+> đang nằm nhầm ở đơn vị hệ thống — chưa xử lý, để người dùng tự quyết định. Xem
+> `docs/analysis/A01_cay_don_vi.md` mục 11.1.
+>
+> Cập nhật 2026-07-21 (rạng sáng): đã chuyển học sinh "Nguyen Khang" + phụ huynh + lead
+> "Nguyen Nghia" từ đơn vị hệ thống sang Trường Mầm non Hoa Nắng theo yêu cầu người dùng
+> (sinh lại mã tránh trùng). Hoàn tất D05/D06 (lịch sử trạng thái học tập, đồng bộ trạng
+> thái lớp khi đổi trạng thái tổng thể học sinh). Xem `PROJECT_SUMMARY.md`.
+>
 > Cập nhật 2026-07-21 (tối): phát hiện và sửa lỗi ở A04/A05 — `getOrganizationsForUser`
 > trước đây chỉ trả về đơn vị có dòng gán tường minh, kể cả với `he_thong.quan_tri`, nên
 > quản trị hệ thống không thấy/chuyển được sang các đơn vị mình chưa từng được gán, và
@@ -61,8 +72,8 @@
 - [ ] D02 Hồ sơ sức khỏe mầm non. (Để Sprint 7.)
 - [x] D03 Quan hệ phụ huynh/người giám hộ. (2026-07-21: `PhuHuynh` + `HocSinhPhuHuynh`, tái sử dụng phụ huynh theo số điện thoại trong đơn vị, một liên hệ chính tại một thời điểm.)
 - [x] D04 Người liên hệ chính và người đón trẻ. (`laLienHeChinh`, `duocDonTre` trên `HocSinhPhuHuynh`; chưa có UI ghi nhận người đón thực tế theo buổi — để Sprint 3/7.)
-- [ ] D05 Lịch sử trạng thái học tập.
-- [ ] D06 Chuyển lớp/ngừng học/bảo lưu.
+- [x] D05 Lịch sử trạng thái học tập. (2026-07-21: `HocSinhTrangThaiLichSu` — ghi 1 dòng mỗi lần đổi `HocSinh.trangThai`, không ghi đè. Xem `docs/analysis/D05_D06_lich_su_trang_thai_hoc_tap.md`.)
+- [x] D06 Chuyển lớp/ngừng học/bảo lưu. (Chuyển lớp đã có từ E03. Bổ sung 2026-07-21: đổi trạng thái tổng thể học sinh sang `ngung_hoc`/`hoan_thanh`/`bao_luu` tự động đồng bộ tất cả `HocSinhLopHoc` đang hoạt động — trước đây 2 tầng trạng thái có thể lệch nhau.)
 
 ## E. Lớp học và lịch học
 - [x] E01 Tạo chương trình/khóa học. (2026-07-21: API `/api/chuong-trinh` + section trong `/classes`. Mã tự đặt (không tự sinh). Xem `docs/analysis/E01_E04_chuong_trinh_lop_hoc.md`.)

@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 
-import { chuongTrinhDaoTao } from "../../drizzle/schema.js";
+import { chuongTrinhDaoTao, donVi } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
 const now = () =>
@@ -14,6 +14,25 @@ export async function listChuongTrinhByDonVi(donViId: number) {
     .from(chuongTrinhDaoTao)
     .where(eq(chuongTrinhDaoTao.donViId, donViId))
     .orderBy(chuongTrinhDaoTao.tenChuongTrinh);
+}
+
+/** Dùng cho đơn vị hệ thống — xem gộp toàn bộ đơn vị đang hoạt động, kèm đơn vị sở hữu. */
+export async function listChuongTrinhAllDonVi() {
+  const db = getDb();
+
+  return db
+    .select({
+      chuongTrinh: chuongTrinhDaoTao,
+      donVi: {
+        id: donVi.id,
+        maDonVi: donVi.maDonVi,
+        tenDonVi: donVi.tenDonVi,
+      },
+    })
+    .from(chuongTrinhDaoTao)
+    .innerJoin(donVi, eq(chuongTrinhDaoTao.donViId, donVi.id))
+    .where(eq(donVi.trangThai, "hoat_dong"))
+    .orderBy(donVi.tenDonVi, chuongTrinhDaoTao.tenChuongTrinh);
 }
 
 export async function findChuongTrinhById(

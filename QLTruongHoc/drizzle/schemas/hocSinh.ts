@@ -42,6 +42,35 @@ export const hocSinh = mysqlTable(
   })
 );
 
+export const hocSinhTrangThaiLichSu = mysqlTable(
+  "HocSinhTrangThaiLichSu",
+  {
+    id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
+    hocSinhId: bigint("hocSinhId", { mode: "number", unsigned: true }).notNull(),
+    trangThaiCu: mysqlEnum("trangThaiCu", [
+      "tiep_nhan",
+      "dang_hoc",
+      "bao_luu",
+      "ngung_hoc",
+      "hoan_thanh"
+    ]),
+    trangThaiMoi: mysqlEnum("trangThaiMoi", [
+      "tiep_nhan",
+      "dang_hoc",
+      "bao_luu",
+      "ngung_hoc",
+      "hoan_thanh"
+    ]).notNull(),
+    lyDo: varchar("lyDo", { length: 500 }),
+    ngayHieuLuc: date("ngayHieuLuc", { mode: "string" }).notNull(),
+    actorUserId: bigint("actorUserId", { mode: "number", unsigned: true }),
+    createdAt: datetime("createdAt", { mode: "string" }).notNull()
+  },
+  (table) => ({
+    hocSinhIdx: index("IX_HocSinhTrangThaiLichSu_hocSinhId").on(table.hocSinhId)
+  })
+);
+
 export const phuHuynh = mysqlTable(
   "PhuHuynh",
   {

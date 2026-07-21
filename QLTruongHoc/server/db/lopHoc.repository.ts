@@ -1,6 +1,7 @@
-import { and, count, eq, isNull, or } from "drizzle-orm";
+import { and, count, desc, eq, isNull, or } from "drizzle-orm";
 
 import {
+  donVi,
   giaoVien,
   hocSinh,
   hocSinhLopHoc,
@@ -11,6 +12,25 @@ import { getDb } from "./connection.js";
 
 const now = () =>
   new Date().toISOString().slice(0, 19).replace("T", " ");
+
+/** Dùng cho đơn vị hệ thống — xem gộp toàn bộ đơn vị đang hoạt động, kèm đơn vị sở hữu. */
+export async function listLopHocAllDonVi() {
+  const db = getDb();
+
+  return db
+    .select({
+      lopHoc,
+      donVi: {
+        id: donVi.id,
+        maDonVi: donVi.maDonVi,
+        tenDonVi: donVi.tenDonVi,
+      },
+    })
+    .from(lopHoc)
+    .innerJoin(donVi, eq(lopHoc.donViId, donVi.id))
+    .where(eq(donVi.trangThai, "hoat_dong"))
+    .orderBy(donVi.tenDonVi, lopHoc.tenLop);
+}
 
 export async function listLopHocByDonVi(donViId: number) {
   const db = getDb();
@@ -289,6 +309,37 @@ export async function countHocSinhDangHocTrongLop(
     );
 
   return rows[0]?.total ?? 0;
+}
+
+export async function listEnrollmentsByHocSinh(hocSinhId: number) {
+  const db = getDb();
+
+  return db
+    .select({
+      enrollment: hocSinhLopHoc,
+      lopHoc,
+    })
+    .from(hocSinhLopHoc)
+    .innerJoin(lopHoc, eq(hocSinhLopHoc.lopHocId, lopHoc.id))
+    .where(eq(hocSinhLopHoc.hocSinhId, hocSinhId))
+    .orderBy(desc(hocSinhLopHoc.ngayVaoLop));
+}
+
+export async function listActiveEnrollmentsByHocSinh(hocSinhId: number) {
+  const db = getDb();
+
+  return db
+    .select()
+    .from(hocSinhLopHoc)
+    .where(
+      and(
+        eq(hocSinhLopHoc.hocSinhId, hocSinhId),
+        or(
+          eq(hocSinhLopHoc.trangThai, "dang_hoc"),
+          eq(hocSinhLopHoc.trangThai, "bao_luu"),
+        ),
+      ),
+    );
 }
 
 export async function findEnrollmentDangHoc(

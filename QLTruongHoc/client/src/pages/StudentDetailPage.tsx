@@ -27,6 +27,18 @@ import type {
   TrangThaiHocSinh,
 } from "../features/hocSinh/hocSinhTypes";
 
+const TRANG_THAI_ENROLLMENT_LABEL: Record<string, string> = {
+  dang_hoc: "Đang học",
+  bao_luu: "Bảo lưu",
+  chuyen_lop: "Đã chuyển lớp",
+  ngung_hoc: "Ngừng học",
+  hoan_thanh: "Hoàn thành",
+};
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 const TRANG_THAI_LABEL: Record<string, string> = {
   tiep_nhan: "Tiếp nhận",
   dang_hoc: "Đang học",
@@ -75,6 +87,11 @@ export function StudentDetailPage() {
   );
   const [savingInfo, setSavingInfo] = useState(false);
   const [savingStatus, setSavingStatus] = useState(false);
+  const [statusForm, setStatusForm] = useState({
+    trangThai: "" as TrangThaiHocSinh | "",
+    lyDo: "",
+    ngayHieuLuc: todayIso(),
+  });
   const [guardianForm, setGuardianForm] = useState<GuardianFormInput>(
     emptyGuardianForm,
   );
@@ -109,6 +126,11 @@ export function StudentDetailPage() {
     try {
       const data = await getHocSinhDetailApi(studentId);
       setDetail(data);
+      setStatusForm({
+        trangThai: data.hocSinh.trangThai,
+        lyDo: "",
+        ngayHieuLuc: todayIso(),
+      });
       setInfoForm({
         hoTen: data.hocSinh.hoTen,
         tenThuongGoi: data.hocSinh.tenThuongGoi ?? "",
@@ -159,15 +181,25 @@ export function StudentDetailPage() {
     }
   }
 
-  async function handleChangeStatus(trangThai: TrangThaiHocSinh) {
+  async function handleChangeStatus(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    if (!statusForm.trangThai) return;
+
     setError("");
     setNotice("");
     setSavingStatus(true);
 
     try {
-      await setHocSinhTrangThaiApi(studentId, trangThai);
+      await setHocSinhTrangThaiApi(studentId, {
+        trangThai: statusForm.trangThai,
+        lyDo: statusForm.lyDo || undefined,
+        ngayHieuLuc: statusForm.ngayHieuLuc || undefined,
+      });
       setNotice(
-        `Đã đổi trạng thái sang ${TRANG_THAI_LABEL[trangThai]}.`,
+        `Đã đổi trạng thái sang ${TRANG_THAI_LABEL[statusForm.trangThai]}.`,
       );
       await loadDetail();
     } catch (statusError) {
@@ -324,19 +356,140 @@ export function StudentDetailPage() {
         subtitle={`Hiện tại: ${TRANG_THAI_LABEL[detail.hocSinh.trangThai]}`}
       >
         {canManage ? (
-          <SelectField
-            value={detail.hocSinh.trangThai}
-            options={Object.entries(TRANG_THAI_LABEL).map(
-              ([value, label]) => ({ value, label }),
-            )}
-            onChange={(value) =>
-              void handleChangeStatus(
-                value as TrangThaiHocSinh,
-              )
-            }
-            disabled={savingStatus}
-          />
+          <form
+            className="user-create-form"
+            onSubmit={handleChangeStatus}
+          >
+            <SelectField
+              label="Trạng thái mới"
+              value={statusForm.trangThai}
+              options={Object.entries(TRANG_THAI_LABEL).map(
+                ([value, label]) => ({ value, label }),
+              )}
+              onChange={(value) =>
+                setStatusForm({
+                  ...statusForm,
+                  trangThai: value as TrangThaiHocSinh,
+                })
+              }
+            />
+
+            <DateField
+              label="Ngày hiệu lực"
+              value={statusForm.ngayHieuLuc}
+              onChange={(value) =>
+                setStatusForm({
+                  ...statusForm,
+                  ngayHieuLuc: value,
+                })
+              }
+            />
+
+            <TextField
+              label="Lý do (tuỳ chọn)"
+              value={statusForm.lyDo}
+              onChange={(value) =>
+                setStatusForm({ ...statusForm, lyDo: value })
+              }
+            />
+
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={
+                savingStatus ||
+                !statusForm.trangThai ||
+                statusForm.trangThai === detail.hocSinh.trangThai
+              }
+            >
+              {savingStatus ? "Đang lưu..." : "Đổi trạng thái"}
+            </button>
+          </form>
         ) : null}
+      </SectionCard>
+
+      <SectionCard
+        title="Lớp học đã tham gia"
+        subtitle={`${detail.lopHoc.length} lượt xếp lớp`}
+      >
+        <div className="user-table-wrap">
+          <table className="user-table">
+            <thead>
+              <tr>
+                <th>Lớp học</th>
+                <th>Ngày vào lớp</th>
+                <th>Ngày rời lớp</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {detail.lopHoc.map((item) => (
+                <tr key={item.enrollmentId}>
+                  <td>
+                    <strong>{item.lopHoc.tenLop}</strong>
+                    <small>{item.lopHoc.maLop}</small>
+                  </td>
+                  <td>{item.ngayVaoLop}</td>
+                  <td>{item.ngayRoiLop ?? "—"}</td>
+                  <td>
+                    {TRANG_THAI_ENROLLMENT_LABEL[item.trangThai]}
+                  </td>
+                </tr>
+              ))}
+
+              {detail.lopHoc.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="empty-cell">
+                    Chưa từng xếp vào lớp nào.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Lịch sử trạng thái"
+        subtitle={`${detail.lichSuTrangThai.length} lần thay đổi`}
+      >
+        <div className="user-table-wrap">
+          <table className="user-table">
+            <thead>
+              <tr>
+                <th>Thời điểm</th>
+                <th>Thay đổi</th>
+                <th>Ngày hiệu lực</th>
+                <th>Lý do</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {detail.lichSuTrangThai.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.createdAt}</td>
+                  <td>
+                    {item.trangThaiCu
+                      ? TRANG_THAI_LABEL[item.trangThaiCu]
+                      : "Tạo mới"}{" "}
+                    → {TRANG_THAI_LABEL[item.trangThaiMoi]}
+                  </td>
+                  <td>{item.ngayHieuLuc}</td>
+                  <td>{item.lyDo || "—"}</td>
+                </tr>
+              ))}
+
+              {detail.lichSuTrangThai.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="empty-cell">
+                    Chưa có lịch sử.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
       </SectionCard>
 
       <SectionCard

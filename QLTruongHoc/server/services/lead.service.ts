@@ -8,6 +8,7 @@ import {
   createLead,
   createLeadHoatDong,
   findLeadById,
+  listLeadAllDonVi,
   listLeadByDonVi,
   listLeadHoatDong,
   updateLeadInfo,
@@ -85,7 +86,11 @@ async function sinhMaLead(donViId: number) {
   return `${prefix}${String(total + 1).padStart(4, "0")}`;
 }
 
-export async function listLead(donViId: number) {
+export async function listLead(donViId: number, loaiDonVi?: string) {
+  if (loaiDonVi === "he_thong") {
+    return listLeadAllDonVi();
+  }
+
   return listLeadByDonVi(donViId);
 }
 

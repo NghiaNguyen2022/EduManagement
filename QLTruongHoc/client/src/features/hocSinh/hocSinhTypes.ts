@@ -26,6 +26,7 @@ export type HocSinhItem = {
   diaChi: string | null;
   ngayNhapHoc: string | null;
   trangThai: TrangThaiHocSinh;
+  donVi?: { id: number; maDonVi: string; tenDonVi: string };
 };
 
 export type PhuHuynhItem = {
@@ -49,9 +50,39 @@ export type GuardianLinkItem = {
   phuHuynh: PhuHuynhItem;
 };
 
+export type TrangThaiLichSuItem = {
+  id: number;
+  hocSinhId: number;
+  trangThaiCu: TrangThaiHocSinh | null;
+  trangThaiMoi: TrangThaiHocSinh;
+  lyDo: string | null;
+  ngayHieuLuc: string;
+  actorUserId: number | null;
+  createdAt: string;
+};
+
+export type EnrollmentSummaryItem = {
+  enrollmentId: number;
+  ngayVaoLop: string;
+  ngayRoiLop: string | null;
+  trangThai:
+    | "dang_hoc"
+    | "bao_luu"
+    | "chuyen_lop"
+    | "ngung_hoc"
+    | "hoan_thanh";
+  lopHoc: {
+    id: number;
+    maLop: string;
+    tenLop: string;
+  };
+};
+
 export type HocSinhDetail = {
   hocSinh: HocSinhItem;
   phuHuynh: GuardianLinkItem[];
+  lichSuTrangThai: TrangThaiLichSuItem[];
+  lopHoc: EnrollmentSummaryItem[];
 };
 
 export type HocSinhFormInput = {

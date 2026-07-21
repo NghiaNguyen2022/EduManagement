@@ -5,6 +5,7 @@ import {
   countGiaoVienTheoMaPrefix,
   createGiaoVien,
   findGiaoVienById,
+  listGiaoVienAllDonVi,
   listGiaoVienByDonVi,
   setGiaoVienTrangThai,
   updateGiaoVien,
@@ -16,7 +17,11 @@ async function sinhMaGiaoVien(donViId: number) {
   return `GV${String(total + 1).padStart(6, "0")}`;
 }
 
-export async function listGiaoVien(donViId: number) {
+export async function listGiaoVien(donViId: number, loaiDonVi?: string) {
+  if (loaiDonVi === "he_thong") {
+    return listGiaoVienAllDonVi();
+  }
+
   return listGiaoVienByDonVi(donViId);
 }
 

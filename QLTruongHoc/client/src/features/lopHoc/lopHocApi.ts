@@ -34,8 +34,14 @@ async function request<T>(
   return payload.data as T;
 }
 
-export function listLopHocApi() {
-  return request<LopHocItem[]>("/api/lop-hoc");
+export async function listLopHocApi() {
+  const rows = await request<
+    (LopHocItem | { lopHoc: LopHocItem; donVi: LopHocItem["donVi"] })[]
+  >("/api/lop-hoc");
+
+  return rows.map((row) =>
+    "lopHoc" in row ? { ...row.lopHoc, donVi: row.donVi } : row,
+  );
 }
 
 export function createLopHocApi(input: LopHocFormInput) {

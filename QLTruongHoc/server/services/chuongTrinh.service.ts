@@ -5,13 +5,18 @@ import {
   createChuongTrinh,
   findChuongTrinhByMa,
   findChuongTrinhById,
+  listChuongTrinhAllDonVi,
   listChuongTrinhByDonVi,
   setChuongTrinhTrangThai,
   updateChuongTrinh,
 } from "../db/chuongTrinh.repository.js";
 import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
 
-export async function listChuongTrinh(donViId: number) {
+export async function listChuongTrinh(donViId: number, loaiDonVi?: string) {
+  if (loaiDonVi === "he_thong") {
+    return listChuongTrinhAllDonVi();
+  }
+
   return listChuongTrinhByDonVi(donViId);
 }
 

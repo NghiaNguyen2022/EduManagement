@@ -19,6 +19,7 @@ import {
   findLopHocById,
   findPhanCongGiaoVienById,
   listHocSinhTrongLop,
+  listLopHocAllDonVi,
   listLopHocByDonVi,
   listPhanCongGiaoVien,
   setLopHocTrangThai,
@@ -42,7 +43,11 @@ const TRANG_THAI_LOP_HOP_LE: TrangThaiLopHoc[] = [
 
 const VAI_TRO_GIAO_VIEN_HOP_LE = ["giao_vien_chinh", "ho_tro", "chu_nhiem"];
 
-export async function listLopHoc(donViId: number) {
+export async function listLopHoc(donViId: number, loaiDonVi?: string) {
+  if (loaiDonVi === "he_thong") {
+    return listLopHocAllDonVi();
+  }
+
   return listLopHocByDonVi(donViId);
 }
 

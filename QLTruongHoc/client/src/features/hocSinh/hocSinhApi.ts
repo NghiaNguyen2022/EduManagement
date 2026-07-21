@@ -39,8 +39,14 @@ async function request<T>(
   return payload.data as T;
 }
 
-export function listHocSinhApi() {
-  return request<HocSinhItem[]>("/api/hoc-sinh");
+export async function listHocSinhApi() {
+  const rows = await request<
+    (HocSinhItem | { hocSinh: HocSinhItem; donVi: HocSinhItem["donVi"] })[]
+  >("/api/hoc-sinh");
+
+  return rows.map((row) =>
+    "hocSinh" in row ? { ...row.hocSinh, donVi: row.donVi } : row,
+  );
 }
 
 export function createHocSinhApi(
@@ -73,13 +79,17 @@ export function updateHocSinhApi(
 
 export function setHocSinhTrangThaiApi(
   id: number,
-  trangThai: TrangThaiHocSinh,
+  input: {
+    trangThai: TrangThaiHocSinh;
+    lyDo?: string;
+    ngayHieuLuc?: string;
+  },
 ) {
   return request<HocSinhItem>(
     `/api/hoc-sinh/${id}/trang-thai`,
     {
       method: "PATCH",
-      body: JSON.stringify({ trangThai }),
+      body: JSON.stringify(input),
     },
   );
 }

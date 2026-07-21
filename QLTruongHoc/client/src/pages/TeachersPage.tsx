@@ -35,13 +35,17 @@ export function TeachersPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<GiaoVienFormInput>(emptyForm);
 
+  const isHeThong =
+    auth?.currentOrganization?.loaiDonVi === "he_thong";
+
   const canManage = useMemo(() => {
     const permissions = auth?.currentOrganization?.quyen ?? [];
     return (
-      permissions.includes("he_thong.quan_tri") ||
-      permissions.includes("lop_hoc.quan_ly")
+      !isHeThong &&
+      (permissions.includes("he_thong.quan_tri") ||
+        permissions.includes("lop_hoc.quan_ly"))
     );
-  }, [auth]);
+  }, [auth, isHeThong]);
 
   const filteredTeachers = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
@@ -156,7 +160,11 @@ export function TeachersPage() {
     <div className="page-stack">
       <PageHeader
         title="Giáo viên"
-        subtitle="Quản lý hồ sơ giáo viên trong đơn vị đang làm việc"
+        subtitle={
+          isHeThong
+            ? "Xem gộp giáo viên của tất cả đơn vị (chỉ xem — đơn vị hệ thống không quản lý hồ sơ giáo viên)"
+            : "Quản lý hồ sơ giáo viên trong đơn vị đang làm việc"
+        }
       />
 
       {error ? <div className="form-error">{error}</div> : null}
@@ -268,6 +276,7 @@ export function TeachersPage() {
                 <th>Liên hệ</th>
                 <th>Chuyên môn</th>
                 <th>Trạng thái</th>
+                {isHeThong ? <th>Đơn vị</th> : null}
                 {canManage ? <th>Thao tác</th> : null}
               </tr>
             </thead>
@@ -296,6 +305,10 @@ export function TeachersPage() {
                         : "Ngừng hoạt động"}
                     </span>
                   </td>
+
+                  {isHeThong ? (
+                    <td>{teacher.donVi?.tenDonVi ?? "—"}</td>
+                  ) : null}
 
                   {canManage ? (
                     <td>
@@ -328,7 +341,7 @@ export function TeachersPage() {
               {!loading && filteredTeachers.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={canManage ? 5 : 4}
+                    colSpan={4 + (canManage ? 1 : 0) + (isHeThong ? 1 : 0)}
                     className="empty-cell"
                   >
                     Chưa có giáo viên nào.

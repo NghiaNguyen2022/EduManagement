@@ -31,8 +31,14 @@ async function request<T>(
   return payload.data as T;
 }
 
-export function listGiaoVienApi() {
-  return request<GiaoVienItem[]>("/api/giao-vien");
+export async function listGiaoVienApi() {
+  const rows = await request<
+    (GiaoVienItem | { giaoVien: GiaoVienItem; donVi: GiaoVienItem["donVi"] })[]
+  >("/api/giao-vien");
+
+  return rows.map((row) =>
+    "giaoVien" in row ? { ...row.giaoVien, donVi: row.donVi } : row,
+  );
 }
 
 export function createGiaoVienApi(input: GiaoVienFormInput) {
