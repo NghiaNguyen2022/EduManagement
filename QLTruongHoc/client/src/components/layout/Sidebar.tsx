@@ -147,9 +147,11 @@ export function Sidebar({
                       key={route.id}
                       to={route.path}
                       title={
-                        collapsed
-                          ? route.label
-                          : undefined
+                        route.comingSoon
+                          ? `${route.label} (đang xây dựng)`
+                          : collapsed
+                            ? route.label
+                            : undefined
                       }
                       className={({
                         isActive,
@@ -158,6 +160,9 @@ export function Sidebar({
                           "sidebar-item",
                           isActive
                             ? "sidebar-item--active"
+                            : "",
+                          route.comingSoon
+                            ? "sidebar-item--coming-soon"
                             : "",
                         ]
                           .filter(Boolean)

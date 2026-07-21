@@ -20,6 +20,12 @@ export type AppRouteDefinition = {
    */
   loaiHinhDaoTao?: LoaiHinhDaoTao[];
   element?: ReactNode;
+  /**
+   * Chức năng chưa hoàn thiện (còn là PlaceholderPage). Hiện trong menu với
+   * kiểu chữ gạch dưới để phân biệt, không ẩn đi vì người dùng vẫn cần biết
+   * mục này tồn tại trong lộ trình.
+   */
+  comingSoon?: boolean;
 };
 
 export const appRoutes: AppRouteDefinition[] = [
@@ -98,6 +104,7 @@ export const appRoutes: AppRouteDefinition[] = [
       "tai_chinh.xem",
       "tai_chinh.quan_ly",
     ],
+    comingSoon: true,
   },
   {
     id: "organizations",
@@ -149,6 +156,7 @@ export const appRoutes: AppRouteDefinition[] = [
       "he_thong.quan_tri",
       "don_vi.quan_ly",
     ],
+    comingSoon: true,
   },
 ];
 
