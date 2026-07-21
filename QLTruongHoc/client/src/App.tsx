@@ -14,6 +14,12 @@ import {
   ChangePasswordPage,
 } from "./pages/ChangePasswordPage";
 import {
+  ClassDetailPage,
+} from "./pages/ClassDetailPage";
+import {
+  ClassesPage,
+} from "./pages/ClassesPage";
+import {
   DashboardPage,
 } from "./pages/DashboardPage";
 import {
@@ -43,6 +49,9 @@ import {
 import {
   StudentsPage,
 } from "./pages/StudentsPage";
+import {
+  TeachersPage,
+} from "./pages/TeachersPage";
 import {
   SystemAuditLogPage,
 } from "./pages/SystemAuditLogPage";
@@ -156,11 +165,23 @@ function ProtectedApp() {
         />
 
         <Route
+          path="/teachers"
+          element={
+            <TeachersPage />
+          }
+        />
+
+        <Route
           path="/classes"
           element={
-            <PlaceholderPage
-              title="Lớp học"
-            />
+            <ClassesPage />
+          }
+        />
+
+        <Route
+          path="/classes/:id"
+          element={
+            <ClassDetailPage />
           }
         />
 

@@ -54,6 +54,17 @@ export const appRoutes: AppRouteDefinition[] = [
     ],
   },
   {
+    id: "teachers",
+    path: "/teachers",
+    label: "Giáo viên",
+    icon: "◆",
+    group: "Đào tạo",
+    permissions: [
+      "lop_hoc.xem",
+      "lop_hoc.quan_ly",
+    ],
+  },
+  {
     id: "classes",
     path: "/classes",
     label: "Lớp học",

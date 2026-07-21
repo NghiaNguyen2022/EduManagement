@@ -17,6 +17,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed:auth": "tsx server/scripts/seedAuthFoundation.ts",
+    "db:seed:sample": "tsx server/scripts/seedSampleData.ts",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit"
   },
   "dependencies": {

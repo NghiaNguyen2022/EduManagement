@@ -434,3 +434,81 @@ trang — nằm **dưới** overlay nên bị che hoàn toàn, modal vẫn mở 
   `UserManagementPage`, `LeadDetailPage`); xoá `error` cũ ngay khi mở dialog để không hiện
   nhầm lỗi của thao tác trước đó.
 - `pnpm typecheck`, `pnpm build` PASS.
+
+---
+
+## E01-E04 — Chương trình, giáo viên, lớp học, xếp lớp (2026-07-21)
+
+Mở đầu Sprint 2, đúng 4 bước. Phạm vi: chương trình đào tạo, hồ sơ giáo viên, lớp học, xếp
+học sinh vào lớp, phân công giáo viên. **Chưa** gồm lịch học/buổi học/kiểm tra xung đột/nghỉ
+và học bù (E05-E08 — bước riêng tiếp theo).
+
+- Phân tích chi tiết: `docs/analysis/E01_E04_chuong_trinh_lop_hoc.md`.
+- Cập nhật BPD: mục 18.7 — dùng vai trò `hoc_vu` đã seed sẵn (không tạo vai trò "Quản lý
+  chuyên môn" riêng); mã chương trình/lớp cho nhân viên tự đặt (khác mã học sinh/phụ
+  huynh/lead tự sinh); không làm cơ chế tạo tài khoản riêng cho giáo viên (dùng chung Quản
+  lý người dùng); chặn vượt sĩ số cứng (chưa làm phê duyệt vượt sĩ số); học sinh xếp được
+  nhiều lớp cùng lúc; chuyển lớp giữ lịch sử, không ghi đè.
+- Database (`database/012_add_chuong_trinh_lop_hoc.sql`): tạo `ChuongTrinhDaoTao`,
+  `GiaoVien`, `LopHoc`, `LopHocGiaoVien`, `HocSinhLopHoc`. Đồng bộ
+  `drizzle/schemas/lopHoc.ts`.
+- Backend: `chuongTrinh.repository/service/router` (`/api/chuong-trinh`),
+  `giaoVien.repository/service/router` (`/api/giao-vien`),
+  `lopHoc.repository/service/router` (`/api/lop-hoc`, gồm cả phân công giáo viên và
+  xếp/chuyển/kết thúc học sinh trong lớp). Quy tắc chính:
+  - Không cho tạo lớp/chương trình trùng mã trong đơn vị.
+  - Không cho vượt sĩ số tối đa của lớp.
+  - Không xếp lớp học sinh đang `ngung_hoc`/`hoan_thanh`, hoặc ngày vào lớp trước ngày
+    nhập học.
+  - Không cho hai giáo viên chính cùng hoạt động một lúc cho một lớp.
+  - Chuyển lớp = đóng enrollment cũ (`chuyen_lop`) + tạo enrollment mới, không ghi đè.
+- Frontend: `TeachersPage.tsx` (`/teachers`), `ClassesPage.tsx` (`/classes`, gồm section
+  Chương trình đào tạo), `ClassDetailPage.tsx` (`/classes/:id` — sửa lớp, đổi trạng thái,
+  phân công/kết thúc giáo viên, xếp/chuyển/kết thúc học sinh) thay `PlaceholderPage`.
+- Test tay qua API (dùng chung server thật đang chạy — không khởi động server riêng, theo
+  dõi chính xác từng ID tạo ra để chỉ xoá đúng ID đó khi dọn dẹp, đúng bài học từ sự cố
+  C07):
+  - Tạo chương trình, 2 giáo viên, 2 lớp (một lớp sĩ số tối đa = 1), 2 học sinh — PASS.
+  - Phân công giáo viên chính; phân công giáo viên chính thứ hai cho cùng lớp → bị chặn —
+    PASS.
+  - Xếp học sinh đủ sĩ số tối đa; xếp học sinh tiếp theo → bị chặn "đã đủ sĩ số" — PASS.
+  - Xếp học sinh đó vào lớp khác không giới hạn sĩ số → thành công — PASS.
+  - Chuyển lớp: enrollment cũ đóng đúng (`chuyen_lop`), enrollment mới tạo riêng, lịch sử
+    giữ nguyên — PASS.
+  - Kết thúc xếp lớp (`hoan_thanh`), kết thúc phân công giáo viên — PASS.
+  - Đổi học sinh sang `ngung_hoc` rồi thử xếp lớp → bị chặn — PASS.
+  - `ke_toan` (không có `lop_hoc.*`) gọi tạo lớp → 403 — PASS.
+  - `pnpm typecheck`, `pnpm build` — PASS.
+  - Dọn dẹp: xoá đúng ID vừa tạo; trong lúc kiểm tra phát hiện thêm rác test sót lại từ
+    vòng C07 trước sự cố (2 học sinh mồ côi "Lê Minh Khôi"/"Lê Minh Anh" + tài khoản phụ
+    huynh test liên quan, chưa kịp dọn vì dừng đột ngột khi phát hiện sự cố) — đã xác nhận
+    kỹ qua `NhatKyHeThong` (không có liên kết tới dữ liệu thật của người dùng) và xoá theo
+    đúng ID. Dữ liệu thật của người dùng ("Nguyen Khang", lead "Nguyen Nghia") xác nhận
+    còn nguyên vẹn sau khi dọn.
+- Checklist: `docs/00_MASTER_CHECKLIST.md` mục E01-E04, B03, B06 đã tick.
+
+---
+
+## Dữ liệu mẫu cơ bản (2026-07-21)
+
+Theo yêu cầu người dùng, tạo `server/scripts/seedSampleData.ts` (`pnpm db:seed:sample`) để
+seed dữ liệu mẫu cho toàn bộ chức năng đã làm tới Sprint 2. Gọi thẳng qua service layer
+(không insert thô) nên đi qua đủ validate + audit log như luồng thật; kết nối DB trực tiếp,
+không qua HTTP server nên không xung đột với server người dùng đang chạy song song. Có
+guard idempotent (kiểm tra chương trình `IELTS-CB` đã tồn tại thì bỏ qua toàn bộ, không tạo
+trùng nếu chạy lại).
+
+Dữ liệu tạo ra — **Trung tâm Ngoại ngữ Quận 8**: 2 chương trình (IELTS Cơ bản, Giao tiếp cơ
+bản), 2 giáo viên, 2 lớp (mỗi lớp có giáo viên chính), 3 học sinh (2 con chung một phụ
+huynh để minh hoạ tái sử dụng theo số điện thoại — D03), đã xếp lớp đầy đủ, 2 lead chưa
+chuyển đổi (một lead có lịch sử chăm sóc). **Trường Mầm non Hoa Nắng**: 1 chương trình, 1
+giáo viên (chủ nhiệm), 1 lớp, 2 học sinh + phụ huynh, đã xếp lớp — minh hoạ đa đơn vị/đa
+loại hình đào tạo hoạt động đúng song song.
+
+4 tài khoản demo theo vai trò tại TTNN-Q8 (`demo_tuyensinh`, `demo_hocvu`, `demo_ketoan`,
+`demo_giaovien`), mật khẩu tạm cố định `Edu@123Qaz`, bắt buộc đổi lần đầu — để người dùng
+đăng nhập thử đúng góc nhìn từng vai trò.
+
+Đã verify qua DB sau khi chạy: toàn bộ mã tự sinh không trùng với dữ liệu thật hiện có
+("Nguyen Khang", lead "Nguyen Nghia" — vẫn nguyên vẹn), phụ huynh "Phạm Văn Long" đúng liên
+kết 2 con. `pnpm typecheck`, `pnpm build` PASS.

@@ -23,10 +23,10 @@
 ## B. Người dùng và phân quyền
 - [ ] B01 Quản trị nền tảng. (Vai trò `quan_tri_he_thong` chỉ gán được qua seed, chưa có UI gán vai trò phạm vi hệ thống — có chủ đích để tránh leo thang quyền.)
 - [x] B02 Quản lý đơn vị. (Vai trò `quan_ly_don_vi` gán được qua Quản lý người dùng.)
-- [ ] B03 Tuyển sinh/tư vấn. (Vai trò đã seed, gán được, nhưng chưa có màn hình nghiệp vụ tuyển sinh — xem mục C.)
+- [x] B03 Tuyển sinh/tư vấn. (Có màn hình Lead/CRM đầy đủ từ 2026-07-21 — xem mục C.)
 - [ ] B04 Kế toán. (Vai trò đã seed; chưa có màn hình nghiệp vụ tài chính — xem mục H.)
-- [ ] B05 Giáo viên. (Vai trò đã seed; chưa có màn hình giảng dạy — xem mục G.)
-- [ ] B06 Nhân viên học vụ. (Vai trò đã seed; chưa có màn hình lớp/lịch — xem mục E.)
+- [ ] B05 Giáo viên. (Có hồ sơ + được phân công lớp từ 2026-07-21, nhưng chưa có màn hình giảng dạy thật (báo giảng/điểm danh) — xem mục F/G.)
+- [x] B06 Nhân viên học vụ. (Có màn hình chương trình/lớp/xếp lớp đầy đủ từ 2026-07-21 — xem mục E.)
 - [ ] B07 Phụ huynh/người giám hộ. (Vai trò đã seed; chưa có Portal phụ huynh thật — xem mục J.)
 - [x] B08 Chính sách khóa/mở tài khoản. (Khóa/mở tay qua Quản lý người dùng; khóa tạm tự động sau 5 lần đăng nhập sai liên tiếp, tự mở sau 15 phút.)
 
@@ -48,14 +48,14 @@
 - [ ] D06 Chuyển lớp/ngừng học/bảo lưu.
 
 ## E. Lớp học và lịch học
-- [ ] E01 Tạo chương trình/khóa học.
-- [ ] E02 Tạo lớp học.
-- [ ] E03 Xếp học sinh vào lớp.
-- [ ] E04 Phân công giáo viên.
-- [ ] E05 Tạo lịch học lặp lại.
-- [ ] E06 Kiểm tra trùng giáo viên/phòng/lớp.
-- [ ] E07 Lịch nghỉ và học bù.
-- [ ] E08 Thời khóa biểu giáo viên, học sinh, phụ huynh.
+- [x] E01 Tạo chương trình/khóa học. (2026-07-21: API `/api/chuong-trinh` + section trong `/classes`. Mã tự đặt (không tự sinh). Xem `docs/analysis/E01_E04_chuong_trinh_lop_hoc.md`.)
+- [x] E02 Tạo lớp học. (API `/api/lop-hoc` + trang `/classes`, `/classes/:id`. Bao gồm hồ sơ giáo viên `/api/giao-vien` + trang `/teachers`.)
+- [x] E03 Xếp học sinh vào lớp. (Chặn vượt sĩ số, chặn học sinh ngừng học/hoàn thành, chuyển lớp giữ lịch sử — không ghi đè.)
+- [x] E04 Phân công giáo viên. (Chỉ một giáo viên chính hoạt động một lúc cho một lớp; giáo viên hỗ trợ không giới hạn.)
+- [ ] E05 Tạo lịch học lặp lại. (Bước tiếp theo — `LichHoc`/`BuoiHoc`.)
+- [ ] E06 Kiểm tra trùng giáo viên/phòng/lớp. (Phụ thuộc E05.)
+- [ ] E07 Lịch nghỉ và học bù. (Phụ thuộc E05.)
+- [ ] E08 Thời khóa biểu giáo viên, học sinh, phụ huynh. (Phụ thuộc E05.)
 
 ## F. Điểm danh và xin phép
 - [ ] F01 Điểm danh theo buổi học.

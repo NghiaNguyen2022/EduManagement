@@ -45,6 +45,19 @@ npm run dev
 - Health API: http://localhost:3000/api/health
 - Frontend: http://localhost:5173
 
+## 3.1 Dữ liệu mẫu
+
+Sau khi `npm run db:seed:auth` (tài khoản `admin` + đơn vị gốc), chạy thêm:
+
+```bat
+npm run db:seed:sample
+```
+
+Tạo dữ liệu mẫu cơ bản cho Trung tâm Ngoại ngữ Quận 8 và Trường Mầm non Hoa Nắng: chương
+trình, giáo viên, lớp học, học sinh + phụ huynh đã xếp lớp, lead chưa chuyển đổi, và 4 tài
+khoản demo theo vai trò (mật khẩu tạm `Edu@123Qaz`). An toàn chạy lại nhiều lần — tự bỏ qua
+nếu dữ liệu mẫu đã tồn tại.
+
 ## 4. Luồng kết nối
 
 ```text
