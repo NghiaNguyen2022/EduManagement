@@ -31,13 +31,13 @@
 - [x] B08 Chính sách khóa/mở tài khoản. (Khóa/mở tay qua Quản lý người dùng; khóa tạm tự động sau 5 lần đăng nhập sai liên tiếp, tự mở sau 15 phút.)
 
 ## C. Tuyển sinh
-- [ ] C01 Tiếp nhận khách hàng tiềm năng.
-- [ ] C02 Ghi nhận nhu cầu khóa học/lớp.
-- [ ] C03 Lịch sử tư vấn và chăm sóc.
-- [ ] C04 Hồ sơ đăng ký nhập học.
-- [ ] C05 Kiểm tra đầu vào/xếp trình độ cho trung tâm ngoại ngữ.
-- [ ] C06 Xác nhận nhập học và sinh mã học sinh.
-- [ ] C07 Tạo tài khoản phụ huynh.
+- [x] C01 Tiếp nhận khách hàng tiềm năng. (2026-07-21: API `/api/leads` + trang `/admissions`. Mã lead tự sinh. Xem `docs/analysis/C01_C03_C06_lead_tuyen_sinh.md`.)
+- [x] C02 Ghi nhận nhu cầu khóa học/lớp. (Trường `nhuCau`, `doTuoiHoacTrinhDo` trên Lead — ghi chú tự do, chưa gắn cứng vào chương trình đào tạo vì Sprint 2 chưa làm.)
+- [x] C03 Lịch sử tư vấn và chăm sóc. (`LeadHoatDong` append-only, có thể kèm đổi trạng thái lead cùng lúc.)
+- [x] C04 Hồ sơ đăng ký nhập học. (Qua form "Xác nhận đăng ký" trong trang chi tiết lead.)
+- [ ] C05 Kiểm tra đầu vào/xếp trình độ cho trung tâm ngoại ngữ. (Để Sprint 7.)
+- [x] C06 Xác nhận nhập học và sinh mã học sinh. (Tái sử dụng `createHocSinhMoi`/`addGuardianToStudent`; một lead chỉ chuyển đổi đúng một lần.)
+- [ ] C07 Tạo tài khoản phụ huynh. (Bước tiếp theo — phụ thuộc C06 vừa xong.)
 
 ## D. Học sinh và phụ huynh
 - [x] D01 Hồ sơ học sinh. (2026-07-21: API `/api/hoc-sinh` + trang `/students`, `/students/:id`. Mã học sinh tự sinh. Xem `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md`.)

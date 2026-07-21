@@ -17,6 +17,12 @@ import {
   DashboardPage,
 } from "./pages/DashboardPage";
 import {
+  LeadDetailPage,
+} from "./pages/LeadDetailPage";
+import {
+  LeadsPage,
+} from "./pages/LeadsPage";
+import {
   LoginPage,
 } from "./pages/LoginPage";
 import {
@@ -124,18 +130,14 @@ function ProtectedApp() {
         <Route
           path="/admissions"
           element={
-            <PlaceholderPage
-              title="Hồ sơ tuyển sinh"
-            />
+            <LeadsPage />
           }
         />
 
         <Route
-          path="/consulting"
+          path="/admissions/:id"
           element={
-            <PlaceholderPage
-              title="Tư vấn tuyển sinh"
-            />
+            <LeadDetailPage />
           }
         />
 

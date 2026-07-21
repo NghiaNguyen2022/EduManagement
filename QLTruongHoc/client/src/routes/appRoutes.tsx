@@ -34,19 +34,8 @@ export const appRoutes: AppRouteDefinition[] = [
   {
     id: "admissions",
     path: "/admissions",
-    label: "Hồ sơ tuyển sinh",
+    label: "Tuyển sinh",
     icon: "◎",
-    group: "Tuyển sinh",
-    permissions: [
-      "tuyen_sinh.xem",
-      "tuyen_sinh.quan_ly",
-    ],
-  },
-  {
-    id: "consulting",
-    path: "/consulting",
-    label: "Tư vấn tuyển sinh",
-    icon: "◇",
     group: "Tuyển sinh",
     permissions: [
       "tuyen_sinh.xem",

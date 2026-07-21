@@ -290,3 +290,52 @@ Lead/tuyển sinh (C01-C06), để lại làm bước riêng tiếp theo.
   - `pnpm typecheck`, `pnpm build` — PASS.
 - Checklist: `docs/00_MASTER_CHECKLIST.md` mục D01, D03, D04 đã tick. D02 (sức khỏe mầm
   non), D05/D06 (lịch sử học tập, chuyển lớp — phụ thuộc Sprint 2 lớp học) để lại sau.
+
+---
+
+## C01/C02/C03/C06 — Lead và chuyển đổi thành học sinh (2026-07-21)
+
+Bước thứ hai của Sprint 1, xây trên nền D01/D03. Phạm vi: Lead, lịch sử chăm sóc, xác nhận
+đăng ký. **Chưa** gồm C05 (kiểm tra đầu vào ngoại ngữ — Sprint 7) và C07 (tài khoản đăng
+nhập phụ huynh — bước tiếp theo).
+
+- Phân tích chi tiết: `docs/analysis/C01_C03_C06_lead_tuyen_sinh.md`.
+- Cập nhật BPD: mục 18.4 — chốt lead không tự động thành học sinh (chỉ qua "Xác nhận đăng
+  ký"), một lead chỉ chuyển đổi đúng một lần, lịch sử chăm sóc append-only, và **cấp thêm
+  quyền `tuyen_sinh.quan_ly` cho vai trò `tu_van`** (trước đó chỉ có `tuyen_sinh.xem`, không
+  đủ để ghi nhận hoạt động chăm sóc theo đúng mô tả nghiệp vụ của vai trò này).
+- Database (`database/011_add_lead_tuyen_sinh.sql`): tạo `Lead`, `LeadHoatDong`. Lưu ý
+  `Lead` là từ khoá dành riêng của MySQL (hàm cửa sổ `LEAD()`), phải escape bằng backtick
+  trong SQL tay — Drizzle tự làm việc này nên `drizzle/schemas/tuyenSinh.ts` không cần lưu
+  ý gì thêm.
+- Backend: `server/db/lead.repository.ts`, `server/services/lead.service.ts` (gọi lại
+  `createHocSinhMoi` và `addGuardianToStudent` từ D01/D03 khi xác nhận đăng ký — không viết
+  lại logic tạo học sinh/phụ huynh), `server/routers/lead.router.ts` (đăng ký `/api/leads`).
+  Quy tắc:
+  - Mã lead tự sinh `LD<năm><4 số>`.
+  - Ghi hoạt động có thể kèm đổi trạng thái, nhưng chặn nhảy thẳng sang `da_dang_ky`.
+  - Đánh dấu không tiếp tục bắt buộc lý do; có thể mở lại về `dang_cham_soc`.
+  - Không sửa được thông tin lead đã `da_dang_ky`.
+  - Xác nhận đăng ký chặn nếu lead đã `da_dang_ky` hoặc đang `khong_tiep_tuc`.
+- Frontend: `client/src/pages/LeadsPage.tsx` (`/admissions`, danh sách + tiếp nhận),
+  `client/src/pages/LeadDetailPage.tsx` (`/admissions/:id`, sửa thông tin, ghi hoạt động,
+  không tiếp tục/mở lại, xác nhận đăng ký) thay `PlaceholderPage`. Gộp 2 mục menu cũ "Hồ sơ
+  tuyển sinh" và "Tư vấn tuyển sinh" thành một mục "Tuyển sinh" duy nhất (`appRoutes.tsx`)
+  vì cả hai dùng chung một trang chi tiết lead, tránh menu rối.
+- Test tay (2 tài khoản smoke-test tại TTNN-Q8 — vai trò `tu_van` và `giao_vien`, đã xoá
+  sạch dữ liệu + tài khoản sau khi xong):
+  - `giao_vien` (không có quyền tuyển sinh) tạo lead → 403 — PASS.
+  - Tạo lead, mã tự sinh `LD20260001` — PASS.
+  - Ghi hoạt động kèm đổi trạng thái → trạng thái lead cập nhật đúng — PASS.
+  - Ghi hoạt động cố chuyển thẳng sang `da_dang_ky` → bị chặn — PASS.
+  - Đánh dấu không tiếp tục thiếu lý do → bị chặn — PASS.
+  - Xác nhận đăng ký → tạo đúng học sinh mới, `Lead.hocSinhId` trỏ đúng — PASS.
+  - Xác nhận đăng ký lần 2 cho lead đã đăng ký → bị chặn — PASS.
+  - Sửa thông tin lead đã khoá → bị chặn — PASS.
+  - Lead thứ 2 cùng số điện thoại với lead đã đăng ký → xác nhận đăng ký tái sử dụng đúng
+    một phụ huynh cho cả hai con, không tạo trùng — PASS (regression D03).
+  - Đánh dấu không tiếp tục → chặn xác nhận đăng ký khi đang đóng → mở lại thành công —
+    PASS.
+  - `pnpm typecheck`, `pnpm build` — PASS.
+- Checklist: `docs/00_MASTER_CHECKLIST.md` mục C01, C02, C03, C04, C06 đã tick. C05 (Sprint
+  7), C07 (bước tiếp theo) để lại sau.
