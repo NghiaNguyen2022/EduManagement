@@ -26,6 +26,12 @@ import {
   DashboardPage,
 } from "./pages/DashboardPage";
 import {
+  FinancePage,
+} from "./pages/FinancePage";
+import {
+  KyThuDetailPage,
+} from "./pages/KyThuDetailPage";
+import {
   LeadDetailPage,
 } from "./pages/LeadDetailPage";
 import {
@@ -203,11 +209,12 @@ function ProtectedApp() {
 
         <Route
           path="/finance"
-          element={
-            <PlaceholderPage
-              title="Học phí · Công nợ"
-            />
-          }
+          element={<FinancePage />}
+        />
+
+        <Route
+          path="/finance/ky-thu/:id"
+          element={<KyThuDetailPage />}
         />
 
         <Route

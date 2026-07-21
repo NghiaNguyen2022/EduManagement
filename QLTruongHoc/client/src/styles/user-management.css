@@ -84,9 +84,21 @@
 }
 
 .status-badge--tam_khoa,
-.status-badge--ngung {
+.status-badge--ngung,
+.status-badge--ngung_ap_dung,
+.status-badge--da_dong {
   background: var(--edu-color-danger-soft);
   color: var(--edu-color-danger);
+}
+
+.status-badge--nhap {
+  background: var(--edu-color-warning-soft);
+  color: var(--edu-color-warning);
+}
+
+.status-badge--da_mo {
+  background: var(--edu-color-success-soft);
+  color: var(--edu-color-success);
 }
 
 .row-actions {

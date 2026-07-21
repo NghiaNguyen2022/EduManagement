@@ -26,6 +26,7 @@ import {
 import { lopHocRouter } from "./routers/lopHoc.router.js";
 import { organizationRouter } from "./routers/organization.router.js";
 import { roleRouter } from "./routers/role.router.js";
+import { taiChinhRouter } from "./routers/taiChinh.router.js";
 import { userAssignmentRouter } from "./routers/user-assignment.router.js";
 import { userRouter } from "./routers/user.router.js";
 
@@ -68,6 +69,7 @@ app.use("/api/users", userRouter);
 app.use("/api/users", userAssignmentRouter);
 app.use("/api/roles", roleRouter);
 app.use("/api/audit-logs", auditLogRouter);
+app.use("/api/tai-chinh", taiChinhRouter);
 
 if (env.nodeEnv === "production") {
   const clientDirectory = path.resolve(

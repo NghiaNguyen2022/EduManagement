@@ -104,7 +104,6 @@ export const appRoutes: AppRouteDefinition[] = [
       "tai_chinh.xem",
       "tai_chinh.quan_ly",
     ],
-    comingSoon: true,
   },
   {
     id: "organizations",

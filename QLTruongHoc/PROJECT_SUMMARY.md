@@ -795,3 +795,78 @@ loại hình) — cần mô hình dữ liệu riêng phức tạp hơn.
     test, trả `BuoiHoc.trangThai` về `du_kien`).
   - `pnpm typecheck` (client + server) PASS.
 - Checklist: `docs/00_MASTER_CHECKLIST.md` mục G01, G02, G03 đã tick.
+
+---
+
+## Thiết kế lại sidebar lần hai (2026-07-22)
+
+Người dùng yêu cầu tiếp: mỗi nhóm chức năng đóng khung có shadow nhẹ, tên nhóm có điểm nhấn,
+và chức năng chưa hoàn thiện (còn là `PlaceholderPage`) hiển thị gạch dưới để phân biệt.
+
+- `client/src/routes/appRoutes.tsx`: thêm cờ tùy chọn `comingSoon?: boolean` trên
+  `AppRouteDefinition`, gắn cho "Học phí · Công nợ" và "Cấu hình hệ thống" (2 mục còn là
+  placeholder tại thời điểm đó).
+- `client/src/components/layout/Sidebar.tsx`: gắn class `sidebar-item--coming-soon` +
+  tooltip "(đang xây dựng)" cho mục có cờ này.
+- `client/src/styles/sidebar-balance.css`: viết lại `.sidebar-group` thành thẻ card riêng
+  (gradient kính mờ, viền mảnh, box-shadow); `.sidebar-group__label` thêm chấm tròn accent
+  màu secondary + đường kẻ chân; mục đang active có vạch accent trái + icon đổi màu tương
+  phản; mục `comingSoon` có gạch dưới nét đứt + giảm opacity.
+- Test qua trình duyệt thật (đăng nhập, đọc computed style trực tiếp trên DOM vì công cụ
+  screenshot bị lỗi timeout trong phiên này): xác nhận đúng shadow/border-radius/màu accent/
+  underline. Phát hiện một lần đọc sai do HMR cache cũ (background trắng của mục active bị
+  đọc nhầm thành trong suốt) — reload cứng xác nhận lại đúng, không phải lỗi CSS thật.
+- `pnpm typecheck`, `pnpm build` PASS.
+- Dọn dẹp: phát hiện `server/services/storeDutyAccessService.ts` là code rác sót từ template
+  gốc (tham chiếu bảng/module không tồn tại: `db/duty`, `db/storeLedger`, bảng `residents`),
+  làm `pnpm typecheck` server fail — không có nơi nào khác tham chiếu, đã xoá.
+
+---
+
+## H01/H02 — Danh mục khoản thu, Kỳ thu (2026-07-22)
+
+Mở Sprint 5 (Tài chính), đúng 4 bước. Phạm vi: danh mục khoản thu, kỳ thu, gán khoản thu áp
+dụng cho kỳ, mở/đóng kỳ thu. **Chưa** gồm H03-H09 (sinh khoản phải thu theo lớp, thu tiền,
+miễn giảm, công nợ, biên nhận, hoàn phí/chuyển phí/bảo lưu, báo cáo doanh thu) — để lại làm
+slice tiếp theo, đúng nhịp tách nhỏ đã dùng cho E01-E04/E05-E08 và F.../G....
+
+- Mô hình dữ liệu tham khảo từ bản nháp `database/003_init_finance_learning.sql` (chưa từng
+  áp dụng), viết lại đúng quy ước Drizzle hiện tại (bigint unsigned, `IX_`/`UQ_`, datetime
+  mode string không có DEFAULT CURRENT_TIMESTAMP — set tay qua `now()` như các module khác).
+- Database (`database/017_add_khoan_thu_ky_thu.sql`, áp dụng trực tiếp vì chưa có TTY cho
+  `db:push`): tạo `DanhMucKhoanThu`, `KyThu`, `KyThuKhoanThu`. Đồng bộ
+  `drizzle/schemas/taiChinh.ts`.
+- Quyền: tái sử dụng `tai_chinh.xem`/`tai_chinh.quan_ly` đã seed sẵn từ Sprint 0 và đã gán
+  cho `ke_toan`/`quan_ly_don_vi` trong `database/008_seed_default_role_permissions.sql` —
+  không cần seed quyền mới.
+- Backend: `server/db/taiChinh.repository.ts`, `server/services/taiChinh.service.ts`,
+  `server/routers/taiChinh.router.ts` (đăng ký `/api/tai-chinh`). Quy tắc chính:
+  - Mã khoản thu/kỳ thu nhân viên tự đặt (giống chương trình/lớp), chặn trùng mã trong đơn
+    vị.
+  - Chặn tạo tại đơn vị hệ thống (`assertDonViChoPhepNghiepVu`, tái dùng từ E01-E04).
+  - Kỳ thu có 2 trạng thái làm việc: `nhap` (sửa được thông tin + khoản thu áp dụng) →
+    `da_mo` (khoá sửa, chuẩn bị cho slice sau sinh khoản phải thu) → `da_dong`. Mở kỳ bắt
+    buộc phải có ít nhất một khoản thu áp dụng; không mở lại được kỳ đã đóng.
+  - Gán khoản thu áp dụng cho kỳ theo kiểu "thay toàn bộ danh sách" (replace-all) thay vì
+    thêm/gỡ từng dòng — đơn giản hơn cho UI chọn nhiều khoản cùng lúc, cùng nguyên tắc với
+    lưu điểm danh hàng loạt.
+  - Không cho gán khoản thu đã `ngung_ap_dung` vào kỳ thu mới.
+- Frontend: `client/src/pages/FinancePage.tsx` (`/finance`, 2 section: danh mục khoản thu +
+  kỳ thu, dùng `CurrencyInput` có sẵn cho số tiền), `client/src/pages/KyThuDetailPage.tsx`
+  (`/finance/ky-thu/:id`, sửa thông tin khi còn nháp, bảng chọn khoản áp dụng bằng checkbox +
+  `CurrencyInput`, nút mở/đóng kỳ qua `ConfirmDialog`) thay `PlaceholderPage`. Gỡ cờ
+  `comingSoon` khỏi mục "Học phí · Công nợ" trong `appRoutes.tsx`.
+- Test tay qua UI thật (dùng chung server đang chạy, xác nhận đúng ID vừa tạo trước khi xoá,
+  đúng bài học từ sự cố C07):
+  - Tạo khoản thu "Học phí hàng tháng" (`HP-THANG`, 2.500.000đ) — PASS.
+  - Tạo kỳ thu "Học phí tháng 8/2026" (`HP-T8-2026`, 01/08–31/08/2026) — PASS, ngày lưu đúng
+    `2026-08-01`/`2026-08-31`.
+  - Vào chi tiết kỳ thu, chọn khoản thu áp dụng (checkbox + số tiền tự điền từ số tiền mặc
+    định), lưu — PASS.
+  - Mở kỳ thu (qua `ConfirmDialog`) → form thông tin và khoản áp dụng chuyển sang chỉ đọc
+    đúng — PASS.
+  - `pnpm typecheck`, `pnpm build` — PASS.
+  - Dọn dẹp: xoá đúng 3 dòng vừa tạo (`KyThuKhoanThu` id=1, `KyThu` id=1, `DanhMucKhoanThu`
+    id=1) sau khi verify qua `SELECT` khớp đúng thời gian/mã vừa tạo — xác nhận trang `/finance`
+    về lại trạng thái rỗng ban đầu.
+- Checklist: `docs/00_MASTER_CHECKLIST.md` mục H01, H02 đã tick.

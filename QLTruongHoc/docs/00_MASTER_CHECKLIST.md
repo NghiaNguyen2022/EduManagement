@@ -49,6 +49,13 @@
 > thấy và truy cập được toàn bộ đơn vị đang hoạt động. Đã test tay qua trình duyệt (PASS).
 > Đồng thời làm lại giao diện sidebar (icon SVG đồng bộ, màu sắc đi qua biến theme, sửa lỗi
 > mục menu đang chọn không nổi bật) — không phát sinh mục checklist mới, thuộc K06.
+>
+> Cập nhật 2026-07-22: thiết kế lại sidebar lần hai (khung nhóm có shadow, điểm nhấn tên
+> nhóm, gạch dưới cho chức năng chưa hoàn thiện) — thuộc K06, không phát sinh mục checklist
+> mới. Mở Sprint 5 (Tài chính), hoàn tất H01/H02 (danh mục khoản thu, kỳ thu + gán khoản thu
+> áp dụng cho kỳ, mở/đóng kỳ). H03-H09 (sinh khoản phải thu, thu tiền, miễn giảm, công nợ,
+> biên nhận, hoàn phí/chuyển phí, báo cáo) để lại làm slice tiếp theo. Xem
+> `PROJECT_SUMMARY.md` mục "H01/H02 — Danh mục khoản thu, Kỳ thu".
 
 ## A. Nền tảng và đa đơn vị
 - [x] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)
@@ -113,8 +120,8 @@
 - [ ] G07 Mầm non: phát triển thể chất/nhận thức/ngôn ngữ/tình cảm-xã hội/thẩm mỹ. (Nghiệp vụ chuyên biệt theo loại hình, để sau.)
 
 ## H. Tài chính
-- [ ] H01 Danh mục khoản thu.
-- [ ] H02 Tạo kỳ thu.
+- [x] H01 Danh mục khoản thu. (2026-07-22: API `/api/tai-chinh/khoan-thu` + trang `/finance`. Mã tự đặt như chương trình/lớp. Xem `docs/analysis/H01_H02_khoan_thu_ky_thu.md`.)
+- [x] H02 Tạo kỳ thu. (2026-07-22: API `/api/tai-chinh/ky-thu` + trang `/finance`, `/finance/ky-thu/:id`. Gán khoản thu áp dụng cho kỳ (`KyThuKhoanThu`), tách 2 trạng thái nháp/mở để khoá sửa sau khi mở — tương tự cách tách bước ở E05-E08.)
 - [ ] H03 Áp dụng khoản thu cho lớp/học sinh.
 - [ ] H04 Khoản phải thu và miễn giảm.
 - [ ] H05 Thu từng phần/nhiều lần.
