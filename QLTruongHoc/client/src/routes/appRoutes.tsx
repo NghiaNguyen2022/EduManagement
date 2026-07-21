@@ -98,6 +98,18 @@ export const appRoutes: AppRouteDefinition[] = [
     ],
   },
   {
+    id: "organizations",
+    path: "/organizations",
+    label: "Cây đơn vị",
+    icon: "⌘",
+    group: "Hệ thống",
+    permissions: [
+      "don_vi.xem",
+      "don_vi.quan_ly",
+      "he_thong.quan_tri",
+    ],
+  },
+  {
     id: "users",
     path: "/users",
     label: "Quản lý người dùng",

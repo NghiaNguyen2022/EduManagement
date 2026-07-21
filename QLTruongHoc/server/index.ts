@@ -11,6 +11,7 @@ import {
 } from "./db/connection.js";
 import { auditLogRouter } from "./routers/audit-log.router.js";
 import { authRouter } from "./routers/auth.router.js";
+import { donViRouter } from "./routers/donVi.router.js";
 import { healthRouter } from "./routers/health.router.js";
 import { organizationRouter } from "./routers/organization.router.js";
 import { roleRouter } from "./routers/role.router.js";
@@ -42,6 +43,7 @@ app.get("/api", (_req, res) => {
 app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/organizations", organizationRouter);
+app.use("/api/don-vi", donViRouter);
 app.use("/api/users", userRouter);
 app.use("/api/users", userAssignmentRouter);
 app.use("/api/roles", roleRouter);

@@ -11,7 +11,7 @@
 > `PROJECT_SUMMARY.md` mục "Rà soát 2026-07-21".
 
 ## A. Nền tảng và đa đơn vị
-- [ ] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (Schema `DonVi` có `donViChaId` đã có; chưa có màn hình CRUD tạo/sửa đơn vị, mới seed sẵn 3 đơn vị mẫu.)
+- [x] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)
 - [x] A02 Chọn đơn vị sau đăng nhập.
 - [x] A03 Lưu đơn vị đang làm việc trong session/token. (`PhienDangNhap.donViHienTaiId`.)
 - [x] A04 Phân quyền người dùng theo từng đơn vị. (`NguoiDungVaiTroDonVi` + middleware `requirePermission`.)

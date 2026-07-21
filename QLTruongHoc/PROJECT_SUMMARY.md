@@ -151,7 +151,7 @@ Không có module nghiệp vụ mới nào được thêm kể từ lần rà so
 
 | Sprint | Nội dung | Trạng thái thật |
 | --- | --- | --- |
-| 0 — Foundation | Đa đơn vị, user/role/quyền, audit, layout | **Xong phần lõi.** Còn thiếu UI CRUD cây đơn vị (`DonVi`) và migration chính thức. |
+| 0 — Foundation | Đa đơn vị, user/role/quyền, audit, layout | **Xong.** CRUD cây đơn vị hoàn tất 2026-07-21 (xem mục A01 bên dưới). Còn thiếu migration chính thức (`db:generate`/`db:migrate`). |
 | 1 — Tuyển sinh & ghi danh | Lead, tư vấn, đăng ký, học sinh + phụ huynh, tài khoản phụ huynh | **Chưa bắt đầu.** Chỉ có scaffold `HocSinh` mồ côi (xem trên); chưa có Lead/Consultation, chưa có `PhuHuynh`. |
 | 2 — Chương trình, lớp, xếp lớp | `ChuongTrinhDaoTao`, `LopHoc`, xếp lớp | **Chưa bắt đầu.** Chỉ có trong bản nháp SQL chưa áp dụng. |
 | 3 — Lịch học & điểm danh | `LichHoc`, `BuoiHoc`, `DiemDanh`, học bù | **Chưa bắt đầu.** |
@@ -183,3 +183,38 @@ Sprint 0 đã đủ nền để bắt đầu Sprint 1. Thứ tự đề xuất, 
 
 Chưa triển khai bước nào ở trên trong lần rà soát này — đây là đề xuất thứ tự việc, chờ xác
 nhận trước khi code.
+
+---
+
+## A01 — Quản lý cây đơn vị (2026-07-21)
+
+Quy trình áp dụng đúng 4 bước đã thống nhất: phân tích → tài liệu phân tích chi tiết → cập
+nhật BPD → code.
+
+- Phân tích chi tiết: `docs/analysis/A01_cay_don_vi.md`.
+- Cập nhật BPD: `BPD_App_Quan_Ly_Truong_Hoc_Trung_Tam_v0.1.docx` mục 18.1 (quyết định:
+  chỉ `he_thong.quan_tri` được tạo/sửa/ngừng hoạt động đơn vị).
+- Database: không cần migration — schema `DonVi` đã đủ trường từ Sprint 0.
+- Backend: `server/db/donVi.repository.ts`, `server/services/donVi.service.ts`,
+  `server/routers/donVi.router.ts` (đăng ký `/api/don-vi`), quy tắc:
+  - Chặn trùng `maDonVi`.
+  - Bắt buộc `loaiHinhDaoTao` khi `loaiDonVi` là `truong`/`trung_tam`.
+  - Chặn tạo con dưới đơn vị cha không `hoat_dong`.
+  - Chặn đổi `loaiDonVi` nếu đơn vị đã có người dùng được gán (`NguoiDungVaiTroDonVi` active).
+  - Chặn ngừng hoạt động nếu còn đơn vị con đang hoạt động.
+  - Chặn ngừng hoạt động node `SYSTEM` gốc trong mọi trường hợp.
+  - Ghi `NhatKyHeThong` cho mọi create/update/đổi trạng thái.
+- Frontend: trang `/organizations` (`OrganizationTreePage.tsx`), thêm vào menu Hệ thống
+  (`appRoutes.tsx`), form tạo/sửa dùng chung, `ConfirmDialog` cho đổi trạng thái.
+- Test tay (dùng tài khoản smoke-test tạo riêng, đã xoá sạch sau khi test, không đụng dữ
+  liệu seed thật ngoại trừ TTNN-Q8 bị deactivate tạm để test rồi kích hoạt lại đúng):
+  - Tạo đơn vị con dưới TTNN-Q8 — PASS.
+  - Sửa tên/địa chỉ có dấu tiếng Việt, xác nhận lưu đúng UTF-8 trong DB — PASS.
+  - Ngừng hoạt động đơn vị còn con đang hoạt động → bị chặn — PASS.
+  - Ngừng hoạt động sau khi con đã ngừng hoạt động → thành công — PASS.
+  - Ngừng hoạt động node `SYSTEM` → luôn bị chặn — PASS.
+  - `pnpm typecheck`, `pnpm build` — PASS.
+- Chưa test: `don_vi.quan_ly` (không phải `he_thong.quan_tri`) bị từ chối 403 khi gọi
+  create/update/status — chưa có tài khoản test phù hợp trong lần này, cần test khi có
+  tài khoản `quan_ly_don_vi` thật.
+- Checklist: `docs/00_MASTER_CHECKLIST.md` mục A01 đã tick.

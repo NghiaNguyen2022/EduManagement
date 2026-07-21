@@ -20,6 +20,9 @@ import {
   LoginPage,
 } from "./pages/LoginPage";
 import {
+  OrganizationTreePage,
+} from "./pages/OrganizationTreePage";
+import {
   PlaceholderPage,
 } from "./pages/PlaceholderPage";
 import {
@@ -102,6 +105,13 @@ function ProtectedApp() {
           path="/audit-logs"
           element={
             <SystemAuditLogPage />
+          }
+        />
+
+        <Route
+          path="/organizations"
+          element={
+            <OrganizationTreePage />
           }
         />
 
