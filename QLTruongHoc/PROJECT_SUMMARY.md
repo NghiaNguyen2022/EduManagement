@@ -218,3 +218,27 @@ nhật BPD → code.
   create/update/status — chưa có tài khoản test phù hợp trong lần này, cần test khi có
   tài khoản `quan_ly_don_vi` thật.
 - Checklist: `docs/00_MASTER_CHECKLIST.md` mục A01 đã tick.
+
+---
+
+## Kiến trúc menu theo quyền và loại hình đào tạo (2026-07-21)
+
+Người dùng rà soát lại yêu cầu ban đầu, xác nhận 2 điểm đã đúng (system admin thấy toàn bộ
+đơn vị; phân quyền + bắt buộc chọn đơn vị khi đăng nhập) và chỉ ra 1 điểm chưa có: menu phải
+khác nhau theo loại hình đào tạo của đơn vị. Áp dụng đúng 4 bước.
+
+- Phân tích chi tiết: `docs/analysis/menu_theo_quyen_va_loai_hinh.md`.
+- Cập nhật BPD: mục 18.2 — chốt quyết định lọc menu theo loại hình áp dụng cho mọi người
+  dùng kể cả system admin; không lọc menu theo tên vai trò cứng (giữ nguyên lọc theo quyền).
+- Database: không đổi.
+- Code:
+  - `client/src/routes/appRoutes.tsx`: thêm type `LoaiHinhDaoTao` và trường tuỳ chọn
+    `loaiHinhDaoTao?: LoaiHinhDaoTao[]` trên `AppRouteDefinition`. Không khai báo = dùng
+    chung mọi loại hình.
+  - `client/src/components/layout/Sidebar.tsx`: điều kiện hiển thị menu = có quyền **và**
+    đúng loại hình (`route.loaiHinhDaoTao` trống hoặc chứa loại hình của đơn vị đang chọn).
+- Hiện chưa có mục menu nào thật sự gán `loaiHinhDaoTao` (Sprint 0-1 toàn bộ là nghiệp vụ
+  dùng chung) — đây là thay đổi chuẩn bị cơ chế, không đổi hành vi hiện tại. `pnpm
+  typecheck`/`pnpm build` PASS. Sẽ test runtime thật khi Sprint 7 thêm menu chuyên biệt đầu
+  tiên (ví dụ "Đón/trả trẻ" chỉ cho `mam_non`).
+- Checklist: `docs/UI_SHELL_CHECKLIST.md` mục "Menu theo loại hình đào tạo" đã tick.

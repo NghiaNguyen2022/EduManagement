@@ -33,6 +33,10 @@ export function Sidebar({
       "he_thong.quan_tri",
     );
 
+  const loaiHinhDaoTaoHienTai =
+    auth?.currentOrganization?.loaiHinhDaoTao ??
+    null;
+
   const visibleGroups = useMemo(() => {
     const groupMap = new Map<
       string,
@@ -40,7 +44,7 @@ export function Sidebar({
     >();
 
     for (const route of appRoutes) {
-      const visible =
+      const coQuyen =
         !route.permissions ||
         isSystemAdmin ||
         route.permissions.some(
@@ -50,7 +54,17 @@ export function Sidebar({
             ),
         );
 
-      if (!visible) {
+      // Menu không khai báo loaiHinhDaoTao là menu dùng chung, hiện ở mọi
+      // đơn vị. Áp dụng cho tất cả người dùng, kể cả quản trị hệ thống, vì
+      // menu phải phản ánh đúng nghiệp vụ của đơn vị đang chọn.
+      const dungLoaiHinh =
+        !route.loaiHinhDaoTao ||
+        route.loaiHinhDaoTao.includes(
+          (loaiHinhDaoTaoHienTai ??
+            "khac") as (typeof route.loaiHinhDaoTao)[number],
+        );
+
+      if (!coQuyen || !dungLoaiHinh) {
         continue;
       }
 
@@ -66,6 +80,7 @@ export function Sidebar({
     );
   }, [
     isSystemAdmin,
+    loaiHinhDaoTaoHienTai,
     permissions,
   ]);
 

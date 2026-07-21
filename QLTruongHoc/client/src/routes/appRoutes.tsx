@@ -2,6 +2,12 @@ import type {
   ReactNode,
 } from "react";
 
+export type LoaiHinhDaoTao =
+  | "mam_non"
+  | "ngoai_ngu"
+  | "tin_hoc"
+  | "khac";
+
 export type AppRouteDefinition = {
   id: string;
   path: string;
@@ -9,6 +15,11 @@ export type AppRouteDefinition = {
   icon: string;
   group: string;
   permissions?: string[];
+  /**
+   * Loại hình đào tạo được phép thấy mục menu này. Không khai báo (undefined)
+   * nghĩa là dùng chung cho mọi loại hình, kể cả đơn vị hệ thống gốc.
+   */
+  loaiHinhDaoTao?: LoaiHinhDaoTao[];
   element?: ReactNode;
 };
 

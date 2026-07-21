@@ -16,6 +16,7 @@
 - [x] Kết nối danh sách đơn vị từ API. (`GET /api/organizations/my`.)
 - [x] Điều hướng bằng URL/router. (`react-router-dom` qua `appRoutes.tsx`.)
 - [x] Menu theo vai trò và quyền. (`appRoutes[].permissions` lọc theo `quyen` của đơn vị hiện tại.)
+- [x] Menu theo loại hình đào tạo. (2026-07-21: `appRoutes[].loaiHinhDaoTao` + lọc trong `Sidebar.tsx`, áp dụng cho cả quản trị hệ thống. Chưa có mục menu nào gán loại hình cụ thể — cơ chế chuẩn bị sẵn cho Sprint 7. Xem `docs/analysis/menu_theo_quyen_va_loai_hinh.md`.)
 - [x] Đăng nhập thật. (Không còn giá trị mặc định điền sẵn trong form — đã gỡ 2026-07-20.)
 - [x] Lưu đơn vị đang làm việc. (`PhienDangNhap.donViHienTaiId`.)
 - [ ] Tách shared style dùng xuyên module. (Đã có `styles/theme.css` dùng chung; chưa rà soát hết các style riêng lẻ theo module mới.)
