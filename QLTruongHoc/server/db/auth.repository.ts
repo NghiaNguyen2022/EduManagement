@@ -272,6 +272,39 @@ export async function getOrganizationsForUser(userId: number) {
     }
   }
 
+  const isSystemAdmin = assignments.some(
+    (row) => row.permissionCode === "he_thong.quan_tri",
+  );
+
+  if (isSystemAdmin) {
+    const allOrganizations = await db
+      .select()
+      .from(donVi)
+      .where(eq(donVi.trangThai, "hoat_dong"));
+
+    for (const organization of allOrganizations) {
+      let item = map.get(organization.id);
+
+      if (!item) {
+        item = {
+          id: organization.id,
+          maDonVi: organization.maDonVi,
+          tenDonVi: organization.tenDonVi,
+          loaiDonVi: organization.loaiDonVi,
+          loaiHinhDaoTao: organization.loaiHinhDaoTao,
+          vaiTro: new Set<string>(),
+          quyen: new Set<string>(),
+        };
+
+        map.set(organization.id, item);
+      }
+
+      // Quản trị hệ thống có toàn quyền ở mọi đơn vị, kể cả nơi chưa có
+      // dòng gán vai trò tường minh — tránh mất quyền khi chuyển đơn vị.
+      item.quyen.add("he_thong.quan_tri");
+    }
+  }
+
   return Array.from(map.values()).map((item) => ({
     ...item,
     vaiTro: Array.from(item.vaiTro),
