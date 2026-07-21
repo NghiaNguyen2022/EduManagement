@@ -30,6 +30,7 @@ export type HocSinhItem = {
 
 export type PhuHuynhItem = {
   id: number;
+  nguoiDungId: number | null;
   maPhuHuynh: string;
   hoTen: string;
   dienThoai: string;

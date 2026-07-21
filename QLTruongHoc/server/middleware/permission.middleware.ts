@@ -54,3 +54,44 @@ export function requirePermission(permissionCode: string) {
     next();
   };
 }
+
+/**
+ * Cho phép thao tác nếu người dùng có ÍT NHẤT MỘT trong các mã quyền được liệt kê.
+ * Dùng cho hành động hợp lý với từ hai vai trò trở lên, tránh phải cấp chéo quyền
+ * cho từng vai trò riêng lẻ.
+ */
+export function requireAnyPermission(permissionCodes: string[]) {
+  return (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    const organization = req.auth?.currentOrganization;
+
+    if (!organization) {
+      res.status(409).json({
+        ok: false,
+        error: "Vui lòng chọn đơn vị làm việc.",
+      });
+      return;
+    }
+
+    const isSystemAdmin = organization.quyen.includes(
+      "he_thong.quan_tri",
+    );
+
+    const hasAny = permissionCodes.some((code) =>
+      organization.quyen.includes(code),
+    );
+
+    if (!isSystemAdmin && !hasAny) {
+      res.status(403).json({
+        ok: false,
+        error: "Bạn không có quyền thực hiện thao tác này.",
+      });
+      return;
+    }
+
+    next();
+  };
+}

@@ -1,3 +1,5 @@
+import { hash } from "bcryptjs";
+
 import {
   createAuditLog,
 } from "../db/audit.repository.js";
@@ -13,9 +15,18 @@ import {
   deleteGuardianLink,
   findGuardianLink,
   findGuardianLinkById,
+  findPhuHuynhById,
   findPhuHuynhByPhone,
   updateGuardianLink,
+  updatePhuHuynhNguoiDungId,
 } from "../db/phuHuynh.repository.js";
+import { findRoleByCode } from "../db/role.repository.js";
+import {
+  createUserWithRole,
+  findUserById,
+  findUserByUsername,
+} from "../db/user.repository.js";
+import { createTemporaryPassword } from "./user.service.js";
 
 type MoiQuanHe =
   | "cha"
@@ -234,4 +245,120 @@ export async function removeGuardianLink(input: {
     content: "Gỡ liên kết phụ huynh - học sinh.",
     ipAddress: input.ipAddress,
   });
+}
+
+function normalizeUsernameFromPhone(dienThoai: string) {
+  return dienThoai.replace(/[^0-9]/g, "");
+}
+
+async function sinhTenDangNhapPhuHuynh(dienThoai: string) {
+  const base = normalizeUsernameFromPhone(dienThoai);
+
+  if (!base) {
+    throw new Error(
+      "Không thể sinh tên đăng nhập vì phụ huynh chưa có số điện thoại hợp lệ.",
+    );
+  }
+
+  let candidate = base;
+  let attempt = 1;
+
+  while (await findUserByUsername(candidate)) {
+    attempt += 1;
+    candidate = `${base}-${attempt}`;
+  }
+
+  return candidate;
+}
+
+export async function createGuardianAccount(input: {
+  donViId: number;
+  linkId: number;
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  const found = await findGuardianLinkById(input.linkId);
+
+  if (!found || found.donViId !== input.donViId) {
+    throw new Error("Không tìm thấy liên kết phụ huynh.");
+  }
+
+  const guardian = await findPhuHuynhById(found.lienKet.phuHuynhId);
+
+  if (!guardian) {
+    throw new Error("Không tìm thấy hồ sơ phụ huynh.");
+  }
+
+  if (guardian.nguoiDungId) {
+    const existingUser = await findUserById(
+      guardian.nguoiDungId,
+    );
+
+    await createAuditLog({
+      userId: input.actorUserId,
+      organizationId: input.donViId,
+      action: "hoc_sinh.guardian_account_existing",
+      objectType: "PhuHuynh",
+      objectId: String(guardian.id),
+      content: `Phụ huynh ${guardian.hoTen} (${guardian.maPhuHuynh}) đã có tài khoản, không tạo mới.`,
+      ipAddress: input.ipAddress,
+    });
+
+    return {
+      created: false as const,
+      nguoiDungId: guardian.nguoiDungId,
+      tenDangNhap: existingUser?.tenDangNhap ?? null,
+      temporaryPassword: null,
+    };
+  }
+
+  const role = await findRoleByCode("phu_huynh");
+
+  if (!role) {
+    throw new Error("Chưa cấu hình vai trò phụ huynh trong hệ thống.");
+  }
+
+  const tenDangNhap = await sinhTenDangNhapPhuHuynh(guardian.dienThoai);
+  const temporaryPassword = createTemporaryPassword();
+  const passwordHash = await hash(temporaryPassword, 12);
+
+  let createdUser;
+
+  try {
+    createdUser = await createUserWithRole({
+      username: tenDangNhap,
+      passwordHash,
+      fullName: guardian.hoTen,
+      email: guardian.email,
+      phone: guardian.dienThoai,
+      roleId: role.id,
+      organizationId: input.donViId,
+    });
+  } catch {
+    throw new Error(
+      "Không thể tạo tài khoản. Email hoặc số điện thoại có thể đã được dùng cho tài khoản khác.",
+    );
+  }
+
+  await updatePhuHuynhNguoiDungId({
+    id: guardian.id,
+    nguoiDungId: createdUser.id,
+  });
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "hoc_sinh.guardian_account_create",
+    objectType: "PhuHuynh",
+    objectId: String(guardian.id),
+    content: `Tạo tài khoản đăng nhập ${tenDangNhap} cho phụ huynh ${guardian.hoTen} (${guardian.maPhuHuynh}).`,
+    ipAddress: input.ipAddress,
+  });
+
+  return {
+    created: true as const,
+    nguoiDungId: createdUser.id,
+    tenDangNhap,
+    temporaryPassword,
+  };
 }

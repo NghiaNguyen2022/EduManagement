@@ -117,6 +117,21 @@ export function updateGuardianApi(
   );
 }
 
+export function createGuardianAccountApi(
+  hocSinhId: number,
+  linkId: number,
+) {
+  return request<{
+    created: boolean;
+    nguoiDungId: number;
+    tenDangNhap: string | null;
+    temporaryPassword: string | null;
+  }>(
+    `/api/hoc-sinh/${hocSinhId}/phu-huynh/${linkId}/tai-khoan`,
+    { method: "POST" },
+  );
+}
+
 export async function removeGuardianApi(
   hocSinhId: number,
   linkId: number,

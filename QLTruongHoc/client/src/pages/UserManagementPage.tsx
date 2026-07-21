@@ -669,12 +669,13 @@ export function UserManagementPage() {
                           <button
                             type="button"
                             className="text-button"
-                            onClick={() =>
+                            onClick={() => {
+                              setError("");
                               setPendingAction({
                                 type: "status",
                                 user,
-                              })
-                            }
+                              });
+                            }}
                           >
                             {user.trangThai ===
                             "hoat_dong"
@@ -685,12 +686,13 @@ export function UserManagementPage() {
                           <button
                             type="button"
                             className="text-button"
-                            onClick={() =>
+                            onClick={() => {
+                              setError("");
                               setPendingAction({
                                 type: "reset",
                                 user,
-                              })
-                            }
+                              });
+                            }}
                           >
                             Reset mật khẩu
                           </button>
@@ -768,6 +770,9 @@ export function UserManagementPage() {
         }
         busy={
           actionBusy
+        }
+        error={
+          pendingAction ? error : ""
         }
         onConfirm={() =>
           void executePendingAction()

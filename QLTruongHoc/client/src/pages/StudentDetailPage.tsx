@@ -12,6 +12,7 @@ import { SectionCard } from "../components/shared/SectionCard";
 import { useAuth } from "../features/auth/AuthContext";
 import {
   addGuardianApi,
+  createGuardianAccountApi,
   getHocSinhDetailApi,
   removeGuardianApi,
   setHocSinhTrangThaiApi,
@@ -81,12 +82,23 @@ export function StudentDetailPage() {
   const [pendingRemove, setPendingRemove] =
     useState<GuardianLinkItem | null>(null);
   const [removeBusy, setRemoveBusy] = useState(false);
+  const [creatingAccountLinkId, setCreatingAccountLinkId] =
+    useState<number | null>(null);
 
   const canManage = useMemo(() => {
     const permissions = auth?.currentOrganization?.quyen ?? [];
     return (
       permissions.includes("he_thong.quan_tri") ||
       permissions.includes("hoc_sinh.quan_ly")
+    );
+  }, [auth]);
+
+  const canCreateGuardianAccount = useMemo(() => {
+    const permissions = auth?.currentOrganization?.quyen ?? [];
+    return (
+      permissions.includes("he_thong.quan_tri") ||
+      permissions.includes("hoc_sinh.quan_ly") ||
+      permissions.includes("tuyen_sinh.quan_ly")
     );
   }, [auth]);
 
@@ -218,6 +230,39 @@ export function StudentDetailPage() {
           ? updateError.message
           : "Không thể cập nhật liên hệ chính.",
       );
+    }
+  }
+
+  async function handleCreateAccount(link: GuardianLinkItem) {
+    setCreatingAccountLinkId(link.lienKetId);
+    setError("");
+    setNotice("");
+
+    try {
+      const result = await createGuardianAccountApi(
+        studentId,
+        link.lienKetId,
+      );
+
+      if (result.created) {
+        setNotice(
+          `Đã tạo tài khoản cho ${link.phuHuynh.hoTen}. Tên đăng nhập: ${result.tenDangNhap} · Mật khẩu tạm: ${result.temporaryPassword} (hiển thị một lần duy nhất).`,
+        );
+      } else {
+        setNotice(
+          `${link.phuHuynh.hoTen} đã có tài khoản đăng nhập: ${result.tenDangNhap ?? "(không xác định)"}.`,
+        );
+      }
+
+      await loadDetail();
+    } catch (accountError) {
+      setError(
+        accountError instanceof Error
+          ? accountError.message
+          : "Không thể tạo tài khoản đăng nhập.",
+      );
+    } finally {
+      setCreatingAccountLinkId(null);
     }
   }
 
@@ -388,7 +433,10 @@ export function StudentDetailPage() {
                 <th>Quan hệ</th>
                 <th>Liên hệ chính</th>
                 <th>Được đón trẻ</th>
-                {canManage ? <th>Thao tác</th> : null}
+                <th>Tài khoản</th>
+                {canManage || canCreateGuardianAccount ? (
+                  <th>Thao tác</th>
+                ) : null}
               </tr>
             </thead>
 
@@ -417,10 +465,20 @@ export function StudentDetailPage() {
 
                   <td>{link.duocDonTre ? "Có" : "Không"}</td>
 
-                  {canManage ? (
+                  <td>
+                    {link.phuHuynh.nguoiDungId ? (
+                      <span className="status-badge status-badge--hoat_dong">
+                        Đã có tài khoản
+                      </span>
+                    ) : (
+                      "Chưa có"
+                    )}
+                  </td>
+
+                  {canManage || canCreateGuardianAccount ? (
                     <td>
                       <div className="row-actions">
-                        {!link.laLienHeChinh ? (
+                        {canManage && !link.laLienHeChinh ? (
                           <button
                             type="button"
                             className="text-button"
@@ -432,15 +490,38 @@ export function StudentDetailPage() {
                           </button>
                         ) : null}
 
-                        <button
-                          type="button"
-                          className="text-button"
-                          onClick={() =>
-                            setPendingRemove(link)
-                          }
-                        >
-                          Gỡ liên kết
-                        </button>
+                        {canCreateGuardianAccount &&
+                        !link.phuHuynh.nguoiDungId ? (
+                          <button
+                            type="button"
+                            className="text-button"
+                            disabled={
+                              creatingAccountLinkId ===
+                              link.lienKetId
+                            }
+                            onClick={() =>
+                              void handleCreateAccount(link)
+                            }
+                          >
+                            {creatingAccountLinkId ===
+                            link.lienKetId
+                              ? "Đang tạo..."
+                              : "Tạo tài khoản đăng nhập"}
+                          </button>
+                        ) : null}
+
+                        {canManage ? (
+                          <button
+                            type="button"
+                            className="text-button"
+                            onClick={() => {
+                              setError("");
+                              setPendingRemove(link);
+                            }}
+                          >
+                            Gỡ liên kết
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   ) : null}
@@ -450,7 +531,9 @@ export function StudentDetailPage() {
               {detail.phuHuynh.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={canManage ? 5 : 4}
+                    colSpan={
+                      canManage || canCreateGuardianAccount ? 6 : 5
+                    }
                     className="empty-cell"
                   >
                     Chưa có phụ huynh liên kết.
@@ -620,6 +703,7 @@ export function StudentDetailPage() {
         confirmLabel="Gỡ liên kết"
         danger
         busy={removeBusy}
+        error={pendingRemove ? error : ""}
         onConfirm={() => void executeRemoveGuardian()}
         onCancel={() => setPendingRemove(null)}
       />

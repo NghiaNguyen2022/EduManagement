@@ -1,9 +1,6 @@
 import {
   hash,
 } from "bcryptjs";
-import {
-  randomBytes,
-} from "node:crypto";
 
 import {
   createAuditLog,
@@ -28,13 +25,13 @@ function normalizeUsername(
     .toLowerCase();
 }
 
-function createTemporaryPassword() {
-  const suffix =
-    randomBytes(4)
-      .toString("hex")
-      .slice(0, 6);
-
-  return `Edu@${suffix}A1`;
+/**
+ * Mật khẩu tạm cố định cho tài khoản mới tạo (nhân viên và phụ huynh).
+ * Bắt buộc đổi mật khẩu ngay lần đăng nhập đầu tiên (batBuocDoiMatKhau = true)
+ * nên việc dùng giá trị cố định vẫn an toàn ở mức chấp nhận được cho MVP.
+ */
+export function createTemporaryPassword() {
+  return "Edu@123Qaz";
 }
 
 export async function getUsers(

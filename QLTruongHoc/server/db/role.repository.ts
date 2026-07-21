@@ -29,6 +29,18 @@ export async function listRoles() {
     .from(vaiTro);
 }
 
+export async function findRoleByCode(maVaiTro: string) {
+  const db = getDb();
+
+  const rows = await db
+    .select()
+    .from(vaiTro)
+    .where(eq(vaiTro.maVaiTro, maVaiTro))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
 export async function findRoleById(roleId: number) {
   const db = getDb();
 

@@ -339,3 +339,98 @@ nhập phụ huynh — bước tiếp theo).
   - `pnpm typecheck`, `pnpm build` — PASS.
 - Checklist: `docs/00_MASTER_CHECKLIST.md` mục C01, C02, C03, C04, C06 đã tick. C05 (Sprint
   7), C07 (bước tiếp theo) để lại sau.
+
+---
+
+## C07 — Tài khoản đăng nhập phụ huynh (2026-07-21)
+
+Bước cuối Sprint 1. Phạm vi và quyết định: xem `docs/analysis/C07_tai_khoan_phu_huynh.md`
+và BPD mục 18.5.
+
+- Backend: `server/middleware/permission.middleware.ts` thêm `requireAnyPermission` (chấp
+  nhận một trong nhiều mã quyền — dùng thay vì tiếp tục cấp chéo quyền cho từng vai trò).
+  `server/db/role.repository.ts` thêm `findRoleByCode`. `server/db/phuHuynh.repository.ts`
+  thêm `updatePhuHuynhNguoiDungId`. `server/services/phuHuynh.service.ts` thêm
+  `createGuardianAccount` — tái sử dụng `createUserWithRole` (đã có từ Sprint 0) và
+  `createTemporaryPassword` (export từ `user.service.ts` để dùng chung, không viết lại).
+  Route mới `POST /api/hoc-sinh/:id/phu-huynh/:linkId/tai-khoan` với
+  `requireAnyPermission(["hoc_sinh.quan_ly", "tuyen_sinh.quan_ly"])`.
+- Frontend: nút "Tạo tài khoản đăng nhập" trong bảng phụ huynh ở `StudentDetailPage.tsx`,
+  thêm cột "Tài khoản" hiển thị đã có/chưa có; ẩn nút nếu phụ huynh đã có tài khoản.
+- Test tay qua API (tài khoản smoke-test tại TTNN-Q8, vai trò `hoc_vu`/`tu_van`/`giao_vien`):
+  - Tạo tài khoản mới cho phụ huynh chưa có — tên đăng nhập sinh từ SĐT, đăng nhập thử
+    bằng tài khoản vừa tạo thành công thật — PASS.
+  - Gọi lại cho cùng phụ huynh qua liên kết của con thứ hai — nhận diện đã có tài khoản,
+    không tạo trùng, trả đúng tên đăng nhập cũ — PASS.
+  - `giao_vien` (không đủ quyền) gọi tạo tài khoản → 403 — PASS.
+  - `tu_van` (chỉ có `tuyen_sinh.quan_ly`, không có `hoc_sinh.quan_ly`) vẫn tạo được tài
+    khoản — xác nhận `requireAnyPermission` hoạt động đúng — PASS.
+  - `pnpm typecheck`, `pnpm build` — PASS.
+  - **Chưa test**: xác nhận trực quan nút trên giao diện thật qua trình duyệt (mới test
+    qua gọi thẳng API).
+- Checklist: `docs/00_MASTER_CHECKLIST.md` mục C07 đã tick (phần backend/API).
+
+### Sự cố dữ liệu trong lúc test C07 (2026-07-21) — bài học quan trọng
+
+Trong lúc test, phát hiện người dùng thật đã đăng nhập tài khoản `admin` qua giao diện
+thật và thao tác song song trên cùng CSDL dev trong khi dev server đang chạy để phục vụ
+test bằng curl. Các lệnh dọn dữ liệu smoke-test sau mỗi vòng test (`DELETE FROM <bảng>`
+không lọc theo phạm vi) đã xoá nhầm dữ liệu thật: học sinh "Trần Hữu Án" + phụ huynh "Paul
+Nguyen" (mất trong đợt dọn D01/D03), học sinh "Trần Văn An" + phụ huynh "Trần Linh Hoàn"
+(mất trong đợt dọn C01-C06), và phụ huynh "Nguyen Nghia" liên kết với học sinh "Nguyen
+Khang" (mất trong đợt dọn C07 — học sinh này còn sống sót nhờ ràng buộc khoá ngoại chặn
+kịp). Không có backup dùng được (bản backup duy nhất có trước khi các bản ghi này tồn
+tại). Không khôi phục được số điện thoại/email gốc vì audit log chỉ ghi tên.
+
+Quy tắc bắt buộc từ nay: **không bao giờ chạy `DELETE FROM <bảng>` không lọc theo ID cụ
+thể để dọn dữ liệu test trên CSDL dev này** — luôn theo dõi đúng ID đã tạo trong phiên test
+và chỉ xoá đúng ID đó; nếu nghi ngờ có hoạt động thật xen lẫn, đối chiếu `NhatKyHeThong`
+theo `nguoiDungId` trước khi xoá bất cứ gì.
+
+### Đổi mật khẩu tạm sang giá trị cố định (2026-07-21)
+
+Theo yêu cầu người dùng, `createTemporaryPassword()` trong `server/services/user.service.ts`
+đổi từ sinh ngẫu nhiên sang giá trị cố định `Edu@123Qaz`, áp dụng cho mọi luồng tạo/reset
+tài khoản (nhân viên và phụ huynh). Vẫn giữ `batBuocDoiMatKhau = true` bắt buộc đổi ngay
+lần đăng nhập đầu — xem BPD mục 18.6. `pnpm typecheck` PASS. Chưa test runtime lại (đang
+chờ xác nhận an toàn cổng server với người dùng sau sự cố ở trên).
+
+---
+
+## Chuẩn hoá popup — Thông báo và Xác nhận (2026-07-21)
+
+Người dùng phản hồi popup "Gỡ liên kết phụ huynh" hiển thị thô (không overlay, không card
+nổi rõ) — rà soát phát hiện `ConfirmDialog` được viết từ Sprint 0 nhưng **chưa từng có CSS
+thật**, chỉ dựa vào style mặc định trình duyệt. Không có patch UI riêng nào trước đó phủ
+được gap này.
+
+- Tạo `client/src/styles/dialog.css` — overlay mờ tối, card nổi bo góc, dùng đúng token từ
+  `theme.css` (không hard-code màu/shadow).
+- Viết lại `ConfirmDialog.tsx` (xác nhận, 2 hành động): thêm `autoFocus` vào nút Từ chối
+  (mặc định an toàn khi lỡ nhấn Enter), nút chấp nhận đổi màu cảnh báo khi `danger`. Giữ
+  nguyên toàn bộ props hiện có (`onConfirm`/`onCancel`/`confirmLabel`) để không phải sửa 4
+  nơi đang gọi (`OrganizationTreePage`, `UserManagementPage`, `StudentDetailPage`,
+  `LeadDetailPage`).
+- Tạo mới `NotificationDialog.tsx` (thông báo, 1 hành động đóng) — chuẩn bị sẵn cho các
+  luồng chỉ cần xác nhận đã đọc (ví dụ hiển thị mật khẩu tạm sau khi tạo tài khoản), chưa
+  có nơi dùng ngay.
+- Cập nhật `docs/DESIGN_SYSTEM_RULES.md` thêm mục "Popup / Modal" làm chuẩn chính thức,
+  cấm tự viết modal riêng trong page và cấm dùng `alert()`/`confirm()` trình duyệt.
+- `pnpm typecheck`, `pnpm build` PASS. Chưa test trực quan trên trình duyệt (người dùng
+  đang thao tác trực tiếp trên server thật cùng lúc — xem sự cố dữ liệu ở mục C07 phía
+  trên; tránh khởi động thêm server song song để không lặp lại rủi ro).
+
+### Hotfix — Lỗi bị che sau overlay modal (2026-07-21)
+
+Người dùng test thật: bấm "Gỡ liên kết" trong modal mới không thấy phản hồi gì, tưởng
+chưa gọi backend. Nguyên nhân: `ConfirmDialog` mới có overlay phủ toàn màn hình
+(`position: fixed; inset: 0; z-index: 1000`), nhưng khi hành động thất bại (ví dụ đúng quy
+tắc D03 "không gỡ được liên hệ chính duy nhất"), lỗi vẫn hiện ở banner `.form-error` đầu
+trang — nằm **dưới** overlay nên bị che hoàn toàn, modal vẫn mở như không có gì xảy ra.
+
+- Thêm prop `error?: string` vào `ConfirmDialog` — hiện ngay trong modal (`.dialog-card__error`,
+  nền đỏ nhạt) thay vì phụ thuộc banner đầu trang.
+- Nối `error` vào cả 4 nơi dùng `ConfirmDialog` (`StudentDetailPage`, `OrganizationTreePage`,
+  `UserManagementPage`, `LeadDetailPage`); xoá `error` cũ ngay khi mở dialog để không hiện
+  nhầm lỗi của thao tác trước đó.
+- `pnpm typecheck`, `pnpm build` PASS.

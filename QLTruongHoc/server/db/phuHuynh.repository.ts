@@ -30,6 +30,21 @@ export async function findPhuHuynhByPhone(
   return rows[0] ?? null;
 }
 
+export async function updatePhuHuynhNguoiDungId(input: {
+  id: number;
+  nguoiDungId: number;
+}) {
+  const db = getDb();
+
+  await db
+    .update(phuHuynh)
+    .set({
+      nguoiDungId: input.nguoiDungId,
+      updatedAt: now(),
+    })
+    .where(eq(phuHuynh.id, input.id));
+}
+
 export async function findPhuHuynhById(id: number) {
   const db = getDb();
 

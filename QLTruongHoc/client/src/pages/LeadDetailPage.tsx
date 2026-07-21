@@ -654,7 +654,10 @@ export function LeadDetailPage() {
               type="button"
               className="danger-button"
               disabled={busyAction || !notContinuingReason.trim()}
-              onClick={() => setPendingNotContinuing(true)}
+              onClick={() => {
+                setError("");
+                setPendingNotContinuing(true);
+              }}
             >
               Đánh dấu không tiếp tục
             </button>
@@ -669,6 +672,7 @@ export function LeadDetailPage() {
         confirmLabel="Xác nhận"
         danger
         busy={busyAction}
+        error={pendingNotContinuing ? error : ""}
         onConfirm={() => void executeMarkNotContinuing()}
         onCancel={() => setPendingNotContinuing(false)}
       />

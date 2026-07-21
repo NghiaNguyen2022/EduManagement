@@ -4,6 +4,7 @@ import {
   requireAuth,
 } from "../middleware/auth.middleware.js";
 import {
+  requireAnyPermission,
   requireCurrentOrganization,
   requirePermission,
 } from "../middleware/permission.middleware.js";
@@ -16,6 +17,7 @@ import {
 } from "../services/hocSinh.service.js";
 import {
   addGuardianToStudent,
+  createGuardianAccount,
   removeGuardianLink,
   updateGuardianLinkInfo,
 } from "../services/phuHuynh.service.js";
@@ -266,6 +268,34 @@ hocSinhRouter.delete(
           error instanceof Error
             ? error.message
             : "Không thể gỡ liên kết phụ huynh.",
+      });
+    }
+  },
+);
+
+hocSinhRouter.post(
+  "/:id/phu-huynh/:linkId/tai-khoan",
+  requireAnyPermission([
+    "hoc_sinh.quan_ly",
+    "tuyen_sinh.quan_ly",
+  ]),
+  async (req, res) => {
+    try {
+      const result = await createGuardianAccount({
+        donViId: req.auth!.currentOrganization!.id,
+        linkId: Number(req.params.linkId),
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.status(201).json({ ok: true, data: result });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Không thể tạo tài khoản đăng nhập.",
       });
     }
   },

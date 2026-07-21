@@ -426,12 +426,13 @@ export function OrganizationTreePage() {
                               <button
                                 type="button"
                                 className="text-button"
-                                onClick={() =>
+                                onClick={() => {
+                                  setError("");
                                   setPendingStatus({
                                     unit,
                                     trangThai: "ngung_hoat_dong",
-                                  })
-                                }
+                                  });
+                                }}
                               >
                                 Ngừng hoạt động
                               </button>
@@ -439,12 +440,13 @@ export function OrganizationTreePage() {
                               <button
                                 type="button"
                                 className="text-button"
-                                onClick={() =>
+                                onClick={() => {
+                                  setError("");
                                   setPendingStatus({
                                     unit,
                                     trangThai: "hoat_dong",
-                                  })
-                                }
+                                  });
+                                }}
                               >
                                 Kích hoạt lại
                               </button>
@@ -493,6 +495,7 @@ export function OrganizationTreePage() {
         }
         danger={pendingStatus?.trangThai === "ngung_hoat_dong"}
         busy={statusBusy}
+        error={pendingStatus ? error : ""}
         onConfirm={() => void executeStatusChange()}
         onCancel={() => setPendingStatus(null)}
       />

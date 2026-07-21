@@ -37,7 +37,7 @@
 - [x] C04 Hồ sơ đăng ký nhập học. (Qua form "Xác nhận đăng ký" trong trang chi tiết lead.)
 - [ ] C05 Kiểm tra đầu vào/xếp trình độ cho trung tâm ngoại ngữ. (Để Sprint 7.)
 - [x] C06 Xác nhận nhập học và sinh mã học sinh. (Tái sử dụng `createHocSinhMoi`/`addGuardianToStudent`; một lead chỉ chuyển đổi đúng một lần.)
-- [ ] C07 Tạo tài khoản phụ huynh. (Bước tiếp theo — phụ thuộc C06 vừa xong.)
+- [x] C07 Tạo tài khoản phụ huynh. (2026-07-21: API `POST /api/hoc-sinh/:id/phu-huynh/:linkId/tai-khoan`, không tạo trùng theo guardian-person. Test qua API PASS; chưa xác nhận UI thật trên trình duyệt. Xem `docs/analysis/C07_tai_khoan_phu_huynh.md`.)
 
 ## D. Học sinh và phụ huynh
 - [x] D01 Hồ sơ học sinh. (2026-07-21: API `/api/hoc-sinh` + trang `/students`, `/students/:id`. Mã học sinh tự sinh. Xem `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md`.)

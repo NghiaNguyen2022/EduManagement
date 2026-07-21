@@ -51,6 +51,41 @@ Dùng:
 </SectionCard>
 ```
 
+## Popup / Modal
+
+Chỉ dùng đúng hai loại popup dùng chung, không tự viết modal riêng trong page:
+
+**Thông báo** — đúng một hành động (đóng), dùng khi chỉ cần người dùng xác nhận đã đọc:
+
+```tsx
+<NotificationDialog
+  open={showResult}
+  title="Đã tạo tài khoản"
+  message="Tên đăng nhập: 0912345678 · Mật khẩu tạm: Edu@123Qaz"
+  tone="success"
+  onClose={() => setShowResult(false)}
+/>
+```
+
+**Xác nhận** — đúng hai hành động (chấp nhận / từ chối), mặc định focus vào nút **Từ chối**
+để tránh bấm nhầm hành động khi nhấn Enter:
+
+```tsx
+<ConfirmDialog
+  open={Boolean(pendingRemove)}
+  title="Gỡ liên kết phụ huynh"
+  message="Gỡ liên kết giữa học sinh và Nguyễn Văn A?"
+  confirmLabel="Gỡ liên kết"
+  danger
+  busy={busy}
+  onConfirm={() => void executeRemove()}
+  onCancel={() => setPendingRemove(null)}
+/>
+```
+
+`danger` đổi nút chấp nhận sang màu cảnh báo (`danger-button`) cho thao tác không thể hoàn
+tác (khoá, xoá, gỡ liên kết...). Không dùng `alert()`/`confirm()` của trình duyệt.
+
 ## Phân trang
 
 Dùng mặc định từ config:
