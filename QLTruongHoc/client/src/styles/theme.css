@@ -54,10 +54,15 @@
   --edu-color-info: #4f8fe7;
   --edu-color-info-soft: #edf4fe;
 
-  --edu-sidebar-background: #173d5a;
-  --edu-sidebar-background-alt: #102f47;
-  --edu-sidebar-text: #eaf7ff;
-  --edu-sidebar-text-muted: #9dc2d6;
-  --edu-sidebar-active: #2f9ed8;
-  --edu-sidebar-active-text: #ffffff;
+  /* Sidebar "xanh giáo dục": kế thừa trực tiếp màu primary/secondary của
+     theme để chỉ cần đổi màu primary phía trên là sidebar đổi theo. */
+  --edu-sidebar-background: var(--edu-color-primary);
+  --edu-sidebar-background-alt: var(--edu-color-primary-strong);
+  --edu-sidebar-text: #ffffff;
+  --edu-sidebar-text-muted: rgba(255, 255, 255, 0.72);
+  --edu-sidebar-hover: rgba(255, 255, 255, 0.16);
+  --edu-sidebar-active: #ffffff;
+  --edu-sidebar-active-text: var(--edu-color-primary-strong);
+  --edu-sidebar-brand-bg: #ffffff;
+  --edu-sidebar-brand-text: var(--edu-color-primary-strong);
 }

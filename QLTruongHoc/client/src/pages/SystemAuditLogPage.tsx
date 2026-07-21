@@ -19,6 +19,9 @@ import {
   SectionCard,
 } from "../components/shared/SectionCard";
 import {
+  useAuth,
+} from "../features/auth/AuthContext";
+import {
   getAuditLogDetailApi,
   listAuditActionsApi,
   listAuditLogsApi,
@@ -62,6 +65,8 @@ function actionLabel(action: string) {
 }
 
 export function SystemAuditLogPage() {
+  const { auth } = useAuth();
+
   const [items, setItems] =
     useState<AuditLogItem[]>([]);
   const [actions, setActions] =
@@ -144,7 +149,7 @@ export function SystemAuditLogPage() {
       .catch(() => setActions([]));
 
     void loadLogs(1);
-  }, []);
+  }, [auth?.currentOrganization?.id]);
 
   async function openDetail(
     logId: number,

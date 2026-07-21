@@ -141,7 +141,7 @@ export function LeadDetailPage() {
     if (Number.isInteger(leadId) && leadId > 0) {
       void loadDetail();
     }
-  }, [leadId]);
+  }, [leadId, auth?.currentOrganization?.id]);
 
   const isLocked =
     detail?.lead.trangThai === "da_dang_ky" ||

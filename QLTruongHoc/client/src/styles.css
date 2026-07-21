@@ -79,10 +79,23 @@ button {
   align-items: center;
   gap: 12px;
   padding: 16px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.sidebar__brand-mark,
+.sidebar__brand-mark {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--edu-radius-medium);
+  background: var(--edu-sidebar-brand-bg);
+  color: var(--edu-sidebar-brand-text);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  box-shadow: var(--edu-shadow-soft);
+}
+
 .organization-selector__mark {
   flex: 0 0 auto;
   display: grid;
@@ -161,19 +174,27 @@ button {
 }
 
 .sidebar-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--edu-sidebar-hover);
 }
 
-.sidebar-item.is-active {
+.sidebar-item.sidebar-item--active {
   background: var(--edu-sidebar-active);
   color: var(--edu-sidebar-active-text);
-  box-shadow: var(--edu-shadow-soft);
+}
+
+.sidebar-item.sidebar-item--active:hover {
+  background: var(--edu-sidebar-active);
 }
 
 .sidebar-item__icon {
   display: grid;
   place-items: center;
-  font-size: 18px;
+  flex: 0 0 auto;
+}
+
+.sidebar-item__icon svg {
+  width: 20px;
+  height: 20px;
 }
 
 .sidebar-item__label {

@@ -89,7 +89,7 @@ export function StudentsPage() {
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [auth?.currentOrganization?.id]);
 
   async function handleCreate(
     event: React.FormEvent<HTMLFormElement>,

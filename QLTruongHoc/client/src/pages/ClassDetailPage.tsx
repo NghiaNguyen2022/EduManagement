@@ -152,7 +152,7 @@ export function ClassDetailPage() {
     if (Number.isInteger(classId) && classId > 0) {
       void loadDetail();
     }
-  }, [classId]);
+  }, [classId, auth?.currentOrganization?.id]);
 
   async function handleSaveInfo(
     event: React.FormEvent<HTMLFormElement>,

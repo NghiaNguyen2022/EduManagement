@@ -76,7 +76,7 @@ export function TeachersPage() {
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [auth?.currentOrganization?.id]);
 
   function startEdit(teacher: GiaoVienItem) {
     setEditingId(teacher.id);

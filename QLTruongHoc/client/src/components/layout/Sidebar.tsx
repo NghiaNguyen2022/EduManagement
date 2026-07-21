@@ -11,6 +11,9 @@ import {
 import {
   appRoutes,
 } from "../../routes/appRoutes";
+import {
+  sidebarIcons,
+} from "./sidebarIcons";
 
 type SidebarProps = {
   collapsed: boolean;
@@ -165,7 +168,8 @@ export function Sidebar({
                       }
                     >
                       <span className="sidebar-item__icon">
-                        {route.icon}
+                        {sidebarIcons[route.id] ??
+                          sidebarIcons.default}
                       </span>
 
                       {!collapsed ? (

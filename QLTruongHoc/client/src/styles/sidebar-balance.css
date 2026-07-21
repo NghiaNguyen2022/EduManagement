@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .sidebar__brand-mark {
@@ -67,7 +67,7 @@
 
 .sidebar-group__label {
   padding: 0 10px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--edu-sidebar-text-muted);
   font-size: 11px;
   font-weight: 800;
   line-height: 24px;

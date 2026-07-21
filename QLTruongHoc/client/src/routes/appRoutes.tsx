@@ -12,7 +12,6 @@ export type AppRouteDefinition = {
   id: string;
   path: string;
   label: string;
-  icon: string;
   group: string;
   permissions?: string[];
   /**
@@ -28,14 +27,12 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "dashboard",
     path: "/dashboard",
     label: "Bảng điều hành",
-    icon: "⌂",
     group: "Tổng quan",
   },
   {
     id: "admissions",
     path: "/admissions",
     label: "Tuyển sinh",
-    icon: "◎",
     group: "Tuyển sinh",
     permissions: [
       "tuyen_sinh.xem",
@@ -46,7 +43,6 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "students",
     path: "/students",
     label: "Học sinh · Học viên",
-    icon: "◉",
     group: "Đào tạo",
     permissions: [
       "hoc_sinh.xem",
@@ -57,7 +53,6 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "teachers",
     path: "/teachers",
     label: "Giáo viên",
-    icon: "◆",
     group: "Đào tạo",
     permissions: [
       "lop_hoc.xem",
@@ -68,7 +63,6 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "classes",
     path: "/classes",
     label: "Lớp học",
-    icon: "▦",
     group: "Đào tạo",
     permissions: [
       "lop_hoc.xem",
@@ -79,7 +73,6 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "schedule",
     path: "/schedule",
     label: "Lịch học",
-    icon: "◫",
     group: "Đào tạo",
     permissions: [
       "lop_hoc.xem",
@@ -90,7 +83,6 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "attendance",
     path: "/attendance",
     label: "Điểm danh",
-    icon: "✓",
     group: "Đào tạo",
     permissions: [
       "diem_danh.xem",
@@ -101,7 +93,6 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "finance",
     path: "/finance",
     label: "Học phí · Công nợ",
-    icon: "₫",
     group: "Tài chính",
     permissions: [
       "tai_chinh.xem",
@@ -112,7 +103,6 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "organizations",
     path: "/organizations",
     label: "Cây đơn vị",
-    icon: "⌘",
     group: "Hệ thống",
     permissions: [
       "don_vi.xem",
@@ -124,7 +114,6 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "users",
     path: "/users",
     label: "Quản lý người dùng",
-    icon: "♙",
     group: "Hệ thống",
     permissions: [
       "nguoi_dung.xem",
@@ -135,7 +124,6 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "roles",
     path: "/roles",
     label: "Vai trò · Phân quyền",
-    icon: "⚿",
     group: "Hệ thống",
     permissions: [
       "phan_quyen.xem",
@@ -146,7 +134,6 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "audit-logs",
     path: "/audit-logs",
     label: "Nhật ký hệ thống",
-    icon: "≡",
     group: "Hệ thống",
     permissions: [
       "phan_quyen.xem",
@@ -157,7 +144,6 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "settings",
     path: "/settings",
     label: "Cấu hình hệ thống",
-    icon: "⚙",
     group: "Hệ thống",
     permissions: [
       "he_thong.quan_tri",

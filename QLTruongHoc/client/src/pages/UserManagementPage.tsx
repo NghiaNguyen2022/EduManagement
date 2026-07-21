@@ -252,7 +252,7 @@ export function UserManagementPage() {
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [auth?.currentOrganization?.id]);
 
   async function handleCreate(
     event:

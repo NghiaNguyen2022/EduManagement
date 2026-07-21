@@ -132,7 +132,7 @@ export function StudentDetailPage() {
     if (Number.isInteger(studentId) && studentId > 0) {
       void loadDetail();
     }
-  }, [studentId]);
+  }, [studentId, auth?.currentOrganization?.id]);
 
   async function handleSaveInfo(
     event: React.FormEvent<HTMLFormElement>,

@@ -124,7 +124,7 @@ export function ClassesPage() {
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [auth?.currentOrganization?.id]);
 
   async function handleCreateProgram(
     event: React.FormEvent<HTMLFormElement>,

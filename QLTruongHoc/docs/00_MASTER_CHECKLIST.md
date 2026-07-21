@@ -11,6 +11,14 @@
 > Cập nhật 2026-07-21 (chiều): đã hoàn tất D01/D03 (hồ sơ học sinh + phụ huynh, nối lại
 > scaffold `hocSinh`). Mục C (Lead/tuyển sinh) và D02/D05/D06 vẫn chưa làm. Chi tiết xem
 > `PROJECT_SUMMARY.md` mục "D01/D03 — Hồ sơ học sinh và phụ huynh".
+>
+> Cập nhật 2026-07-21 (tối): phát hiện và sửa lỗi ở A04/A05 — `getOrganizationsForUser`
+> trước đây chỉ trả về đơn vị có dòng gán tường minh, kể cả với `he_thong.quan_tri`, nên
+> quản trị hệ thống không thấy/chuyển được sang các đơn vị mình chưa từng được gán, và
+> không gán được vai trò cho người khác vào các đơn vị đó. Đã sửa để quản trị hệ thống luôn
+> thấy và truy cập được toàn bộ đơn vị đang hoạt động. Đã test tay qua trình duyệt (PASS).
+> Đồng thời làm lại giao diện sidebar (icon SVG đồng bộ, màu sắc đi qua biến theme, sửa lỗi
+> mục menu đang chọn không nổi bật) — không phát sinh mục checklist mới, thuộc K06.
 
 ## A. Nền tảng và đa đơn vị
 - [x] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)
