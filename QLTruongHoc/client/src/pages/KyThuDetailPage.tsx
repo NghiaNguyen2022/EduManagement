@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 import {
   CurrencyInput,
@@ -13,6 +13,10 @@ import { SectionCard } from "../components/shared/SectionCard";
 import { useAuth } from "../features/auth/AuthContext";
 import { listLopHocApi } from "../features/lopHoc/lopHocApi";
 import type { LopHocItem } from "../features/lopHoc/lopHocTypes";
+import {
+  useGuardedNavigate,
+  useUnsavedChangesGuard,
+} from "../features/navigation/UnsavedChangesContext";
 import {
   capNhatGiamTruApi,
   dongKyThuApi,
@@ -78,7 +82,7 @@ type ChonKhoanThu = {
 
 export function KyThuDetailPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useGuardedNavigate();
   const { auth } = useAuth();
 
   const [detail, setDetail] = useState<KyThuDetail | null>(null);
@@ -90,9 +94,14 @@ export function KyThuDetailPage() {
   const [notice, setNotice] = useState("");
 
   const [infoForm, setInfoForm] = useState<KyThuFormInput | null>(null);
+  const [loadedInfoForm, setLoadedInfoForm] =
+    useState<KyThuFormInput | null>(null);
   const [savingInfo, setSavingInfo] = useState(false);
 
   const [chonKhoanThu, setChonKhoanThu] = useState<ChonKhoanThu[]>([]);
+  const [loadedChonKhoanThu, setLoadedChonKhoanThu] = useState<
+    ChonKhoanThu[]
+  >([]);
   const [savingKhoanThu, setSavingKhoanThu] = useState(false);
 
   const [confirmAction, setConfirmAction] = useState<
@@ -133,6 +142,13 @@ export function KyThuDetailPage() {
     );
   }, [auth]);
 
+  useUnsavedChangesGuard(
+    activePanel !== null ||
+      (loadedInfoForm !== null &&
+        JSON.stringify(infoForm) !== JSON.stringify(loadedInfoForm)) ||
+      JSON.stringify(chonKhoanThu) !== JSON.stringify(loadedChonKhoanThu),
+  );
+
   async function loadKhoanPhaiThu() {
     if (!id) return;
 
@@ -168,14 +184,17 @@ export function KyThuDetailPage() {
       setDetail(detailData);
       setKhoanThuList(khoanThuRows);
       setLopHocList(lopHocRows);
-      setInfoForm({
+
+      const nextInfoForm = {
         maKyThu: detailData.kyThu.maKyThu,
         tenKyThu: detailData.kyThu.tenKyThu,
         loaiKy: detailData.kyThu.loaiKy,
         tuNgay: detailData.kyThu.tuNgay,
         denNgay: detailData.kyThu.denNgay,
         hanThanhToan: detailData.kyThu.hanThanhToan ?? "",
-      });
+      };
+      setInfoForm(nextInfoForm);
+      setLoadedInfoForm(nextInfoForm);
 
       const apDungMap = new Map(
         detailData.khoanApDung.map((item) => [
@@ -184,20 +203,20 @@ export function KyThuDetailPage() {
         ]),
       );
 
-      setChonKhoanThu(
-        khoanThuRows.map((item) => {
-          const apDung = apDungMap.get(item.id);
-          return {
-            danhMucKhoanThuId: item.id,
-            chon: Boolean(apDung),
-            soTien: apDung
-              ? Number(apDung.soTien)
-              : item.soTienMacDinh
-                ? Number(item.soTienMacDinh)
-                : null,
-          };
-        }),
-      );
+      const nextChonKhoanThu = khoanThuRows.map((item) => {
+        const apDung = apDungMap.get(item.id);
+        return {
+          danhMucKhoanThuId: item.id,
+          chon: Boolean(apDung),
+          soTien: apDung
+            ? Number(apDung.soTien)
+            : item.soTienMacDinh
+              ? Number(item.soTienMacDinh)
+              : null,
+        };
+      });
+      setChonKhoanThu(nextChonKhoanThu);
+      setLoadedChonKhoanThu(nextChonKhoanThu);
 
       if (detailData.kyThu.trangThai !== "nhap") {
         const khoanPhaiThuRows = await listKhoanPhaiThuApi(Number(id));

@@ -20,6 +20,16 @@ export async function listChuongTrinh(donViId: number, loaiDonVi?: string) {
   return listChuongTrinhByDonVi(donViId);
 }
 
+export async function getChuongTrinhDetail(donViId: number, id: number) {
+  const found = await findChuongTrinhById(donViId, id);
+
+  if (!found) {
+    throw new Error("Không tìm thấy chương trình trong đơn vị hiện tại.");
+  }
+
+  return found;
+}
+
 export async function createChuongTrinhMoi(input: {
   donViId: number;
   maChuongTrinh: string;

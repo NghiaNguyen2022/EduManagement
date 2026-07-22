@@ -9,6 +9,7 @@ import {
 } from "../middleware/permission.middleware.js";
 import {
   createChuongTrinhMoi,
+  getChuongTrinhDetail,
   listChuongTrinh,
   setChuongTrinhStatus,
   updateChuongTrinhThongTin,
@@ -31,6 +32,29 @@ chuongTrinhRouter.get(
     );
 
     res.json({ ok: true, data: rows });
+  },
+);
+
+chuongTrinhRouter.get(
+  "/:id",
+  requirePermission("lop_hoc.xem"),
+  async (req, res) => {
+    try {
+      const detail = await getChuongTrinhDetail(
+        req.auth!.currentOrganization!.id,
+        Number(req.params.id),
+      );
+
+      res.json({ ok: true, data: detail });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Không thể tải chi tiết chương trình.",
+      });
+    }
   },
 );
 

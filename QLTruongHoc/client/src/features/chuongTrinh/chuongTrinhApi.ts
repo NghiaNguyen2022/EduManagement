@@ -43,6 +43,10 @@ function toApiInput(input: ChuongTrinhFormInput) {
   };
 }
 
+export function getChuongTrinhDetailApi(id: number) {
+  return request<ChuongTrinhItem>(`/api/chuong-trinh/${id}`);
+}
+
 export async function listChuongTrinhApi() {
   const rows = await request<
     (

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 
 import {
   SelectField,
   TextField,
 } from "../components/form";
+import { EntityLink, OrgLink } from "../components/shared/EntityLink";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
 import { useAuth } from "../features/auth/AuthContext";
@@ -16,6 +16,7 @@ import type {
   LeadFormInput,
   LeadItem,
 } from "../features/lead/leadTypes";
+import { useUnsavedChangesGuard } from "../features/navigation/UnsavedChangesContext";
 
 const TRANG_THAI_LABEL: Record<string, string> = {
   moi: "Mới",
@@ -66,6 +67,10 @@ export function LeadsPage() {
         permissions.includes("tuyen_sinh.quan_ly"))
     );
   }, [auth, isHeThong]);
+
+  useUnsavedChangesGuard(
+    JSON.stringify(form) !== JSON.stringify(emptyForm),
+  );
 
   const filteredLeads = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
@@ -266,16 +271,12 @@ export function LeadsPage() {
               {filteredLeads.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    {isHeThong ? (
+                    <EntityLink
+                      to={`/admissions/${item.id}`}
+                      donVi={item.donVi}
+                    >
                       <strong>{item.hoTen}</strong>
-                    ) : (
-                      <Link
-                        to={`/admissions/${item.id}`}
-                        className="text-button"
-                      >
-                        <strong>{item.hoTen}</strong>
-                      </Link>
-                    )}
+                    </EntityLink>
                     <small>{item.maLead}</small>
                   </td>
 
@@ -291,7 +292,9 @@ export function LeadsPage() {
                   </td>
 
                   {isHeThong ? (
-                    <td>{item.donVi?.tenDonVi ?? "—"}</td>
+                    <td>
+                      <OrgLink donVi={item.donVi} to="/admissions" />
+                    </td>
                   ) : null}
                 </tr>
               ))}

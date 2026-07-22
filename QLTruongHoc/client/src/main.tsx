@@ -10,6 +10,9 @@ import {
 import {
   AuthProvider,
 } from "./features/auth/AuthContext";
+import {
+  UnsavedChangesProvider,
+} from "./features/navigation/UnsavedChangesContext";
 import "./styles/theme.css";
 import "./styles.css";
 import "./styles/auth.css";
@@ -32,7 +35,9 @@ ReactDOM.createRoot(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <UnsavedChangesProvider>
+          <App />
+        </UnsavedChangesProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>,

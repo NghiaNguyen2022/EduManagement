@@ -56,6 +56,27 @@ export function AuthProvider({
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    // Phiên đăng nhập dùng chung 1 cookie cho mọi tab — nếu đơn vị bị đổi
+    // từ tab khác (ví dụ link "mở tab mới" ở OpenInOrganizationPage), tab
+    // này tự đọc lại đúng đơn vị mỗi khi được focus, tránh hiển thị sai.
+    function resync() {
+      if (document.visibilityState !== "visible") return;
+
+      getMeApi()
+        .then(setAuth)
+        .catch(() => {});
+    }
+
+    window.addEventListener("focus", resync);
+    document.addEventListener("visibilitychange", resync);
+
+    return () => {
+      window.removeEventListener("focus", resync);
+      document.removeEventListener("visibilitychange", resync);
+    };
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       auth,

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 
 import {
   CurrencyInput,
@@ -7,9 +6,12 @@ import {
   SelectField,
   TextField,
 } from "../components/form";
+import { EntityLink, OrgLink } from "../components/shared/EntityLink";
+import { GuardedLink } from "../components/shared/GuardedLink";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
 import { useAuth } from "../features/auth/AuthContext";
+import { useUnsavedChangesGuard } from "../features/navigation/UnsavedChangesContext";
 import {
   createDanhMucKhoanThuApi,
   createKyThuApi,
@@ -101,6 +103,11 @@ export function FinancePage() {
     );
   }, [auth, isHeThong]);
 
+  useUnsavedChangesGuard(
+    JSON.stringify(khoanThuForm) !== JSON.stringify(emptyKhoanThuForm) ||
+      JSON.stringify(kyThuForm) !== JSON.stringify(emptyKyThuForm),
+  );
+
   async function loadData() {
     setLoading(true);
     setError("");
@@ -189,9 +196,9 @@ export function FinancePage() {
             : "Quản lý danh mục khoản thu và kỳ thu học phí trong đơn vị đang làm việc"
         }
         action={
-          <Link to="/finance/bao-cao" className="text-button">
+          <GuardedLink to="/finance/bao-cao" className="text-button">
             Báo cáo tài chính
-          </Link>
+          </GuardedLink>
         }
       />
 
@@ -323,7 +330,9 @@ export function FinancePage() {
                       </span>
                     </td>
                     {isHeThong ? (
-                      <td>{item.donVi?.tenDonVi ?? "—"}</td>
+                      <td>
+                        <OrgLink donVi={item.donVi} to="/finance" />
+                      </td>
                     ) : null}
                   </tr>
                 ))}
@@ -443,16 +452,12 @@ export function FinancePage() {
                 {kyThuList.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      {isHeThong ? (
+                      <EntityLink
+                        to={`/finance/ky-thu/${item.id}`}
+                        donVi={item.donVi}
+                      >
                         <strong>{item.tenKyThu}</strong>
-                      ) : (
-                        <Link
-                          to={`/finance/ky-thu/${item.id}`}
-                          className="text-button"
-                        >
-                          <strong>{item.tenKyThu}</strong>
-                        </Link>
-                      )}
+                      </EntityLink>
                       <small>{item.maKyThu}</small>
                     </td>
                     <td>{LOAI_KY_LABEL[item.loaiKy]}</td>
@@ -468,7 +473,9 @@ export function FinancePage() {
                       </span>
                     </td>
                     {isHeThong ? (
-                      <td>{item.donVi?.tenDonVi ?? "—"}</td>
+                      <td>
+                        <OrgLink donVi={item.donVi} to="/finance" />
+                      </td>
                     ) : null}
                   </tr>
                 ))}
@@ -511,12 +518,12 @@ export function FinancePage() {
                     </td>
                     <td>
                       {item.kyThu ? (
-                        <Link
+                        <GuardedLink
                           to={`/finance/ky-thu/${item.kyThu.id}`}
                           className="text-button"
                         >
                           {item.kyThu.tenKyThu}
-                        </Link>
+                        </GuardedLink>
                       ) : (
                         "—"
                       )}

@@ -31,6 +31,10 @@ async function request<T>(
   return payload.data as T;
 }
 
+export function getGiaoVienDetailApi(id: number) {
+  return request<GiaoVienItem>(`/api/giao-vien/${id}`);
+}
+
 export async function listGiaoVienApi() {
   const rows = await request<
     (GiaoVienItem | { giaoVien: GiaoVienItem; donVi: GiaoVienItem["donVi"] })[]

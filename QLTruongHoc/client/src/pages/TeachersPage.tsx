@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { SelectField, TextField } from "../components/form";
+import { TextField } from "../components/form";
+import { EntityLink, OrgLink } from "../components/shared/EntityLink";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
 import { useAuth } from "../features/auth/AuthContext";
 import {
   createGiaoVienApi,
   listGiaoVienApi,
-  setGiaoVienStatusApi,
-  updateGiaoVienApi,
 } from "../features/giaoVien/giaoVienApi";
 import type {
   GiaoVienFormInput,
   GiaoVienItem,
 } from "../features/giaoVien/giaoVienTypes";
+import { useUnsavedChangesGuard } from "../features/navigation/UnsavedChangesContext";
 
 const emptyForm: GiaoVienFormInput = {
   hoTen: "",
@@ -32,7 +32,7 @@ export function TeachersPage() {
   const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<GiaoVienFormInput>(emptyForm);
 
   const isHeThong =
@@ -46,6 +46,10 @@ export function TeachersPage() {
         permissions.includes("lop_hoc.quan_ly"))
     );
   }, [auth, isHeThong]);
+
+  useUnsavedChangesGuard(
+    JSON.stringify(form) !== JSON.stringify(emptyForm),
+  );
 
   const filteredTeachers = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
@@ -82,24 +86,6 @@ export function TeachersPage() {
     void loadData();
   }, [auth?.currentOrganization?.id]);
 
-  function startEdit(teacher: GiaoVienItem) {
-    setEditingId(teacher.id);
-    setForm({
-      hoTen: teacher.hoTen,
-      dienThoai: teacher.dienThoai ?? "",
-      email: teacher.email ?? "",
-      chuyenMon: teacher.chuyenMon ?? "",
-      trinhDo: teacher.trinhDo ?? "",
-    });
-    setError("");
-    setNotice("");
-  }
-
-  function resetForm() {
-    setEditingId(null);
-    setForm(emptyForm);
-  }
-
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ) {
@@ -109,15 +95,10 @@ export function TeachersPage() {
     setSubmitting(true);
 
     try {
-      if (editingId) {
-        await updateGiaoVienApi(editingId, form);
-        setNotice(`Đã cập nhật hồ sơ ${form.hoTen}.`);
-      } else {
-        const created = await createGiaoVienApi(form);
-        setNotice(`Đã tạo hồ sơ giáo viên ${created.maGiaoVien}.`);
-      }
-
-      resetForm();
+      const created = await createGiaoVienApi(form);
+      setNotice(`Đã tạo hồ sơ giáo viên ${created.maGiaoVien}.`);
+      setForm(emptyForm);
+      setShowForm(false);
       await loadData();
     } catch (submitError) {
       setError(
@@ -130,32 +111,6 @@ export function TeachersPage() {
     }
   }
 
-  async function handleToggleStatus(teacher: GiaoVienItem) {
-    setError("");
-    setNotice("");
-
-    try {
-      const trangThaiMoi =
-        teacher.trangThai === "hoat_dong"
-          ? "ngung_hoat_dong"
-          : "hoat_dong";
-
-      await setGiaoVienStatusApi(teacher.id, trangThaiMoi);
-      setNotice(
-        `Đã đổi trạng thái ${teacher.hoTen} sang ${
-          trangThaiMoi === "hoat_dong" ? "hoạt động" : "ngừng hoạt động"
-        }.`,
-      );
-      await loadData();
-    } catch (statusError) {
-      setError(
-        statusError instanceof Error
-          ? statusError.message
-          : "Không thể đổi trạng thái.",
-      );
-    }
-  }
-
   return (
     <div className="page-stack">
       <PageHeader
@@ -165,19 +120,26 @@ export function TeachersPage() {
             ? "Xem gộp giáo viên của tất cả đơn vị (chỉ xem — đơn vị hệ thống không quản lý hồ sơ giáo viên)"
             : "Quản lý hồ sơ giáo viên trong đơn vị đang làm việc"
         }
+        action={
+          canManage ? (
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => setShowForm((current) => !current)}
+            >
+              {showForm ? "Đóng" : "Thêm giáo viên"}
+            </button>
+          ) : null
+        }
       />
 
       {error ? <div className="form-error">{error}</div> : null}
       {notice ? <div className="form-success">{notice}</div> : null}
 
-      {canManage ? (
+      {showForm && canManage ? (
         <SectionCard
-          title={editingId ? "Sửa hồ sơ giáo viên" : "Thêm giáo viên"}
-          subtitle={
-            editingId
-              ? "Không thể đổi mã giáo viên."
-              : "Mã giáo viên do hệ thống tự sinh."
-          }
+          title="Thêm giáo viên"
+          subtitle="Mã giáo viên do hệ thống tự sinh."
         >
           <form className="user-create-form" onSubmit={handleSubmit}>
             <TextField
@@ -223,30 +185,13 @@ export function TeachersPage() {
               }
             />
 
-            <div className="row-actions">
-              <button
-                type="submit"
-                className="primary-button"
-                disabled={submitting}
-              >
-                {submitting
-                  ? "Đang lưu..."
-                  : editingId
-                    ? "Lưu thay đổi"
-                    : "Tạo hồ sơ"}
-              </button>
-
-              {editingId ? (
-                <button
-                  type="button"
-                  className="text-button"
-                  onClick={resetForm}
-                  disabled={submitting}
-                >
-                  Hủy sửa
-                </button>
-              ) : null}
-            </div>
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={submitting}
+            >
+              {submitting ? "Đang lưu..." : "Tạo hồ sơ"}
+            </button>
           </form>
         </SectionCard>
       ) : null}
@@ -277,7 +222,6 @@ export function TeachersPage() {
                 <th>Chuyên môn</th>
                 <th>Trạng thái</th>
                 {isHeThong ? <th>Đơn vị</th> : null}
-                {canManage ? <th>Thao tác</th> : null}
               </tr>
             </thead>
 
@@ -285,7 +229,12 @@ export function TeachersPage() {
               {filteredTeachers.map((teacher) => (
                 <tr key={teacher.id}>
                   <td>
-                    <strong>{teacher.hoTen}</strong>
+                    <EntityLink
+                      to={`/teachers/${teacher.id}`}
+                      donVi={teacher.donVi}
+                    >
+                      <strong>{teacher.hoTen}</strong>
+                    </EntityLink>
                     <small>{teacher.maGiaoVien}</small>
                   </td>
 
@@ -307,32 +256,8 @@ export function TeachersPage() {
                   </td>
 
                   {isHeThong ? (
-                    <td>{teacher.donVi?.tenDonVi ?? "—"}</td>
-                  ) : null}
-
-                  {canManage ? (
                     <td>
-                      <div className="row-actions">
-                        <button
-                          type="button"
-                          className="text-button"
-                          onClick={() => startEdit(teacher)}
-                        >
-                          Sửa
-                        </button>
-
-                        <button
-                          type="button"
-                          className="text-button"
-                          onClick={() =>
-                            void handleToggleStatus(teacher)
-                          }
-                        >
-                          {teacher.trangThai === "hoat_dong"
-                            ? "Ngừng hoạt động"
-                            : "Kích hoạt lại"}
-                        </button>
-                      </div>
+                      <OrgLink donVi={teacher.donVi} to="/teachers" />
                     </td>
                   ) : null}
                 </tr>
@@ -341,7 +266,7 @@ export function TeachersPage() {
               {!loading && filteredTeachers.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4 + (canManage ? 1 : 0) + (isHeThong ? 1 : 0)}
+                    colSpan={4 + (isHeThong ? 1 : 0)}
                     className="empty-cell"
                   >
                     Chưa có giáo viên nào.

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 
 import {
   DateField,
@@ -7,6 +6,7 @@ import {
   SelectField,
   TextField,
 } from "../components/form";
+import { EntityLink, OrgLink } from "../components/shared/EntityLink";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
 import { useAuth } from "../features/auth/AuthContext";
@@ -26,6 +26,7 @@ import type {
   LopHocFormInput,
   LopHocItem,
 } from "../features/lopHoc/lopHocTypes";
+import { useUnsavedChangesGuard } from "../features/navigation/UnsavedChangesContext";
 
 const TRANG_THAI_LOP_LABEL: Record<string, string> = {
   chuan_bi: "Chuẩn bị",
@@ -85,6 +86,11 @@ export function ClassesPage() {
         permissions.includes("lop_hoc.quan_ly"))
     );
   }, [auth, isHeThong]);
+
+  useUnsavedChangesGuard(
+    JSON.stringify(programForm) !== JSON.stringify(emptyChuongTrinhForm) ||
+      JSON.stringify(classForm) !== JSON.stringify(emptyLopForm),
+  );
 
   const programsById = useMemo(() => {
     const map = new Map<number, ChuongTrinhItem>();
@@ -302,7 +308,12 @@ export function ClassesPage() {
                 {programs.map((program) => (
                   <tr key={program.id}>
                     <td>
-                      <strong>{program.tenChuongTrinh}</strong>
+                      <EntityLink
+                        to={`/chuong-trinh/${program.id}`}
+                        donVi={program.donVi}
+                      >
+                        <strong>{program.tenChuongTrinh}</strong>
+                      </EntityLink>
                       <small>{program.maChuongTrinh}</small>
                     </td>
                     <td>{program.capDo || "—"}</td>
@@ -320,7 +331,9 @@ export function ClassesPage() {
                       </span>
                     </td>
                     {isHeThong ? (
-                      <td>{program.donVi?.tenDonVi ?? "—"}</td>
+                      <td>
+                        <OrgLink donVi={program.donVi} to="/classes" />
+                      </td>
                     ) : null}
                   </tr>
                 ))}
@@ -471,16 +484,12 @@ export function ClassesPage() {
               {filteredClasses.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    {isHeThong ? (
+                    <EntityLink
+                      to={`/classes/${item.id}`}
+                      donVi={item.donVi}
+                    >
                       <strong>{item.tenLop}</strong>
-                    ) : (
-                      <Link
-                        to={`/classes/${item.id}`}
-                        className="text-button"
-                      >
-                        <strong>{item.tenLop}</strong>
-                      </Link>
-                    )}
+                    </EntityLink>
                     <small>{item.maLop}</small>
                   </td>
 
@@ -502,7 +511,9 @@ export function ClassesPage() {
                   </td>
 
                   {isHeThong ? (
-                    <td>{item.donVi?.tenDonVi ?? "—"}</td>
+                    <td>
+                      <OrgLink donVi={item.donVi} to="/classes" />
+                    </td>
                   ) : null}
                 </tr>
               ))}

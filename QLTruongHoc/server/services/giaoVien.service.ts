@@ -25,6 +25,16 @@ export async function listGiaoVien(donViId: number, loaiDonVi?: string) {
   return listGiaoVienByDonVi(donViId);
 }
 
+export async function getGiaoVienDetail(donViId: number, id: number) {
+  const found = await findGiaoVienById(donViId, id);
+
+  if (!found) {
+    throw new Error("Không tìm thấy giáo viên trong đơn vị hiện tại.");
+  }
+
+  return found;
+}
+
 export async function createGiaoVienMoi(input: {
   donViId: number;
   hoTen: string;

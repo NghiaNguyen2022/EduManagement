@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 
 import {
   DateField,
   SelectField,
   TextField,
 } from "../components/form";
+import { EntityLink, OrgLink } from "../components/shared/EntityLink";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
 import { useAuth } from "../features/auth/AuthContext";
@@ -17,6 +17,7 @@ import type {
   HocSinhFormInput,
   HocSinhItem,
 } from "../features/hocSinh/hocSinhTypes";
+import { useUnsavedChangesGuard } from "../features/navigation/UnsavedChangesContext";
 
 const TRANG_THAI_LABEL: Record<string, string> = {
   tiep_nhan: "Tiếp nhận",
@@ -57,6 +58,10 @@ export function StudentsPage() {
         permissions.includes("hoc_sinh.quan_ly"))
     );
   }, [auth, isHeThong]);
+
+  useUnsavedChangesGuard(
+    JSON.stringify(form) !== JSON.stringify(emptyForm),
+  );
 
   const filteredStudents = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
@@ -242,16 +247,12 @@ export function StudentsPage() {
               {filteredStudents.map((student) => (
                 <tr key={student.id}>
                   <td>
-                    {isHeThong ? (
+                    <EntityLink
+                      to={`/students/${student.id}`}
+                      donVi={student.donVi}
+                    >
                       <strong>{student.hoTen}</strong>
-                    ) : (
-                      <Link
-                        to={`/students/${student.id}`}
-                        className="text-button"
-                      >
-                        <strong>{student.hoTen}</strong>
-                      </Link>
-                    )}
+                    </EntityLink>
                     <small>{student.maHocSinh}</small>
                   </td>
 
@@ -267,7 +268,9 @@ export function StudentsPage() {
                   </td>
 
                   {isHeThong ? (
-                    <td>{student.donVi?.tenDonVi ?? "—"}</td>
+                    <td>
+                      <OrgLink donVi={student.donVi} to="/students" />
+                    </td>
                   ) : null}
                 </tr>
               ))}

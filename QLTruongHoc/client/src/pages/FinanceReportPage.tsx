@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { DateField } from "../components/form";
+import { EntityLink, OrgLink } from "../components/shared/EntityLink";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
 import { StatCard } from "../components/shared/StatCard";
@@ -131,11 +132,18 @@ export function FinanceReportPage() {
                   {report.theoKyThu.map((item) => (
                     <tr key={item.kyThu.id}>
                       <td>
-                        <strong>{item.kyThu.tenKyThu}</strong>
+                        <EntityLink
+                          to={`/finance/ky-thu/${item.kyThu.id}`}
+                          donVi={item.donVi}
+                        >
+                          <strong>{item.kyThu.tenKyThu}</strong>
+                        </EntityLink>
                         <small>{item.kyThu.maKyThu}</small>
                       </td>
                       {isHeThong ? (
-                        <td>{item.donVi?.tenDonVi ?? "—"}</td>
+                        <td>
+                          <OrgLink donVi={item.donVi} to="/finance/bao-cao" />
+                        </td>
                       ) : null}
                       <td>{formatTien(item.phaiThu)}</td>
                       <td>{formatTien(item.daThu)}</td>

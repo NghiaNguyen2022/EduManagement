@@ -23,8 +23,14 @@ import {
   ClassesPage,
 } from "./pages/ClassesPage";
 import {
+  ChuongTrinhDetailPage,
+} from "./pages/ChuongTrinhDetailPage";
+import {
   DashboardPage,
 } from "./pages/DashboardPage";
+import {
+  GiaoVienDetailPage,
+} from "./pages/GiaoVienDetailPage";
 import {
   FinancePage,
 } from "./pages/FinancePage";
@@ -43,6 +49,9 @@ import {
 import {
   LoginPage,
 } from "./pages/LoginPage";
+import {
+  OpenInOrganizationPage,
+} from "./pages/OpenInOrganizationPage";
 import {
   OrganizationTreePage,
 } from "./pages/OrganizationTreePage";
@@ -187,6 +196,13 @@ function ProtectedApp() {
         />
 
         <Route
+          path="/teachers/:id"
+          element={
+            <GiaoVienDetailPage />
+          }
+        />
+
+        <Route
           path="/classes"
           element={
             <ClassesPage />
@@ -197,6 +213,13 @@ function ProtectedApp() {
           path="/classes/:id"
           element={
             <ClassDetailPage />
+          }
+        />
+
+        <Route
+          path="/chuong-trinh/:id"
+          element={
+            <ChuongTrinhDetailPage />
           }
         />
 
@@ -223,6 +246,13 @@ function ProtectedApp() {
         <Route
           path="/finance/bao-cao"
           element={<FinanceReportPage />}
+        />
+
+        <Route
+          path="/mo-don-vi"
+          element={
+            <OpenInOrganizationPage />
+          }
         />
 
         <Route

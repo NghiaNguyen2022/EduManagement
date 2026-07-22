@@ -9,6 +9,7 @@ import {
 } from "../middleware/permission.middleware.js";
 import {
   createGiaoVienMoi,
+  getGiaoVienDetail,
   listGiaoVien,
   setGiaoVienStatus,
   updateGiaoVienThongTin,
@@ -31,6 +32,29 @@ giaoVienRouter.get(
     );
 
     res.json({ ok: true, data: rows });
+  },
+);
+
+giaoVienRouter.get(
+  "/:id",
+  requirePermission("lop_hoc.xem"),
+  async (req, res) => {
+    try {
+      const detail = await getGiaoVienDetail(
+        req.auth!.currentOrganization!.id,
+        Number(req.params.id),
+      );
+
+      res.json({ ok: true, data: detail });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Không thể tải chi tiết giáo viên.",
+      });
+    }
   },
 );
 

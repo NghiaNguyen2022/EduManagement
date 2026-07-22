@@ -963,3 +963,67 @@ thu theo từng kỳ thu. Chỉ còn **H08** (hoàn phí/chuyển phí/bảo lư
   - Dọn dẹp: xoá đúng ID vừa tạo theo thứ tự khoá ngoại, xác nhận `/finance` và `/finance/bao-cao`
     về lại trạng thái rỗng ban đầu.
 - Checklist: `docs/00_MASTER_CHECKLIST.md` mục H09 đã tick. Sprint 5 còn lại đúng một mục H08.
+
+---
+
+## Hệ thống link liên kết toàn app (2026-07-22)
+
+Người dùng yêu cầu: bảng "xem gộp" ở đơn vị hệ thống (ví dụ Chương trình đào tạo trong
+`ClassesPage`) phải bấm được vào tên thực thể và tên đơn vị, tự đề xuất khi nào mở cùng tab
+khi nào mở tab mới, và cảnh báo khi rời trang có dữ liệu chưa lưu.
+
+**Phát hiện kiến trúc quan trọng trước khi làm:** phiên đăng nhập dùng chung 1 cookie
+(`qlth_session`) cho mọi tab của cùng trình duyệt — "đơn vị đang chọn" (`donViHienTaiId`) lưu
+trên chính dòng session đó, không tách theo tab/request. Nghĩa là đổi đơn vị ở tab mới **sẽ**
+đổi đơn vị cho cả tab gốc (chỉ là tab gốc không thấy ngay). Tách phiên thật sự theo từng tab
+cần đổi cơ chế đăng nhập (mỗi tab một token riêng, không thể dựa thuần vào cookie) — quy mô
+lớn hơn nhiều so với yêu cầu. Đã chọn hướng nhẹ: dùng đúng cơ chế hiện có + `AuthContext` tự
+gọi lại `/auth/me` mỗi khi tab được focus lại, để tab gốc luôn tự sửa về đúng đơn vị đang chọn
+thay vì đứng im hiển thị sai.
+
+- Hạ tầng mới (`client/src/`):
+  - `features/navigation/UnsavedChangesContext.tsx` — `UnsavedChangesProvider` (bọc toàn app
+    trong `main.tsx`), `useUnsavedChangesGuard(isDirty)`, `useGuardedNavigate()`. Có
+    `ConfirmDialog` xác nhận rời trang + chặn `beforeunload` khi đang dirty.
+  - `components/shared/GuardedLink.tsx` — link cùng tab, tự hỏi xác nhận nếu trang đang dirty.
+  - `components/shared/EntityLink.tsx` — export `EntityLink` (link tới thực thể, tự chọn cùng
+    tab hay tab mới dựa vào có `donVi` hay không) và `OrgLink` (ô "Đơn vị", luôn mở tab mới).
+  - `pages/OpenInOrganizationPage.tsx` (route `/mo-don-vi?donViId=&to=`) — trang trung gian
+    cho link tab mới: gọi `selectOrganization` rồi điều hướng tới `to`.
+  - `AuthContext.tsx` — thêm resync khi tab `focus`/`visibilitychange`.
+  - Cập nhật `docs/DESIGN_SYSTEM_RULES.md` mục "Link liên kết giữa các trang" làm chuẩn dùng
+    chung, cấm tự viết `window.open`/`beforeunload`/`confirm()` riêng trong page.
+- Trang chi tiết mới (trước đó chưa tồn tại, chỉ sửa inline):
+  - Backend: `getChuongTrinhDetail`/`GET /api/chuong-trinh/:id`,
+    `getGiaoVienDetail`/`GET /api/giao-vien/:id` (tái dùng repository sẵn có, không đổi quy
+    tắc nghiệp vụ).
+  - `pages/ChuongTrinhDetailPage.tsx` (`/chuong-trinh/:id`) — sửa thông tin, đổi trạng thái,
+    danh sách lớp đang dùng chương trình này.
+  - `pages/GiaoVienDetailPage.tsx` (`/teachers/:id`) — sửa thông tin, đổi trạng thái.
+    `TeachersPage.tsx` bỏ sửa/đổi trạng thái inline (chuyển hẳn sang trang chi tiết), giữ
+    nguyên form tạo mới — cùng khuôn mẫu với `StudentsPage`/`LeadsPage`.
+- Gắn `EntityLink`/`OrgLink` vào đúng cột tên thực thể + cột "Đơn vị" ở mọi bảng xem gộp đã có
+  từ trước: `ClassesPage` (chương trình, lớp học), `TeachersPage`, `StudentsPage`,
+  `LeadsPage`, `FinancePage` (kỳ thu, công nợ), `FinanceReportPage` (thu theo kỳ thu). Có chủ
+  đích **không** link các cột chỉ hiển thị dữ liệu (số điện thoại, ghi chú, số tiền...) — đúng
+  yêu cầu "cân đối", không phải chỗ nào cũng cần link.
+- Gắn `useUnsavedChangesGuard` vào các trang có form tạo/sửa đang nhận link điều hướng mới:
+  `ClassesPage`, `TeachersPage`, `StudentsPage`, `LeadsPage`, `FinancePage`,
+  `KyThuDetailPage`, `ChuongTrinhDetailPage`, `GiaoVienDetailPage`. **Chưa** lùi sâu vào
+  `StudentDetailPage`/`ClassDetailPage`/`LeadDetailPage` (các trang chi tiết có sẵn từ trước,
+  nhiều mục sửa nhỏ lẻ, không thuộc phạm vi thay đổi lần này) — để lại nếu cần sau.
+- Test tay qua trình duyệt thật:
+  - Bảng "Chương trình đào tạo" ở đơn vị hệ thống — bấm tên chương trình → mở đúng tab mới,
+    href `/mo-don-vi?donViId=2&to=%2Fchuong-trinh%2F3`, `target="_blank"` — PASS. Điều hướng
+    trực tiếp tới URL đó xác nhận: tự chuyển đúng đơn vị (`TTNN-Q8`), vào đúng trang chi tiết,
+    hiện đúng danh sách lớp dùng chương trình — PASS.
+  - Sửa tên chương trình rồi bấm "← Lớp học" → hiện đúng `ConfirmDialog` "Rời trang khi chưa
+    lưu"; bấm "Rời trang" → điều hướng đúng, dữ liệu chưa lưu bị huỷ đúng ý (không lưu xuống
+    DB) — PASS.
+  - `TeachersPage` → bấm tên giáo viên → vào đúng `GiaoVienDetailPage`, hiển thị đúng thông
+    tin — PASS.
+  - `pnpm typecheck`, `pnpm build` — PASS. Không phát sinh lỗi console thật (một dòng lỗi HMR
+    "Failed to reload App.tsx" chỉ là log cũ còn sót lại từ lúc đang sửa file giữa chừng, xác
+    nhận lại bằng console sạch sau khi tải lại trang mới).
+- Checklist: không thuộc mục H hay bất kỳ mục nào trong `docs/00_MASTER_CHECKLIST.md` — đây là
+  cải tiến hạ tầng UI/UX xuyên suốt app, không phải một tính năng nghiệp vụ mới.
