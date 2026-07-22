@@ -62,3 +62,38 @@ export type KyThuDetail = {
   kyThu: KyThuItem;
   khoanApDung: KhoanApDungItem[];
 };
+
+export type TrangThaiKhoanPhaiThu = "chua_thu" | "thu_mot_phan" | "da_thu_du";
+
+export type KhoanPhaiThuItem = {
+  id: number;
+  kyThuId: number;
+  hocSinh: { id: number; maHocSinh: string; hoTen: string };
+  tongTien: string;
+  giamTru: string;
+  daThu: string;
+  conLai: string;
+  trangThai: TrangThaiKhoanPhaiThu;
+  kyThu?: { id: number; maKyThu: string; tenKyThu: string };
+};
+
+export type PhuongThucThu = "tien_mat" | "chuyen_khoan" | "the" | "khac";
+
+export type PhieuThuItem = {
+  id: number;
+  donViId: number;
+  khoanPhaiThuId: number;
+  hocSinhId: number;
+  soPhieu: string;
+  soTien: string;
+  phuongThuc: PhuongThucThu;
+  ghiChu: string | null;
+  nguoiThuId: number;
+  ngayThu: string;
+};
+
+export type SinhKhoanPhaiThuResult = {
+  daTao: number;
+  boQua: number;
+  tongSoHocSinh: number;
+};

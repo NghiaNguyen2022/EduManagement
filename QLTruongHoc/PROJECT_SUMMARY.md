@@ -870,3 +870,64 @@ slice tiếp theo, đúng nhịp tách nhỏ đã dùng cho E01-E04/E05-E08 và 
     id=1) sau khi verify qua `SELECT` khớp đúng thời gian/mã vừa tạo — xác nhận trang `/finance`
     về lại trạng thái rỗng ban đầu.
 - Checklist: `docs/00_MASTER_CHECKLIST.md` mục H01, H02 đã tick.
+
+---
+
+## H03-H07 — Khoản phải thu, miễn giảm, thu tiền, công nợ, biên nhận (2026-07-22)
+
+Tiếp H01/H02, đúng 4 bước. Phạm vi: sinh khoản phải thu cho từng học sinh theo lớp, miễn
+giảm, thu tiền từng phần/nhiều lần, xem công nợ toàn đơn vị, xem lịch sử phiếu thu (biên
+nhận). **Chưa** gồm H08 (hoàn phí/chuyển phí/bảo lưu) và H09 (báo cáo doanh thu tổng hợp có
+biểu đồ) — để lại làm bước sau.
+
+- Phân tích chi tiết: `docs/analysis/H03_H07_khoan_phai_thu_thu_tien.md`.
+- Cập nhật BPD: mục 18.14 — chốt đơn giản hoá lớn nhất so với bản nháp
+  `database/003_init_finance_learning.sql`: **một phiếu thu gắn đúng một khoản phải thu**
+  (không có `PhieuThuChiTiet` nhiều khoản/phiếu); "thu nhiều lần" vẫn đủ vì một khoản phải
+  thu nhận được nhiều phiếu thu cho tới khi thu đủ. `conLai` tính trong service, không dùng
+  generated column MySQL. Đóng kỳ thu khoá luôn cả miễn giảm/thu tiền (không chỉ khoá sửa
+  thông tin kỳ như đã chốt ở mục 18.13).
+- Database (`database/018_add_khoan_phai_thu_phieu_thu.sql`): tạo `KhoanPhaiThu`,
+  `KhoanPhaiThuChiTiet`, `PhieuThu`. Đồng bộ `drizzle/schemas/taiChinh.ts`.
+- Backend: mở rộng `server/db/taiChinh.repository.ts`,
+  `server/services/taiChinh.service.ts`, `server/routers/taiChinh.router.ts` (thêm các route
+  con dưới `/api/tai-chinh`: sinh khoản phải thu theo lớp, xem/miễn giảm/thu tiền khoản phải
+  thu, xem phiếu thu, xem công nợ toàn đơn vị). Quy tắc chính:
+  - Sinh khoản phải thu: chỉ khi kỳ `da_mo`; lấy học sinh đang `dang_hoc` trong lớp; bỏ qua
+    (không lỗi) học sinh đã có khoản phải thu cho kỳ đó — idempotent, chạy lại nhiều lớp/nhiều
+    lần an toàn.
+  - Miễn giảm/thu tiền: chỉ khi kỳ vẫn `da_mo` — đóng kỳ khoá toàn bộ thao tác tiền, kể cả
+    những khoản phải thu chưa thu đủ (chốt sổ đúng nghĩa).
+  - Giảm trừ mới + đã thu không được vượt tổng tiền; số tiền thu không được vượt số còn lại
+    và phải lớn hơn 0.
+  - Trạng thái khoản phải thu (`chua_thu`/`thu_mot_phan`/`da_thu_du`) luôn suy ra tự động từ
+    số liệu sau mỗi lần đổi, không cho sửa tay.
+  - Mã phiếu thu tự sinh `PT<năm><5 số>`.
+- Frontend: mở rộng `client/src/pages/KyThuDetailPage.tsx` — thêm section "Sinh khoản phải
+  thu" (chọn lớp, chỉ hiện khi kỳ đang mở), bảng "Khoản phải thu" theo kỳ, panel thao tác dùng
+  chung một vùng hiển thị bên dưới bảng (chỉ một panel "Thu tiền"/"Miễn giảm"/"Lịch sử thu"
+  hiện tại một thời điểm — tránh mở nhiều modal chồng nhau, đúng nguyên tắc thiết kế "không tự
+  viết modal riêng" vì đây là form inline, không phải popup). Thêm mục "Công nợ" vào
+  `client/src/pages/FinancePage.tsx` (toàn đơn vị, liên kết sang đúng kỳ thu).
+- Test tay qua UI thật (dùng chung server đang chạy, theo đúng lớp/học sinh mẫu sẵn có tại
+  TTNN-Q8, xác nhận đúng ID trước khi xoá):
+  - Sinh khoản phải thu cho lớp "IELTS Sáng Thứ 2-4-6" (2 học sinh đang học) từ kỳ thu đã mở
+    — tạo đúng 2 khoản phải thu 1.000.000đ, bỏ qua 0 — PASS.
+  - Thu một phần 600.000đ cho một học sinh → còn lại 400.000đ, trạng thái "Thu một phần" —
+    PASS.
+  - Miễn giảm 200.000đ cho học sinh còn lại → còn lại 800.000đ, trạng thái vẫn "Chưa thu" —
+    PASS. Thử giảm trừ 2.000.000đ (vượt tổng tiền) → bị chặn đúng thông báo — PASS (phát hiện
+    khi test tay do gõ nhầm vào ô CurrencyInput chưa focus rỗng, validation chặn đúng, không
+    có dữ liệu sai lọt xuống DB).
+  - Xem "Lịch sử thu" → đúng 1 phiếu thu, mã tự sinh `PT202600001`, đúng ngày/số tiền/phương
+    thức/ghi chú — PASS.
+  - Trang `/finance` mục "Công nợ" hiển thị đúng cả 2 khoản còn nợ, liên kết đúng sang kỳ thu
+    — PASS.
+  - Đóng kỳ thu → nút "Sinh khoản phải thu" và cột "Thao tác" (Thu tiền/Miễn giảm/Lịch sử
+    thu) biến mất khỏi bảng khoản phải thu, chỉ còn xem — PASS.
+  - `pnpm typecheck`, `pnpm build` — PASS.
+  - Dọn dẹp: xoá đúng theo thứ tự khoá ngoại (`PhieuThu` id=1, `KhoanPhaiThuChiTiet` id=1-2,
+    `KhoanPhaiThu` id=1-2, `KyThuKhoanThu`, `KyThu` id=2, `DanhMucKhoanThu` id=2) sau khi
+    verify qua `SELECT` khớp đúng thời gian vừa tạo — xác nhận trang `/finance` về lại trạng
+    thái rỗng ban đầu.
+- Checklist: `docs/00_MASTER_CHECKLIST.md` mục H03, H04, H05, H06, H07 đã tick.

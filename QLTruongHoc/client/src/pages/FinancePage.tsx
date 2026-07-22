@@ -13,17 +13,23 @@ import { useAuth } from "../features/auth/AuthContext";
 import {
   createDanhMucKhoanThuApi,
   createKyThuApi,
+  listCongNoApi,
   listDanhMucKhoanThuApi,
   listKyThuApi,
 } from "../features/taiChinh/taiChinhApi";
 import type {
   DanhMucKhoanThuFormInput,
   DanhMucKhoanThuItem,
+  KhoanPhaiThuItem,
   KyThuFormInput,
   KyThuItem,
   LoaiKhoanThu,
   LoaiKy,
 } from "../features/taiChinh/taiChinhTypes";
+
+function formatTien(value: string) {
+  return `${Number(value).toLocaleString("vi-VN")} ₫`;
+}
 
 const LOAI_KHOAN_THU_LABEL: Record<LoaiKhoanThu, string> = {
   hoc_phi: "Học phí",
@@ -70,6 +76,7 @@ export function FinancePage() {
     [],
   );
   const [kyThuList, setKyThuList] = useState<KyThuItem[]>([]);
+  const [congNoList, setCongNoList] = useState<KhoanPhaiThuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -99,12 +106,14 @@ export function FinancePage() {
     setError("");
 
     try {
-      const [khoanThuRows, kyThuRows] = await Promise.all([
+      const [khoanThuRows, kyThuRows, congNoRows] = await Promise.all([
         listDanhMucKhoanThuApi(),
         listKyThuApi(),
+        isHeThong ? Promise.resolve([]) : listCongNoApi(),
       ]);
       setKhoanThuList(khoanThuRows);
       setKyThuList(kyThuRows);
+      setCongNoList(congNoRows);
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -471,6 +480,67 @@ export function FinancePage() {
           </div>
         )}
       </SectionCard>
+
+      {!isHeThong ? (
+        <SectionCard
+          title="Công nợ"
+          subtitle={`${congNoList.length} khoản còn phải thu`}
+        >
+          <div className="user-table-wrap">
+            <table className="user-table">
+              <thead>
+                <tr>
+                  <th>Học sinh</th>
+                  <th>Kỳ thu</th>
+                  <th>Còn lại</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {congNoList.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <strong>{item.hocSinh.hoTen}</strong>
+                      <small>{item.hocSinh.maHocSinh}</small>
+                    </td>
+                    <td>
+                      {item.kyThu ? (
+                        <Link
+                          to={`/finance/ky-thu/${item.kyThu.id}`}
+                          className="text-button"
+                        >
+                          {item.kyThu.tenKyThu}
+                        </Link>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td>{formatTien(item.conLai)}</td>
+                    <td>
+                      <span
+                        className={`status-badge status-badge--${item.trangThai}`}
+                      >
+                        {item.trangThai === "chua_thu"
+                          ? "Chưa thu"
+                          : "Thu một phần"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+
+                {congNoList.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="empty-cell">
+                      Không còn khoản nào phải thu.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
+      ) : null}
     </div>
   );
 }

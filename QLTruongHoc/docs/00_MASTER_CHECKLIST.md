@@ -53,9 +53,11 @@
 > Cập nhật 2026-07-22: thiết kế lại sidebar lần hai (khung nhóm có shadow, điểm nhấn tên
 > nhóm, gạch dưới cho chức năng chưa hoàn thiện) — thuộc K06, không phát sinh mục checklist
 > mới. Mở Sprint 5 (Tài chính), hoàn tất H01/H02 (danh mục khoản thu, kỳ thu + gán khoản thu
-> áp dụng cho kỳ, mở/đóng kỳ). H03-H09 (sinh khoản phải thu, thu tiền, miễn giảm, công nợ,
-> biên nhận, hoàn phí/chuyển phí, báo cáo) để lại làm slice tiếp theo. Xem
-> `PROJECT_SUMMARY.md` mục "H01/H02 — Danh mục khoản thu, Kỳ thu".
+> áp dụng cho kỳ, mở/đóng kỳ), sau đó tiếp H03-H07 (sinh khoản phải thu theo lớp, miễn giảm,
+> thu tiền từng phần, công nợ toàn đơn vị, lịch sử phiếu thu). H08/H09 (hoàn phí/chuyển
+> phí/bảo lưu, báo cáo doanh thu tổng hợp) để lại làm bước sau. Xem `PROJECT_SUMMARY.md` mục
+> "H01/H02 — Danh mục khoản thu, Kỳ thu" và "H03-H07 — Khoản phải thu, miễn giảm, thu tiền,
+> công nợ, biên nhận".
 
 ## A. Nền tảng và đa đơn vị
 - [x] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)
@@ -122,11 +124,11 @@
 ## H. Tài chính
 - [x] H01 Danh mục khoản thu. (2026-07-22: API `/api/tai-chinh/khoan-thu` + trang `/finance`. Mã tự đặt như chương trình/lớp. Xem `docs/analysis/H01_H02_khoan_thu_ky_thu.md`.)
 - [x] H02 Tạo kỳ thu. (2026-07-22: API `/api/tai-chinh/ky-thu` + trang `/finance`, `/finance/ky-thu/:id`. Gán khoản thu áp dụng cho kỳ (`KyThuKhoanThu`), tách 2 trạng thái nháp/mở để khoá sửa sau khi mở — tương tự cách tách bước ở E05-E08.)
-- [ ] H03 Áp dụng khoản thu cho lớp/học sinh.
-- [ ] H04 Khoản phải thu và miễn giảm.
-- [ ] H05 Thu từng phần/nhiều lần.
-- [ ] H06 Công nợ phụ huynh.
-- [ ] H07 Biên nhận thu.
+- [x] H03 Áp dụng khoản thu cho lớp/học sinh. (2026-07-22: nút "Sinh khoản phải thu" trong chi tiết kỳ thu, chọn lớp → tạo `KhoanPhaiThu` cho từng học sinh đang học, bỏ qua học sinh đã có sẵn (idempotent). Xem `docs/analysis/H03_H07_khoan_phai_thu_thu_tien.md`.)
+- [x] H04 Khoản phải thu và miễn giảm. (Form "Miễn giảm" theo từng khoản phải thu, chặn giảm trừ vượt tổng tiền.)
+- [x] H05 Thu từng phần/nhiều lần. (Form "Thu tiền" tạo `PhieuThu`, cho phép nhiều phiếu thu trên cùng một khoản phải thu tới khi thu đủ; trạng thái tự suy ra chưa_thu/thu_một_phần/đã_thu_đủ.)
+- [x] H06 Công nợ phụ huynh. (Mục "Công nợ" trong trang `/finance` — toàn bộ khoản phải thu còn nợ trên toàn đơn vị, liên kết sang đúng kỳ thu. Chưa gộp theo phụ huynh, xem theo học sinh.)
+- [x] H07 Biên nhận thu. (Mục "Lịch sử thu" theo từng khoản phải thu — số phiếu tự sinh `PT<năm><5 số>`, ngày/số tiền/phương thức/ghi chú. Chưa có bản in/PDF riêng.)
 - [ ] H08 Hoàn phí/chuyển phí/bảo lưu.
 - [ ] H09 Báo cáo doanh thu, công nợ, thu theo đơn vị.
 

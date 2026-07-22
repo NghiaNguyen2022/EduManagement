@@ -1,9 +1,12 @@
 import type {
   DanhMucKhoanThuFormInput,
   DanhMucKhoanThuItem,
+  KhoanPhaiThuItem,
   KyThuDetail,
   KyThuFormInput,
   KyThuItem,
+  PhieuThuItem,
+  SinhKhoanPhaiThuResult,
 } from "./taiChinhTypes";
 
 type ApiResponse<T> = {
@@ -147,4 +150,60 @@ export function dongKyThuApi(id: number) {
   return request<KyThuItem>(`/api/tai-chinh/ky-thu/${id}/dong`, {
     method: "PATCH",
   });
+}
+
+// ---------------------------------------------------------------
+// Khoản phải thu, thu tiền, công nợ
+// ---------------------------------------------------------------
+
+export function sinhKhoanPhaiThuApi(kyThuId: number, lopHocId: number) {
+  return request<SinhKhoanPhaiThuResult>(
+    `/api/tai-chinh/ky-thu/${kyThuId}/sinh-khoan-phai-thu`,
+    {
+      method: "POST",
+      body: JSON.stringify({ lopHocId }),
+    },
+  );
+}
+
+export function listKhoanPhaiThuApi(kyThuId: number) {
+  return request<KhoanPhaiThuItem[]>(
+    `/api/tai-chinh/ky-thu/${kyThuId}/khoan-phai-thu`,
+  );
+}
+
+export function capNhatGiamTruApi(
+  khoanPhaiThuId: number,
+  giamTru: number,
+) {
+  return request<KhoanPhaiThuItem>(
+    `/api/tai-chinh/khoan-phai-thu/${khoanPhaiThuId}/giam-tru`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ giamTru }),
+    },
+  );
+}
+
+export function thuTienApi(
+  khoanPhaiThuId: number,
+  input: { soTien: number; phuongThuc: string; ghiChu?: string },
+) {
+  return request<{ phieuThu: PhieuThuItem; khoanPhaiThu: KhoanPhaiThuItem }>(
+    `/api/tai-chinh/khoan-phai-thu/${khoanPhaiThuId}/thu-tien`,
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export function listPhieuThuApi(khoanPhaiThuId: number) {
+  return request<PhieuThuItem[]>(
+    `/api/tai-chinh/khoan-phai-thu/${khoanPhaiThuId}/phieu-thu`,
+  );
+}
+
+export function listCongNoApi() {
+  return request<KhoanPhaiThuItem[]>("/api/tai-chinh/cong-no");
 }

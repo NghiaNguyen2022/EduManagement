@@ -3,22 +3,34 @@ import {
 } from "../db/audit.repository.js";
 import {
   createDanhMucKhoanThu,
+  createKhoanPhaiThu,
   createKyThu,
+  createPhieuThu,
+  countPhieuThuTheoPrefix,
   findDanhMucKhoanThuById,
   findDanhMucKhoanThuByMa,
+  findKhoanPhaiThuByKyThuHocSinh,
+  findKhoanPhaiThuById,
   findKyThuById,
   findKyThuByMa,
+  listCongNoByDonVi,
   listDanhMucKhoanThuAllDonVi,
   listDanhMucKhoanThuByDonVi,
+  listHocSinhDangHocTrongLop,
+  listKhoanPhaiThuByKyThu,
   listKyThuAllDonVi,
   listKyThuByDonVi,
   listKyThuKhoanThu,
+  listPhieuThuByKhoanPhaiThu,
   replaceKyThuKhoanThu,
   setDanhMucKhoanThuTrangThai,
   setKyThuTrangThai,
   updateDanhMucKhoanThu,
+  updateKhoanPhaiThuDaThu,
+  updateKhoanPhaiThuGiamTru,
   updateKyThu,
 } from "../db/taiChinh.repository.js";
+import { findLopHocById } from "../db/lopHoc.repository.js";
 import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
 
 type LoaiKhoanThu = "hoc_phi" | "tien_an" | "dich_vu" | "tai_lieu" | "khac";
@@ -526,4 +538,335 @@ export async function dongKyThu(input: {
   });
 
   return updated;
+}
+
+// ---------------------------------------------------------------
+// Khoản phải thu, thu tiền, công nợ
+// ---------------------------------------------------------------
+
+type TrangThaiKhoanPhaiThu = "chua_thu" | "thu_mot_phan" | "da_thu_du";
+
+function tinhTrangThaiKhoanPhaiThu(
+  tongTien: number,
+  giamTru: number,
+  daThu: number,
+): TrangThaiKhoanPhaiThu {
+  if (daThu <= 0) return "chua_thu";
+
+  const conLai = tongTien - giamTru - daThu;
+
+  return conLai <= 0 ? "da_thu_du" : "thu_mot_phan";
+}
+
+function toKhoanPhaiThuView(row: {
+  khoanPhaiThu: {
+    id: number;
+    kyThuId: number;
+    hocSinhId: number;
+    tongTien: string;
+    giamTru: string;
+    daThu: string;
+    trangThai: string;
+  };
+  hocSinh: { id: number; maHocSinh: string; hoTen: string };
+}) {
+  const tongTien = Number(row.khoanPhaiThu.tongTien);
+  const giamTru = Number(row.khoanPhaiThu.giamTru);
+  const daThu = Number(row.khoanPhaiThu.daThu);
+
+  return {
+    id: row.khoanPhaiThu.id,
+    kyThuId: row.khoanPhaiThu.kyThuId,
+    hocSinh: {
+      id: row.hocSinh.id,
+      maHocSinh: row.hocSinh.maHocSinh,
+      hoTen: row.hocSinh.hoTen,
+    },
+    tongTien: row.khoanPhaiThu.tongTien,
+    giamTru: row.khoanPhaiThu.giamTru,
+    daThu: row.khoanPhaiThu.daThu,
+    conLai: (tongTien - giamTru - daThu).toFixed(2),
+    trangThai: row.khoanPhaiThu.trangThai,
+  };
+}
+
+export async function sinhKhoanPhaiThuChoLop(input: {
+  donViId: number;
+  kyThuId: number;
+  lopHocId: number;
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  const kyThuFound = await requireKyThu(input.donViId, input.kyThuId);
+
+  if (kyThuFound.trangThai !== "da_mo") {
+    throw new Error(
+      "Chỉ có thể sinh khoản phải thu cho kỳ thu đang mở.",
+    );
+  }
+
+  const lopHoc = await findLopHocById(input.donViId, input.lopHocId);
+
+  if (!lopHoc) {
+    throw new Error("Không tìm thấy lớp học trong đơn vị hiện tại.");
+  }
+
+  const khoanApDung = await listKyThuKhoanThu(input.kyThuId);
+
+  if (khoanApDung.length === 0) {
+    throw new Error("Kỳ thu chưa có khoản thu áp dụng nào.");
+  }
+
+  const tongTienKy = khoanApDung
+    .reduce((sum, item) => sum + Number(item.apDung.soTien), 0)
+    .toFixed(2);
+
+  const chiTiet = khoanApDung.map((item) => ({
+    danhMucKhoanThuId: item.apDung.danhMucKhoanThuId,
+    soTien: item.apDung.soTien,
+  }));
+
+  const roster = await listHocSinhDangHocTrongLop(input.lopHocId);
+
+  let daTao = 0;
+  let boQua = 0;
+
+  for (const row of roster) {
+    const existing = await findKhoanPhaiThuByKyThuHocSinh(
+      input.kyThuId,
+      row.hocSinh.id,
+    );
+
+    if (existing) {
+      boQua += 1;
+      continue;
+    }
+
+    await createKhoanPhaiThu({
+      donViId: input.donViId,
+      kyThuId: input.kyThuId,
+      hocSinhId: row.hocSinh.id,
+      tongTien: tongTienKy,
+      chiTiet,
+    });
+
+    daTao += 1;
+  }
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "khoan_phai_thu.sinh_theo_lop",
+    objectType: "KyThu",
+    objectId: String(input.kyThuId),
+    content: `Sinh khoản phải thu cho lớp ${lopHoc.tenLop} — kỳ thu ${kyThuFound.tenKyThu}: tạo mới ${daTao}, bỏ qua ${boQua} (đã có sẵn).`,
+    ipAddress: input.ipAddress,
+  });
+
+  return { daTao, boQua, tongSoHocSinh: roster.length };
+}
+
+export async function listKhoanPhaiThuTheoKyThu(
+  donViId: number,
+  kyThuId: number,
+) {
+  await requireKyThu(donViId, kyThuId);
+
+  const rows = await listKhoanPhaiThuByKyThu(kyThuId);
+
+  return rows.map(toKhoanPhaiThuView);
+}
+
+async function requireKhoanPhaiThuTrongKyDangMo(
+  donViId: number,
+  khoanPhaiThuId: number,
+) {
+  const khoanPhaiThuFound = await findKhoanPhaiThuById(
+    donViId,
+    khoanPhaiThuId,
+  );
+
+  if (!khoanPhaiThuFound) {
+    throw new Error("Không tìm thấy khoản phải thu.");
+  }
+
+  const kyThuFound = await requireKyThu(donViId, khoanPhaiThuFound.kyThuId);
+
+  if (kyThuFound.trangThai !== "da_mo") {
+    throw new Error(
+      "Kỳ thu không còn mở, không thể miễn giảm hoặc thu tiền.",
+    );
+  }
+
+  return khoanPhaiThuFound;
+}
+
+export async function capNhatGiamTru(input: {
+  donViId: number;
+  khoanPhaiThuId: number;
+  giamTru: number;
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  const khoanPhaiThuFound = await requireKhoanPhaiThuTrongKyDangMo(
+    input.donViId,
+    input.khoanPhaiThuId,
+  );
+
+  const giamTru = chuanHoaSoTien(input.giamTru) ?? "0.00";
+  const tongTien = Number(khoanPhaiThuFound.tongTien);
+  const daThu = Number(khoanPhaiThuFound.daThu);
+
+  if (Number(giamTru) + daThu > tongTien) {
+    throw new Error(
+      "Giảm trừ cộng với số đã thu không được vượt quá tổng tiền.",
+    );
+  }
+
+  const trangThai = tinhTrangThaiKhoanPhaiThu(
+    tongTien,
+    Number(giamTru),
+    daThu,
+  );
+
+  const updated = await updateKhoanPhaiThuGiamTru({
+    id: input.khoanPhaiThuId,
+    giamTru,
+    trangThai,
+  });
+
+  if (!updated) {
+    throw new Error("Không thể cập nhật giảm trừ.");
+  }
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "khoan_phai_thu.mien_giam",
+    objectType: "KhoanPhaiThu",
+    objectId: String(updated.id),
+    content: `Cập nhật giảm trừ khoản phải thu #${updated.id} thành ${giamTru}.`,
+    ipAddress: input.ipAddress,
+  });
+
+  return updated;
+}
+
+type PhuongThucThu = "tien_mat" | "chuyen_khoan" | "the" | "khac";
+const PHUONG_THUC_HOP_LE: PhuongThucThu[] = [
+  "tien_mat",
+  "chuyen_khoan",
+  "the",
+  "khac",
+];
+
+async function sinhSoPhieuThu(donViId: number) {
+  const nam = new Date().getFullYear();
+  const prefix = `PT${nam}`;
+  const total = await countPhieuThuTheoPrefix(donViId, prefix);
+
+  return `${prefix}${String(total + 1).padStart(5, "0")}`;
+}
+
+export async function ghiNhanThuTien(input: {
+  donViId: number;
+  khoanPhaiThuId: number;
+  soTien: number;
+  phuongThuc: string;
+  ghiChu?: string | null;
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  const khoanPhaiThuFound = await requireKhoanPhaiThuTrongKyDangMo(
+    input.donViId,
+    input.khoanPhaiThuId,
+  );
+
+  if (!PHUONG_THUC_HOP_LE.includes(input.phuongThuc as PhuongThucThu)) {
+    throw new Error("Phương thức thu tiền không hợp lệ.");
+  }
+
+  if (!Number.isFinite(input.soTien) || input.soTien <= 0) {
+    throw new Error("Số tiền thu phải lớn hơn 0.");
+  }
+
+  const tongTien = Number(khoanPhaiThuFound.tongTien);
+  const giamTru = Number(khoanPhaiThuFound.giamTru);
+  const daThuHienTai = Number(khoanPhaiThuFound.daThu);
+  const conLai = tongTien - giamTru - daThuHienTai;
+
+  if (input.soTien > conLai) {
+    throw new Error("Số tiền thu vượt quá số tiền còn phải thu.");
+  }
+
+  const daThuMoi = (daThuHienTai + input.soTien).toFixed(2);
+  const trangThai = tinhTrangThaiKhoanPhaiThu(
+    tongTien,
+    giamTru,
+    Number(daThuMoi),
+  );
+
+  const soPhieu = await sinhSoPhieuThu(input.donViId);
+
+  const phieu = await createPhieuThu({
+    donViId: input.donViId,
+    khoanPhaiThuId: input.khoanPhaiThuId,
+    hocSinhId: khoanPhaiThuFound.hocSinhId,
+    soPhieu,
+    soTien: input.soTien.toFixed(2),
+    phuongThuc: input.phuongThuc as PhuongThucThu,
+    ghiChu: input.ghiChu?.trim() || null,
+    nguoiThuId: input.actorUserId,
+  });
+
+  if (!phieu) {
+    throw new Error("Không thể tạo phiếu thu.");
+  }
+
+  const updatedKhoanPhaiThu = await updateKhoanPhaiThuDaThu({
+    id: input.khoanPhaiThuId,
+    daThu: daThuMoi,
+    trangThai,
+  });
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "phieu_thu.create",
+    objectType: "PhieuThu",
+    objectId: String(phieu.id),
+    content: `Thu ${phieu.soTien} cho khoản phải thu #${input.khoanPhaiThuId} — phiếu ${phieu.soPhieu}.`,
+    ipAddress: input.ipAddress,
+  });
+
+  return { phieuThu: phieu, khoanPhaiThu: updatedKhoanPhaiThu };
+}
+
+export async function listPhieuThuTheoKhoanPhaiThu(
+  donViId: number,
+  khoanPhaiThuId: number,
+) {
+  const khoanPhaiThuFound = await findKhoanPhaiThuById(
+    donViId,
+    khoanPhaiThuId,
+  );
+
+  if (!khoanPhaiThuFound) {
+    throw new Error("Không tìm thấy khoản phải thu.");
+  }
+
+  return listPhieuThuByKhoanPhaiThu(khoanPhaiThuId);
+}
+
+export async function listCongNoToanDonVi(donViId: number) {
+  const rows = await listCongNoByDonVi(donViId);
+
+  return rows.map((row) => ({
+    ...toKhoanPhaiThuView(row),
+    kyThu: {
+      id: row.kyThu.id,
+      maKyThu: row.kyThu.maKyThu,
+      tenKyThu: row.kyThu.tenKyThu,
+    },
+  }));
 }

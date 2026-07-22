@@ -1,10 +1,15 @@
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, gt, like, sql } from "drizzle-orm";
 
 import {
   danhMucKhoanThu,
   donVi,
+  hocSinh,
+  hocSinhLopHoc,
+  khoanPhaiThu,
+  khoanPhaiThuChiTiet,
   kyThu,
   kyThuKhoanThu,
+  phieuThu,
 } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
@@ -350,4 +355,264 @@ export async function replaceKyThuKhoanThu(input: {
       updatedAt: now(),
     })),
   );
+}
+
+// ---------------------------------------------------------------
+// Học sinh đang học trong lớp (dùng để sinh khoản phải thu)
+// ---------------------------------------------------------------
+
+export async function listHocSinhDangHocTrongLop(lopHocId: number) {
+  const db = getDb();
+
+  return db
+    .select({ hocSinh })
+    .from(hocSinhLopHoc)
+    .innerJoin(hocSinh, eq(hocSinhLopHoc.hocSinhId, hocSinh.id))
+    .where(
+      and(
+        eq(hocSinhLopHoc.lopHocId, lopHocId),
+        eq(hocSinhLopHoc.trangThai, "dang_hoc"),
+      ),
+    );
+}
+
+// ---------------------------------------------------------------
+// Khoản phải thu
+// ---------------------------------------------------------------
+
+export async function findKhoanPhaiThuByKyThuHocSinh(
+  kyThuId: number,
+  hocSinhId: number,
+) {
+  const db = getDb();
+
+  const rows = await db
+    .select()
+    .from(khoanPhaiThu)
+    .where(
+      and(
+        eq(khoanPhaiThu.kyThuId, kyThuId),
+        eq(khoanPhaiThu.hocSinhId, hocSinhId),
+      ),
+    )
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function createKhoanPhaiThu(input: {
+  donViId: number;
+  kyThuId: number;
+  hocSinhId: number;
+  tongTien: string;
+  chiTiet: { danhMucKhoanThuId: number; soTien: string }[];
+}) {
+  const db = getDb();
+
+  await db.insert(khoanPhaiThu).values({
+    donViId: input.donViId,
+    kyThuId: input.kyThuId,
+    hocSinhId: input.hocSinhId,
+    tongTien: input.tongTien,
+    giamTru: "0.00",
+    daThu: "0.00",
+    trangThai: "chua_thu",
+    createdAt: now(),
+    updatedAt: now(),
+  });
+
+  const created = await findKhoanPhaiThuByKyThuHocSinh(
+    input.kyThuId,
+    input.hocSinhId,
+  );
+
+  if (!created) {
+    throw new Error("Không thể tạo khoản phải thu.");
+  }
+
+  const khoanPhaiThuId = created.id;
+
+  if (input.chiTiet.length > 0) {
+    await db.insert(khoanPhaiThuChiTiet).values(
+      input.chiTiet.map((item) => ({
+        khoanPhaiThuId,
+        danhMucKhoanThuId: item.danhMucKhoanThuId,
+        soTien: item.soTien,
+        createdAt: now(),
+      })),
+    );
+  }
+
+  return khoanPhaiThuId;
+}
+
+export async function findKhoanPhaiThuById(
+  donViId: number,
+  id: number,
+) {
+  const db = getDb();
+
+  const rows = await db
+    .select()
+    .from(khoanPhaiThu)
+    .where(
+      and(eq(khoanPhaiThu.id, id), eq(khoanPhaiThu.donViId, donViId)),
+    )
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function listKhoanPhaiThuByKyThu(kyThuId: number) {
+  const db = getDb();
+
+  return db
+    .select({ khoanPhaiThu, hocSinh })
+    .from(khoanPhaiThu)
+    .innerJoin(hocSinh, eq(khoanPhaiThu.hocSinhId, hocSinh.id))
+    .where(eq(khoanPhaiThu.kyThuId, kyThuId))
+    .orderBy(hocSinh.hoTen);
+}
+
+/** Công nợ toàn đơn vị — mọi khoản phải thu còn nợ (tổng tiền - giảm trừ - đã thu > 0). */
+export async function listCongNoByDonVi(donViId: number) {
+  const db = getDb();
+
+  return db
+    .select({ khoanPhaiThu, hocSinh, kyThu })
+    .from(khoanPhaiThu)
+    .innerJoin(hocSinh, eq(khoanPhaiThu.hocSinhId, hocSinh.id))
+    .innerJoin(kyThu, eq(khoanPhaiThu.kyThuId, kyThu.id))
+    .where(
+      and(
+        eq(khoanPhaiThu.donViId, donViId),
+        gt(
+          sql`${khoanPhaiThu.tongTien} - ${khoanPhaiThu.giamTru} - ${khoanPhaiThu.daThu}`,
+          0,
+        ),
+      ),
+    )
+    .orderBy(hocSinh.hoTen);
+}
+
+export async function updateKhoanPhaiThuGiamTru(input: {
+  id: number;
+  giamTru: string;
+  trangThai: "chua_thu" | "thu_mot_phan" | "da_thu_du";
+}) {
+  const db = getDb();
+
+  await db
+    .update(khoanPhaiThu)
+    .set({
+      giamTru: input.giamTru,
+      trangThai: input.trangThai,
+      updatedAt: now(),
+    })
+    .where(eq(khoanPhaiThu.id, input.id));
+
+  const rows = await db
+    .select()
+    .from(khoanPhaiThu)
+    .where(eq(khoanPhaiThu.id, input.id))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function updateKhoanPhaiThuDaThu(input: {
+  id: number;
+  daThu: string;
+  trangThai: "chua_thu" | "thu_mot_phan" | "da_thu_du";
+}) {
+  const db = getDb();
+
+  await db
+    .update(khoanPhaiThu)
+    .set({
+      daThu: input.daThu,
+      trangThai: input.trangThai,
+      updatedAt: now(),
+    })
+    .where(eq(khoanPhaiThu.id, input.id));
+
+  const rows = await db
+    .select()
+    .from(khoanPhaiThu)
+    .where(eq(khoanPhaiThu.id, input.id))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+// ---------------------------------------------------------------
+// Phiếu thu
+// ---------------------------------------------------------------
+
+export async function countPhieuThuTheoPrefix(
+  donViId: number,
+  prefix: string,
+) {
+  const db = getDb();
+
+  const rows = await db
+    .select({ total: count() })
+    .from(phieuThu)
+    .where(
+      and(
+        eq(phieuThu.donViId, donViId),
+        like(phieuThu.soPhieu, `${prefix}%`),
+      ),
+    );
+
+  return rows[0]?.total ?? 0;
+}
+
+export async function createPhieuThu(input: {
+  donViId: number;
+  khoanPhaiThuId: number;
+  hocSinhId: number;
+  soPhieu: string;
+  soTien: string;
+  phuongThuc: "tien_mat" | "chuyen_khoan" | "the" | "khac";
+  ghiChu: string | null;
+  nguoiThuId: number;
+}) {
+  const db = getDb();
+
+  await db.insert(phieuThu).values({
+    donViId: input.donViId,
+    khoanPhaiThuId: input.khoanPhaiThuId,
+    hocSinhId: input.hocSinhId,
+    soPhieu: input.soPhieu,
+    soTien: input.soTien,
+    phuongThuc: input.phuongThuc,
+    ghiChu: input.ghiChu,
+    nguoiThuId: input.nguoiThuId,
+    ngayThu: now(),
+    createdAt: now(),
+  });
+
+  const rows = await db
+    .select()
+    .from(phieuThu)
+    .where(
+      and(
+        eq(phieuThu.donViId, input.donViId),
+        eq(phieuThu.soPhieu, input.soPhieu),
+      ),
+    )
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function listPhieuThuByKhoanPhaiThu(khoanPhaiThuId: number) {
+  const db = getDb();
+
+  return db
+    .select()
+    .from(phieuThu)
+    .where(eq(phieuThu.khoanPhaiThuId, khoanPhaiThuId))
+    .orderBy(phieuThu.ngayThu);
 }
