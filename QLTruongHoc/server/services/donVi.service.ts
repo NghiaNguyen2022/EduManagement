@@ -88,6 +88,16 @@ export async function getDonViTree(input: {
   return all.filter((unit) => visibleIds.has(unit.id));
 }
 
+export async function getDonViDetail(id: number) {
+  const found = await findDonViById(id);
+
+  if (!found) {
+    throw new Error("Không tìm thấy đơn vị.");
+  }
+
+  return found;
+}
+
 export async function createDonViUnit(input: {
   donViChaId: number | null;
   maDonVi: string;

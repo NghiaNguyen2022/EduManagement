@@ -4,21 +4,19 @@ import {
   SelectField,
   TextField,
 } from "../components/form";
-import { ConfirmDialog } from "../components/shared/ConfirmDialog";
+import { EntityLink } from "../components/shared/EntityLink";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
 import { useAuth } from "../features/auth/AuthContext";
 import {
   createDonViApi,
   listDonViApi,
-  setDonViStatusApi,
-  updateDonViApi,
 } from "../features/donVi/donViApi";
 import type {
   DonViFormInput,
   DonViItem,
-  TrangThaiDonVi,
 } from "../features/donVi/donViTypes";
+import { useUnsavedChangesGuard } from "../features/navigation/UnsavedChangesContext";
 
 const LOAI_DON_VI_LABEL: Record<string, string> = {
   he_thong: "Hệ thống",
@@ -51,11 +49,6 @@ const emptyForm: DonViFormInput = {
   email: "",
 };
 
-type PendingStatusAction = {
-  unit: DonViItem;
-  trangThai: TrangThaiDonVi;
-} | null;
-
 export function OrganizationTreePage() {
   const { auth } = useAuth();
 
@@ -64,16 +57,17 @@ export function OrganizationTreePage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<DonViFormInput>(emptyForm);
-  const [pendingStatus, setPendingStatus] =
-    useState<PendingStatusAction>(null);
-  const [statusBusy, setStatusBusy] = useState(false);
 
   const canManage = useMemo(() => {
     const permissions = auth?.currentOrganization?.quyen ?? [];
     return permissions.includes("he_thong.quan_tri");
   }, [auth]);
+
+  useUnsavedChangesGuard(
+    JSON.stringify(form) !== JSON.stringify(emptyForm),
+  );
 
   const unitsById = useMemo(() => {
     const map = new Map<number, DonViItem>();
@@ -114,27 +108,6 @@ export function OrganizationTreePage() {
     void loadData();
   }, []);
 
-  function startEdit(unit: DonViItem) {
-    setEditingId(unit.id);
-    setForm({
-      donViChaId: unit.donViChaId,
-      maDonVi: unit.maDonVi,
-      tenDonVi: unit.tenDonVi,
-      loaiDonVi: unit.loaiDonVi,
-      loaiHinhDaoTao: unit.loaiHinhDaoTao,
-      diaChi: unit.diaChi ?? "",
-      soDienThoai: unit.soDienThoai ?? "",
-      email: unit.email ?? "",
-    });
-    setNotice("");
-    setError("");
-  }
-
-  function resetForm() {
-    setEditingId(null);
-    setForm(emptyForm);
-  }
-
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ) {
@@ -144,22 +117,10 @@ export function OrganizationTreePage() {
     setSubmitting(true);
 
     try {
-      if (editingId) {
-        await updateDonViApi(editingId, {
-          tenDonVi: form.tenDonVi,
-          loaiDonVi: form.loaiDonVi,
-          loaiHinhDaoTao: form.loaiHinhDaoTao,
-          diaChi: form.diaChi,
-          soDienThoai: form.soDienThoai,
-          email: form.email,
-        });
-        setNotice(`Đã cập nhật đơn vị ${form.tenDonVi}.`);
-      } else {
-        await createDonViApi(form);
-        setNotice(`Đã tạo đơn vị ${form.tenDonVi}.`);
-      }
-
-      resetForm();
+      await createDonViApi(form);
+      setNotice(`Đã tạo đơn vị ${form.tenDonVi}.`);
+      setForm(emptyForm);
+      setShowForm(false);
       await loadData();
     } catch (submitError) {
       setError(
@@ -169,36 +130,6 @@ export function OrganizationTreePage() {
       );
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  async function executeStatusChange() {
-    if (!pendingStatus) return;
-
-    setStatusBusy(true);
-    setError("");
-    setNotice("");
-
-    try {
-      await setDonViStatusApi(
-        pendingStatus.unit.id,
-        pendingStatus.trangThai,
-      );
-      setNotice(
-        `Đã đổi trạng thái đơn vị ${pendingStatus.unit.tenDonVi} sang ${
-          TRANG_THAI_LABEL[pendingStatus.trangThai]
-        }.`,
-      );
-      setPendingStatus(null);
-      await loadData();
-    } catch (statusError) {
-      setError(
-        statusError instanceof Error
-          ? statusError.message
-          : "Không thể đổi trạng thái đơn vị.",
-      );
-    } finally {
-      setStatusBusy(false);
     }
   }
 
@@ -214,26 +145,32 @@ export function OrganizationTreePage() {
       <PageHeader
         title="Cây đơn vị"
         subtitle="Quản lý trường, trung tâm và cơ sở trong toàn hệ thống"
+        action={
+          canManage ? (
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => setShowForm((current) => !current)}
+            >
+              {showForm ? "Đóng" : "Thêm đơn vị"}
+            </button>
+          ) : null
+        }
       />
 
       {error ? <div className="form-error">{error}</div> : null}
       {notice ? <div className="form-success">{notice}</div> : null}
 
-      {canManage ? (
+      {showForm && canManage ? (
         <SectionCard
-          title={editingId ? "Sửa đơn vị" : "Thêm đơn vị"}
-          subtitle={
-            editingId
-              ? "Không thể đổi mã đơn vị và đơn vị cha sau khi tạo."
-              : "Đơn vị cấp 1 (không có đơn vị cha) nằm trực tiếp dưới Hệ thống."
-          }
+          title="Thêm đơn vị"
+          subtitle="Đơn vị cấp 1 (không có đơn vị cha) nằm trực tiếp dưới Hệ thống."
         >
           <form className="user-create-form" onSubmit={handleSubmit}>
             <SelectField
               label="Đơn vị cha"
               value={form.donViChaId ? String(form.donViChaId) : ""}
               placeholder="Không có (đơn vị cấp 1)"
-              disabled={Boolean(editingId)}
               options={parentOptions.map((option) => ({
                 value: String(option.value),
                 label: option.label,
@@ -250,7 +187,6 @@ export function OrganizationTreePage() {
               label="Mã đơn vị"
               value={form.maDonVi}
               required
-              disabled={Boolean(editingId)}
               placeholder="VD: TTNN-Q8"
               onChange={(value) =>
                 setForm({ ...form, maDonVi: value })
@@ -329,30 +265,13 @@ export function OrganizationTreePage() {
               }
             />
 
-            <div className="row-actions">
-              <button
-                type="submit"
-                className="primary-button"
-                disabled={submitting}
-              >
-                {submitting
-                  ? "Đang lưu..."
-                  : editingId
-                    ? "Lưu thay đổi"
-                    : "Tạo đơn vị"}
-              </button>
-
-              {editingId ? (
-                <button
-                  type="button"
-                  className="text-button"
-                  onClick={resetForm}
-                  disabled={submitting}
-                >
-                  Hủy sửa
-                </button>
-              ) : null}
-            </div>
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={submitting}
+            >
+              {submitting ? "Đang lưu..." : "Tạo đơn vị"}
+            </button>
           </form>
         </SectionCard>
       ) : null}
@@ -374,7 +293,6 @@ export function OrganizationTreePage() {
                 <th>Loại</th>
                 <th>Loại hình đào tạo</th>
                 <th>Trạng thái</th>
-                {canManage ? <th>Thao tác</th> : null}
               </tr>
             </thead>
 
@@ -382,7 +300,9 @@ export function OrganizationTreePage() {
               {sortedUnits.map((unit) => (
                 <tr key={unit.id}>
                   <td>
-                    <strong>{unit.tenDonVi}</strong>
+                    <EntityLink to={`/organizations/${unit.id}`}>
+                      <strong>{unit.tenDonVi}</strong>
+                    </EntityLink>
                     <small>{unit.maDonVi}</small>
                   </td>
 
@@ -408,65 +328,12 @@ export function OrganizationTreePage() {
                       {TRANG_THAI_LABEL[unit.trangThai]}
                     </span>
                   </td>
-
-                  {canManage ? (
-                    <td>
-                      <div className="row-actions">
-                        {unit.loaiDonVi !== "he_thong" ? (
-                          <>
-                            <button
-                              type="button"
-                              className="text-button"
-                              onClick={() => startEdit(unit)}
-                            >
-                              Sửa
-                            </button>
-
-                            {unit.trangThai === "hoat_dong" ? (
-                              <button
-                                type="button"
-                                className="text-button"
-                                onClick={() => {
-                                  setError("");
-                                  setPendingStatus({
-                                    unit,
-                                    trangThai: "ngung_hoat_dong",
-                                  });
-                                }}
-                              >
-                                Ngừng hoạt động
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                className="text-button"
-                                onClick={() => {
-                                  setError("");
-                                  setPendingStatus({
-                                    unit,
-                                    trangThai: "hoat_dong",
-                                  });
-                                }}
-                              >
-                                Kích hoạt lại
-                              </button>
-                            )}
-                          </>
-                        ) : (
-                          <small>Đơn vị gốc</small>
-                        )}
-                      </div>
-                    </td>
-                  ) : null}
                 </tr>
               ))}
 
               {!loading && sortedUnits.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={canManage ? 6 : 5}
-                    className="empty-cell"
-                  >
+                  <td colSpan={5} className="empty-cell">
                     Chưa có đơn vị nào.
                   </td>
                 </tr>
@@ -475,30 +342,6 @@ export function OrganizationTreePage() {
           </table>
         </div>
       </SectionCard>
-
-      <ConfirmDialog
-        open={Boolean(pendingStatus)}
-        title={
-          pendingStatus?.trangThai === "ngung_hoat_dong"
-            ? "Ngừng hoạt động đơn vị"
-            : "Kích hoạt lại đơn vị"
-        }
-        message={
-          pendingStatus?.trangThai === "ngung_hoat_dong"
-            ? `Đơn vị ${pendingStatus?.unit.tenDonVi} sẽ ngừng hoạt động. Người dùng đang gán tại đây sẽ không còn chọn được đơn vị này khi đăng nhập.`
-            : `Kích hoạt lại đơn vị ${pendingStatus?.unit.tenDonVi}?`
-        }
-        confirmLabel={
-          pendingStatus?.trangThai === "ngung_hoat_dong"
-            ? "Ngừng hoạt động"
-            : "Kích hoạt lại"
-        }
-        danger={pendingStatus?.trangThai === "ngung_hoat_dong"}
-        busy={statusBusy}
-        error={pendingStatus ? error : ""}
-        onConfirm={() => void executeStatusChange()}
-        onCancel={() => setPendingStatus(null)}
-      />
     </div>
   );
 }

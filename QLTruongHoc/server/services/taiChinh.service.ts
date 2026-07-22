@@ -13,6 +13,7 @@ import {
   findKhoanPhaiThuById,
   findKyThuById,
   findKyThuByMa,
+  findPhieuThuById,
   listCongNoByDonVi,
   listDanhMucKhoanThuAllDonVi,
   listDanhMucKhoanThuByDonVi,
@@ -918,5 +919,36 @@ export async function getBaoCaoTaiChinh(input: {
     soPhieuThu: tongThu.soPhieuThu,
     tongCongNo: tongCongNo.tongCongNo,
     theoKyThu,
+  };
+}
+
+export async function getPhieuThuDetail(donViId: number, id: number) {
+  const found = await findPhieuThuById(donViId, id);
+
+  if (!found) {
+    throw new Error("Không tìm thấy phiếu thu trong đơn vị hiện tại.");
+  }
+
+  return {
+    id: found.phieuThu.id,
+    soPhieu: found.phieuThu.soPhieu,
+    soTien: found.phieuThu.soTien,
+    phuongThuc: found.phieuThu.phuongThuc,
+    ghiChu: found.phieuThu.ghiChu,
+    ngayThu: found.phieuThu.ngayThu,
+    hocSinh: {
+      id: found.hocSinh.id,
+      maHocSinh: found.hocSinh.maHocSinh,
+      hoTen: found.hocSinh.hoTen,
+    },
+    kyThu: {
+      id: found.kyThu.id,
+      maKyThu: found.kyThu.maKyThu,
+      tenKyThu: found.kyThu.tenKyThu,
+    },
+    khoanPhaiThu: toKhoanPhaiThuView({
+      khoanPhaiThu: found.khoanPhaiThu,
+      hocSinh: found.hocSinh,
+    }),
   };
 }

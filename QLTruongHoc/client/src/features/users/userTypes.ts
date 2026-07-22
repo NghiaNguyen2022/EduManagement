@@ -24,3 +24,13 @@ export type RoleOption = {
   tenVaiTro: string;
   phamVi: string;
 };
+
+export type UserDetail = {
+  id: number;
+  tenDangNhap: string;
+  hoTen: string;
+  email: string | null;
+  soDienThoai: string | null;
+  trangThai: "hoat_dong" | "tam_khoa" | "ngung";
+  batBuocDoiMatKhau: boolean;
+};

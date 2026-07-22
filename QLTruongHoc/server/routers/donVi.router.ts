@@ -9,6 +9,7 @@ import {
 } from "../middleware/permission.middleware.js";
 import {
   createDonViUnit,
+  getDonViDetail,
   getDonViTree,
   setDonViStatus,
   updateDonViUnit,
@@ -39,6 +40,29 @@ donViRouter.get(
       ok: true,
       data: tree,
     });
+  },
+);
+
+donViRouter.get(
+  "/:id",
+  requirePermission("don_vi.xem"),
+  async (req, res) => {
+    try {
+      const detail = await getDonViDetail(Number(req.params.id));
+
+      res.json({
+        ok: true,
+        data: detail,
+      });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Không thể tải chi tiết đơn vị.",
+      });
+    }
   },
 );
 

@@ -116,6 +116,24 @@ export async function getRoles() {
   return listAssignableRoles();
 }
 
+export async function getUserDetail(id: number) {
+  const found = await findUserById(id);
+
+  if (!found) {
+    throw new Error("Không tìm thấy người dùng.");
+  }
+
+  return {
+    id: found.id,
+    tenDangNhap: found.tenDangNhap,
+    hoTen: found.hoTen,
+    email: found.email,
+    soDienThoai: found.soDienThoai,
+    trangThai: found.trangThai,
+    batBuocDoiMatKhau: Boolean(found.batBuocDoiMatKhau),
+  };
+}
+
 export async function createUser(input: {
   username: string;
   fullName: string;

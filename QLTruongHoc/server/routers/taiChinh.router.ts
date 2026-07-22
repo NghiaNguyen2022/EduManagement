@@ -22,6 +22,7 @@ import {
   listKyThu,
   listPhieuThuTheoKhoanPhaiThu,
   moKyThu,
+  getPhieuThuDetail,
   setDanhMucKhoanThuStatus,
   sinhKhoanPhaiThuChoLop,
   updateDanhMucKhoanThuThongTin,
@@ -435,6 +436,23 @@ taiChinhRouter.get(
       res.json({ ok: true, data });
     } catch (error) {
       handleError(res, error, "Không thể tải báo cáo tài chính.");
+    }
+  },
+);
+
+taiChinhRouter.get(
+  "/phieu-thu/:id",
+  requirePermission("tai_chinh.xem"),
+  async (req, res) => {
+    try {
+      const detail = await getPhieuThuDetail(
+        req.auth!.currentOrganization!.id,
+        Number(req.params.id),
+      );
+
+      res.json({ ok: true, data: detail });
+    } catch (error) {
+      handleError(res, error, "Không thể tải chi tiết phiếu thu.");
     }
   },
 );

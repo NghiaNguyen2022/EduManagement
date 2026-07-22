@@ -617,6 +617,26 @@ export async function listPhieuThuByKhoanPhaiThu(khoanPhaiThuId: number) {
     .orderBy(phieuThu.ngayThu);
 }
 
+export async function findPhieuThuById(donViId: number, id: number) {
+  const db = getDb();
+
+  const rows = await db
+    .select({
+      phieuThu,
+      hocSinh,
+      khoanPhaiThu,
+      kyThu,
+    })
+    .from(phieuThu)
+    .innerJoin(hocSinh, eq(phieuThu.hocSinhId, hocSinh.id))
+    .innerJoin(khoanPhaiThu, eq(phieuThu.khoanPhaiThuId, khoanPhaiThu.id))
+    .innerJoin(kyThu, eq(khoanPhaiThu.kyThuId, kyThu.id))
+    .where(and(eq(phieuThu.id, id), eq(phieuThu.donViId, donViId)))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
 // ---------------------------------------------------------------
 // Báo cáo tài chính
 // ---------------------------------------------------------------

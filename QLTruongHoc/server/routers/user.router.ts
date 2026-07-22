@@ -13,6 +13,7 @@ import {
   changeUserStatus,
   createUser,
   getRoles,
+  getUserDetail,
   getUsers,
   resetPassword,
 } from "../services/user.service.js";
@@ -52,6 +53,29 @@ userRouter.get(
       ok: true,
       data: roles,
     });
+  },
+);
+
+userRouter.get(
+  "/:id",
+  requirePermission("nguoi_dung.xem"),
+  async (req, res) => {
+    try {
+      const detail = await getUserDetail(Number(req.params.id));
+
+      res.json({
+        ok: true,
+        data: detail,
+      });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Không thể tải chi tiết người dùng.",
+      });
+    }
   },
 );
 

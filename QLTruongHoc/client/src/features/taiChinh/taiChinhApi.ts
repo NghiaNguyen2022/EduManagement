@@ -6,6 +6,7 @@ import type {
   KyThuDetail,
   KyThuFormInput,
   KyThuItem,
+  PhieuThuDetail,
   PhieuThuItem,
   SinhKhoanPhaiThuResult,
 } from "./taiChinhTypes";
@@ -212,4 +213,8 @@ export function listCongNoApi() {
 export function getBaoCaoTaiChinhApi(tuNgay: string, denNgay: string) {
   const params = new URLSearchParams({ tuNgay, denNgay });
   return request<BaoCaoTaiChinh>(`/api/tai-chinh/bao-cao?${params}`);
+}
+
+export function getPhieuThuDetailApi(id: number) {
+  return request<PhieuThuDetail>(`/api/tai-chinh/phieu-thu/${id}`);
 }

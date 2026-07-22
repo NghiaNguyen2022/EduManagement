@@ -8,6 +8,9 @@ import {
   ConfirmDialog,
 } from "../components/shared/ConfirmDialog";
 import {
+  EntityLink,
+} from "../components/shared/EntityLink";
+import {
   PageHeader,
 } from "../components/shared/PageHeader";
 import {
@@ -16,9 +19,6 @@ import {
 import {
   SectionCard,
 } from "../components/shared/SectionCard";
-import {
-  UserAssignmentPanel,
-} from "../components/users/UserAssignmentPanel";
 import {
   SelectField,
   TextField,
@@ -112,12 +112,6 @@ export function UserManagementPage() {
     pendingAction,
     setPendingAction,
   ] = useState<PendingAction>(null);
-  const [
-    assignmentUser,
-    setAssignmentUser,
-  ] = useState<UserListItem | null>(
-    null,
-  );
   const [
     error,
     setError,
@@ -591,9 +585,13 @@ export function UserManagementPage() {
                     key={user.id}
                   >
                     <td>
-                      <strong>
-                        {user.hoTen}
-                      </strong>
+                      <EntityLink
+                        to={`/users/${user.id}`}
+                      >
+                        <strong>
+                          {user.hoTen}
+                        </strong>
+                      </EntityLink>
                       <small>
                         {
                           user.tenDangNhap
@@ -654,18 +652,6 @@ export function UserManagementPage() {
                     {canManage ? (
                       <td>
                         <div className="row-actions">
-                          <button
-                            type="button"
-                            className="text-button"
-                            onClick={() =>
-                              setAssignmentUser(
-                                user,
-                              )
-                            }
-                          >
-                            Vai trò · Đơn vị
-                          </button>
-
                           <button
                             type="button"
                             className="text-button"
@@ -783,20 +769,6 @@ export function UserManagementPage() {
           )
         }
       />
-
-      {assignmentUser ? (
-        <UserAssignmentPanel
-          user={
-            assignmentUser
-          }
-          onClose={() => {
-            setAssignmentUser(
-              null,
-            );
-            void loadData();
-          }}
-        />
-      ) : null}
     </div>
   );
 }

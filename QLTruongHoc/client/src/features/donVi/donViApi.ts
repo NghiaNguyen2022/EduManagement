@@ -43,6 +43,10 @@ export function listDonViApi() {
   return request<DonViItem[]>("/api/don-vi");
 }
 
+export function getDonViDetailApi(id: number) {
+  return request<DonViItem>(`/api/don-vi/${id}`);
+}
+
 export function createDonViApi(input: DonViFormInput) {
   return request<DonViItem>("/api/don-vi", {
     method: "POST",

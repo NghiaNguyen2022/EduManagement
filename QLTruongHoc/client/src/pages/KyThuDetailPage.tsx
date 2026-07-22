@@ -8,6 +8,7 @@ import {
   TextField,
 } from "../components/form";
 import { ConfirmDialog } from "../components/shared/ConfirmDialog";
+import { GuardedLink } from "../components/shared/GuardedLink";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
 import { useAuth } from "../features/auth/AuthContext";
@@ -908,7 +909,14 @@ export function KyThuDetailPage() {
                 <tbody>
                   {phieuThuList.map((phieu) => (
                     <tr key={phieu.id}>
-                      <td>{phieu.soPhieu}</td>
+                      <td>
+                        <GuardedLink
+                          to={`/finance/phieu-thu/${phieu.id}`}
+                          className="text-button"
+                        >
+                          {phieu.soPhieu}
+                        </GuardedLink>
+                      </td>
                       <td>{phieu.ngayThu}</td>
                       <td>{formatTien(phieu.soTien)}</td>
                       <td>{PHUONG_THUC_LABEL[phieu.phuongThuc]}</td>

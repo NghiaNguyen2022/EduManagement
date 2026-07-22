@@ -1027,3 +1027,56 @@ thay vì đứng im hiển thị sai.
     nhận lại bằng console sạch sau khi tải lại trang mới).
 - Checklist: không thuộc mục H hay bất kỳ mục nào trong `docs/00_MASTER_CHECKLIST.md` — đây là
   cải tiến hạ tầng UI/UX xuyên suốt app, không phải một tính năng nghiệp vụ mới.
+
+---
+
+## 3 trang chi tiết còn thiếu — Phiếu thu, Đơn vị, Người dùng (2026-07-22)
+
+Tiếp ngay hệ thống link ở trên: rà soát toàn bộ entity theo nguyên tắc "đối tượng nghiệp vụ
+cốt lõi cần trang chi tiết riêng theo đơn vị, dữ liệu danh mục/tham chiếu thì giữ dạng bảng +
+form inline" (tham khảo mẫu List Report/Object Page của SAP Fiori và thực tiễn SIS). Phát hiện
+3 khoảng trống: Phiếu thu (chỉ xem trong danh sách "Lịch sử thu", chưa tra cứu độc lập được),
+Đơn vị (chỉ có form sửa nhanh trong cây, chưa có hồ sơ riêng), Người dùng (quản lý vai trò qua
+modal `UserAssignmentPanel`, chưa có trang riêng). Làm cả 3 theo yêu cầu người dùng.
+
+- Backend: thêm 3 hàm chi tiết + 3 route `GET /:id` mới, tái dùng toàn bộ logic nghiệp vụ đã
+  có (không đổi quy tắc):
+  - `getPhieuThuDetail` (`server/services/taiChinh.service.ts`) + `findPhieuThuById`
+    (join `hocSinh`/`khoanPhaiThu`/`kyThu`) — `GET /api/tai-chinh/phieu-thu/:id`.
+  - `getDonViDetail` (`server/services/donVi.service.ts`, chỉ là wrapper quanh
+    `findDonViById` đã có) — `GET /api/don-vi/:id`.
+  - `getUserDetail` (`server/services/user.service.ts`) — **có lọc bỏ `matKhauHash`** trước
+    khi trả về frontend (an toàn bảo mật, `findUserById` gốc trả nguyên cả hash) —
+    `GET /api/users/:id`.
+- Frontend — trang mới:
+  - `PhieuThuDetailPage.tsx` (`/finance/phieu-thu/:id`) — chỉ xem (phiếu thu không sửa được
+    sau khi lập, đúng bản chất chứng từ), có nút "In biên nhận" dùng `window.print()` (không
+    cần thêm thư viện PDF). Link từ "Lịch sử thu" trong `KyThuDetailPage`.
+  - `DonViDetailPage.tsx` (`/organizations/:id`) — sửa thông tin, đổi trạng thái (3 mức:
+    hoạt động/tạm ngưng/ngừng hoạt động, khác 2 mức của Chương trình/Giáo viên), danh sách
+    đơn vị con (link đệ quy sang chính trang này). `OrganizationTreePage.tsx` đơn giản hoá
+    còn list + tạo mới, bỏ sửa/đổi trạng thái inline — cùng khuôn mẫu đã áp dụng cho
+    Teachers/Students trước đó.
+  - `UserDetailPage.tsx` (`/users/:id`) — khoá/mở khoá, reset mật khẩu (qua `ConfirmDialog` +
+    `NotificationDialog` hiện mật khẩu tạm), quản lý vai trò theo đơn vị (viết lại mới, dùng
+    `ConfirmDialog` thay vì `window.confirm()` như component cũ). Xoá hẳn
+    `client/src/components/users/UserAssignmentPanel.tsx` (không còn nơi nào dùng, đúng
+    nguyên tắc không giữ code chết) — chức năng chuyển hết vào trang chi tiết.
+  - Cả 3 trang dùng `EntityLink`/`GuardedLink` cho link nội bộ và
+    `useUnsavedChangesGuard` cho form sửa — đúng hạ tầng vừa xây ở mục trên.
+- Test tay qua UI thật (dùng chung server đang chạy):
+  - `DonViDetailPage`: bấm từ cây đơn vị vào TTNN-Q8 — hiện đúng trạng thái, form sửa, danh
+    sách đơn vị con (0 đơn vị, đúng thực tế) — PASS.
+  - `UserDetailPage`: bấm vào tài khoản `demo_hocvu` — hiện đúng thông tin, đúng cờ "Bắt buộc
+    đổi mật khẩu", đúng 1 phân công vai trò có sẵn (`hoc_vu` tại TTNN-Q8). Reset mật khẩu →
+    `ConfirmDialog` → `NotificationDialog` hiện đúng mật khẩu tạm cố định `Edu@123Qaz` — PASS.
+  - `PhieuThuDetailPage`: tạo khoản thu + kỳ thu + mở kỳ + sinh khoản phải thu + thu tiền đủ
+    cho 1 học sinh → bấm "Lịch sử thu" → bấm số phiếu `PT202600001` → trang chi tiết hiện
+    đúng toàn bộ thông tin (học sinh, kỳ thu, số tiền, phương thức, ngày thu) và đúng số dư
+    khoản phải thu liên quan (còn lại 0đ, đã thu đủ) — PASS.
+  - `pnpm typecheck`, `pnpm build` — PASS. Không phát sinh lỗi console thật.
+  - Dọn dẹp: xoá đúng ID vừa tạo cho vòng test Phiếu thu theo thứ tự khoá ngoại; không đổi
+    trạng thái thật của TTNN-Q8 (chỉ xem, không bấm nút đổi trạng thái khi test); reset mật
+    khẩu `demo_hocvu` là hành động an toàn vì mật khẩu tạm luôn là giá trị cố định có sẵn.
+- Checklist: không thuộc mục nào trong `docs/00_MASTER_CHECKLIST.md` — tiếp tục thuộc phạm vi
+  cải tiến hạ tầng UI/UX, không phải tính năng nghiệp vụ mới.

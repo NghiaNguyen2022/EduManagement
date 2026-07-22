@@ -1,5 +1,6 @@
 import type {
   RoleOption,
+  UserDetail,
   UserListItem,
 } from "./userTypes";
 
@@ -40,6 +41,10 @@ async function request<T>(
 
 export function listUsersApi() {
   return request<UserListItem[]>("/api/users");
+}
+
+export function getUserDetailApi(id: number) {
+  return request<UserDetail>(`/api/users/${id}`);
 }
 
 export function listRolesApi() {

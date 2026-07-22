@@ -112,3 +112,15 @@ export type BaoCaoTaiChinh = {
   tongCongNo: string;
   theoKyThu: BaoCaoKyThuItem[];
 };
+
+export type PhieuThuDetail = {
+  id: number;
+  soPhieu: string;
+  soTien: string;
+  phuongThuc: PhuongThucThu;
+  ghiChu: string | null;
+  ngayThu: string;
+  hocSinh: { id: number; maHocSinh: string; hoTen: string };
+  kyThu: { id: number; maKyThu: string; tenKyThu: string };
+  khoanPhaiThu: KhoanPhaiThuItem;
+};

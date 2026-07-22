@@ -29,6 +29,9 @@ import {
   DashboardPage,
 } from "./pages/DashboardPage";
 import {
+  DonViDetailPage,
+} from "./pages/DonViDetailPage";
+import {
   GiaoVienDetailPage,
 } from "./pages/GiaoVienDetailPage";
 import {
@@ -40,6 +43,9 @@ import {
 import {
   KyThuDetailPage,
 } from "./pages/KyThuDetailPage";
+import {
+  PhieuThuDetailPage,
+} from "./pages/PhieuThuDetailPage";
 import {
   LeadDetailPage,
 } from "./pages/LeadDetailPage";
@@ -79,6 +85,9 @@ import {
 import {
   SystemAuditLogPage,
 } from "./pages/SystemAuditLogPage";
+import {
+  UserDetailPage,
+} from "./pages/UserDetailPage";
 import {
   UserManagementPage,
 } from "./pages/UserManagementPage";
@@ -140,6 +149,13 @@ function ProtectedApp() {
         />
 
         <Route
+          path="/users/:id"
+          element={
+            <UserDetailPage />
+          }
+        />
+
+        <Route
           path="/roles"
           element={
             <RolePermissionPage />
@@ -157,6 +173,13 @@ function ProtectedApp() {
           path="/organizations"
           element={
             <OrganizationTreePage />
+          }
+        />
+
+        <Route
+          path="/organizations/:id"
+          element={
+            <DonViDetailPage />
           }
         />
 
@@ -246,6 +269,11 @@ function ProtectedApp() {
         <Route
           path="/finance/bao-cao"
           element={<FinanceReportPage />}
+        />
+
+        <Route
+          path="/finance/phieu-thu/:id"
+          element={<PhieuThuDetailPage />}
         />
 
         <Route
