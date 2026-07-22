@@ -4,9 +4,11 @@ import {
   countThongBaoTheoMaPrefix,
   createThongBao,
   findThongBaoById,
+  findThongBaoByIdAny,
   findThongBaoDaDoc,
   listThongBaoAllDonVi,
   listThongBaoByDonVi,
+  listThongBaoByDonViIds,
 } from "../db/thongBao.repository.js";
 import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
 
@@ -26,7 +28,21 @@ async function sinhMaThongBao(donViId: number) {
   return `${prefix}${String(total + 1).padStart(4, "0")}`;
 }
 
-export async function listThongBao(donViId: number, loaiDonVi?: string, userId?: number) {
+export async function listThongBao(
+  donViId: number,
+  loaiDonVi?: string,
+  userId?: number,
+  /**
+   * Chỉ truyền khi người gọi là phụ huynh xem gộp theo các đơn vị con đang
+   * học — ưu tiên hơn `loaiDonVi === "he_thong"`, vì đơn vị "đang chọn" của
+   * phụ huynh chỉ là nơi neo phiên đăng nhập, không phải phạm vi xem thật.
+   */
+  guardianDonViIds?: number[],
+) {
+  if (guardianDonViIds) {
+    return listThongBaoByDonViIds(guardianDonViIds, userId ?? 0);
+  }
+
   if (loaiDonVi === "he_thong") {
     return listThongBaoAllDonVi(userId ?? 0);
   }
@@ -111,10 +127,14 @@ export async function confirmThongBaoDaDoc(input: {
   thongBaoId: number;
   actorUserId: number;
   ipAddress?: string;
+  /** Xem ghi chú ở `listThongBao` — đơn vị đang chọn không nhất thiết là đơn vị sở hữu thông báo. */
+  guardianDonViIds?: number[];
 }) {
-  const thongBao = await findThongBaoById(input.donViId, input.thongBaoId);
+  const thongBao = input.guardianDonViIds
+    ? await findThongBaoByIdAny(input.thongBaoId)
+    : await findThongBaoById(input.donViId, input.thongBaoId);
 
-  if (!thongBao) {
+  if (!thongBao || (input.guardianDonViIds && !input.guardianDonViIds.includes(thongBao.donViId))) {
     throw new Error("Không tìm thấy thông báo trong đơn vị hiện tại.");
   }
 

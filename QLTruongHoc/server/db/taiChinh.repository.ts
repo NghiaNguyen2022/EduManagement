@@ -1,4 +1,4 @@
-import { and, count, eq, gt, gte, like, lte, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, gte, like, lte, sql } from "drizzle-orm";
 
 import {
   danhMucKhoanThu,
@@ -13,8 +13,7 @@ import {
 } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
-const now = () =>
-  new Date().toISOString().slice(0, 19).replace("T", " ");
+const now = () => new Date().toISOString().slice(0, 19).replace("T", " ");
 
 // ---------------------------------------------------------------
 // Danh mục khoản thu
@@ -49,41 +48,25 @@ export async function listDanhMucKhoanThuAllDonVi() {
     .orderBy(donVi.tenDonVi, danhMucKhoanThu.tenKhoanThu);
 }
 
-export async function findDanhMucKhoanThuById(
-  donViId: number,
-  id: number,
-) {
+export async function findDanhMucKhoanThuById(donViId: number, id: number) {
   const db = getDb();
 
   const rows = await db
     .select()
     .from(danhMucKhoanThu)
-    .where(
-      and(
-        eq(danhMucKhoanThu.id, id),
-        eq(danhMucKhoanThu.donViId, donViId),
-      ),
-    )
+    .where(and(eq(danhMucKhoanThu.id, id), eq(danhMucKhoanThu.donViId, donViId)))
     .limit(1);
 
   return rows[0] ?? null;
 }
 
-export async function findDanhMucKhoanThuByMa(
-  donViId: number,
-  maKhoanThu: string,
-) {
+export async function findDanhMucKhoanThuByMa(donViId: number, maKhoanThu: string) {
   const db = getDb();
 
   const rows = await db
     .select()
     .from(danhMucKhoanThu)
-    .where(
-      and(
-        eq(danhMucKhoanThu.donViId, donViId),
-        eq(danhMucKhoanThu.maKhoanThu, maKhoanThu),
-      ),
-    )
+    .where(and(eq(danhMucKhoanThu.donViId, donViId), eq(danhMucKhoanThu.maKhoanThu, maKhoanThu)))
     .limit(1);
 
   return rows[0] ?? null;
@@ -173,11 +156,7 @@ export async function setDanhMucKhoanThuTrangThai(input: {
 export async function listKyThuByDonVi(donViId: number) {
   const db = getDb();
 
-  return db
-    .select()
-    .from(kyThu)
-    .where(eq(kyThu.donViId, donViId))
-    .orderBy(kyThu.tuNgay);
+  return db.select().from(kyThu).where(eq(kyThu.donViId, donViId)).orderBy(kyThu.tuNgay);
 }
 
 /** Dùng cho đơn vị hệ thống — xem gộp toàn bộ đơn vị đang hoạt động. */
@@ -217,9 +196,7 @@ export async function findKyThuByMa(donViId: number, maKyThu: string) {
   const rows = await db
     .select()
     .from(kyThu)
-    .where(
-      and(eq(kyThu.donViId, donViId), eq(kyThu.maKyThu, maKyThu)),
-    )
+    .where(and(eq(kyThu.donViId, donViId), eq(kyThu.maKyThu, maKyThu)))
     .limit(1);
 
   return rows[0] ?? null;
@@ -274,11 +251,7 @@ export async function updateKyThu(input: {
     })
     .where(eq(kyThu.id, input.id));
 
-  const rows = await db
-    .select()
-    .from(kyThu)
-    .where(eq(kyThu.id, input.id))
-    .limit(1);
+  const rows = await db.select().from(kyThu).where(eq(kyThu.id, input.id)).limit(1);
 
   return rows[0] ?? null;
 }
@@ -297,11 +270,7 @@ export async function setKyThuTrangThai(input: {
     })
     .where(eq(kyThu.id, input.id));
 
-  const rows = await db
-    .select()
-    .from(kyThu)
-    .where(eq(kyThu.id, input.id))
-    .limit(1);
+  const rows = await db.select().from(kyThu).where(eq(kyThu.id, input.id)).limit(1);
 
   return rows[0] ?? null;
 }
@@ -319,10 +288,7 @@ export async function listKyThuKhoanThu(kyThuId: number) {
       khoanThu: danhMucKhoanThu,
     })
     .from(kyThuKhoanThu)
-    .innerJoin(
-      danhMucKhoanThu,
-      eq(kyThuKhoanThu.danhMucKhoanThuId, danhMucKhoanThu.id),
-    )
+    .innerJoin(danhMucKhoanThu, eq(kyThuKhoanThu.danhMucKhoanThuId, danhMucKhoanThu.id))
     .where(eq(kyThuKhoanThu.kyThuId, kyThuId))
     .orderBy(danhMucKhoanThu.tenKhoanThu);
 }
@@ -337,9 +303,7 @@ export async function replaceKyThuKhoanThu(input: {
 }) {
   const db = getDb();
 
-  await db
-    .delete(kyThuKhoanThu)
-    .where(eq(kyThuKhoanThu.kyThuId, input.kyThuId));
+  await db.delete(kyThuKhoanThu).where(eq(kyThuKhoanThu.kyThuId, input.kyThuId));
 
   if (input.danhSach.length === 0) {
     return;
@@ -368,33 +332,20 @@ export async function listHocSinhDangHocTrongLop(lopHocId: number) {
     .select({ hocSinh })
     .from(hocSinhLopHoc)
     .innerJoin(hocSinh, eq(hocSinhLopHoc.hocSinhId, hocSinh.id))
-    .where(
-      and(
-        eq(hocSinhLopHoc.lopHocId, lopHocId),
-        eq(hocSinhLopHoc.trangThai, "dang_hoc"),
-      ),
-    );
+    .where(and(eq(hocSinhLopHoc.lopHocId, lopHocId), eq(hocSinhLopHoc.trangThai, "dang_hoc")));
 }
 
 // ---------------------------------------------------------------
 // Khoản phải thu
 // ---------------------------------------------------------------
 
-export async function findKhoanPhaiThuByKyThuHocSinh(
-  kyThuId: number,
-  hocSinhId: number,
-) {
+export async function findKhoanPhaiThuByKyThuHocSinh(kyThuId: number, hocSinhId: number) {
   const db = getDb();
 
   const rows = await db
     .select()
     .from(khoanPhaiThu)
-    .where(
-      and(
-        eq(khoanPhaiThu.kyThuId, kyThuId),
-        eq(khoanPhaiThu.hocSinhId, hocSinhId),
-      ),
-    )
+    .where(and(eq(khoanPhaiThu.kyThuId, kyThuId), eq(khoanPhaiThu.hocSinhId, hocSinhId)))
     .limit(1);
 
   return rows[0] ?? null;
@@ -421,10 +372,7 @@ export async function createKhoanPhaiThu(input: {
     updatedAt: now(),
   });
 
-  const created = await findKhoanPhaiThuByKyThuHocSinh(
-    input.kyThuId,
-    input.hocSinhId,
-  );
+  const created = await findKhoanPhaiThuByKyThuHocSinh(input.kyThuId, input.hocSinhId);
 
   if (!created) {
     throw new Error("Không thể tạo khoản phải thu.");
@@ -446,18 +394,13 @@ export async function createKhoanPhaiThu(input: {
   return khoanPhaiThuId;
 }
 
-export async function findKhoanPhaiThuById(
-  donViId: number,
-  id: number,
-) {
+export async function findKhoanPhaiThuById(donViId: number, id: number) {
   const db = getDb();
 
   const rows = await db
     .select()
     .from(khoanPhaiThu)
-    .where(
-      and(eq(khoanPhaiThu.id, id), eq(khoanPhaiThu.donViId, donViId)),
-    )
+    .where(and(eq(khoanPhaiThu.id, id), eq(khoanPhaiThu.donViId, donViId)))
     .limit(1);
 
   return rows[0] ?? null;
@@ -474,6 +417,18 @@ export async function listKhoanPhaiThuByKyThu(kyThuId: number) {
     .orderBy(hocSinh.hoTen);
 }
 
+/** Toàn bộ khoản phải thu của một học sinh (đã thu đủ lẫn còn nợ), kèm tên kỳ thu — dùng cho Portal phụ huynh (J06). */
+export async function listKhoanPhaiThuByHocSinh(hocSinhId: number) {
+  const db = getDb();
+
+  return db
+    .select({ khoanPhaiThu, kyThu })
+    .from(khoanPhaiThu)
+    .innerJoin(kyThu, eq(khoanPhaiThu.kyThuId, kyThu.id))
+    .where(eq(khoanPhaiThu.hocSinhId, hocSinhId))
+    .orderBy(desc(khoanPhaiThu.createdAt));
+}
+
 /** Công nợ toàn đơn vị — mọi khoản phải thu còn nợ (tổng tiền - giảm trừ - đã thu > 0). */
 export async function listCongNoByDonVi(donViId: number) {
   const db = getDb();
@@ -486,10 +441,7 @@ export async function listCongNoByDonVi(donViId: number) {
     .where(
       and(
         eq(khoanPhaiThu.donViId, donViId),
-        gt(
-          sql`${khoanPhaiThu.tongTien} - ${khoanPhaiThu.giamTru} - ${khoanPhaiThu.daThu}`,
-          0,
-        ),
+        gt(sql`${khoanPhaiThu.tongTien} - ${khoanPhaiThu.giamTru} - ${khoanPhaiThu.daThu}`, 0),
       ),
     )
     .orderBy(hocSinh.hoTen);
@@ -511,11 +463,7 @@ export async function updateKhoanPhaiThuGiamTru(input: {
     })
     .where(eq(khoanPhaiThu.id, input.id));
 
-  const rows = await db
-    .select()
-    .from(khoanPhaiThu)
-    .where(eq(khoanPhaiThu.id, input.id))
-    .limit(1);
+  const rows = await db.select().from(khoanPhaiThu).where(eq(khoanPhaiThu.id, input.id)).limit(1);
 
   return rows[0] ?? null;
 }
@@ -536,11 +484,7 @@ export async function updateKhoanPhaiThuDaThu(input: {
     })
     .where(eq(khoanPhaiThu.id, input.id));
 
-  const rows = await db
-    .select()
-    .from(khoanPhaiThu)
-    .where(eq(khoanPhaiThu.id, input.id))
-    .limit(1);
+  const rows = await db.select().from(khoanPhaiThu).where(eq(khoanPhaiThu.id, input.id)).limit(1);
 
   return rows[0] ?? null;
 }
@@ -549,21 +493,13 @@ export async function updateKhoanPhaiThuDaThu(input: {
 // Phiếu thu
 // ---------------------------------------------------------------
 
-export async function countPhieuThuTheoPrefix(
-  donViId: number,
-  prefix: string,
-) {
+export async function countPhieuThuTheoPrefix(donViId: number, prefix: string) {
   const db = getDb();
 
   const rows = await db
     .select({ total: count() })
     .from(phieuThu)
-    .where(
-      and(
-        eq(phieuThu.donViId, donViId),
-        like(phieuThu.soPhieu, `${prefix}%`),
-      ),
-    );
+    .where(and(eq(phieuThu.donViId, donViId), like(phieuThu.soPhieu, `${prefix}%`)));
 
   return rows[0]?.total ?? 0;
 }
@@ -596,12 +532,7 @@ export async function createPhieuThu(input: {
   const rows = await db
     .select()
     .from(phieuThu)
-    .where(
-      and(
-        eq(phieuThu.donViId, input.donViId),
-        eq(phieuThu.soPhieu, input.soPhieu),
-      ),
-    )
+    .where(and(eq(phieuThu.donViId, input.donViId), eq(phieuThu.soPhieu, input.soPhieu)))
     .limit(1);
 
   return rows[0] ?? null;
@@ -641,11 +572,7 @@ export async function findPhieuThuById(donViId: number, id: number) {
 // Báo cáo tài chính
 // ---------------------------------------------------------------
 
-export async function sumPhieuThuTrongKhoang(
-  donViId: number,
-  tuNgay: string,
-  denNgay: string,
-) {
+export async function sumPhieuThuTrongKhoang(donViId: number, tuNgay: string, denNgay: string) {
   const db = getDb();
 
   const rows = await db
@@ -674,6 +601,21 @@ export async function sumCongNoByDonVi(donViId: number) {
     })
     .from(khoanPhaiThu)
     .where(eq(khoanPhaiThu.donViId, donViId));
+
+  return rows[0] ?? { tongCongNo: "0.00" };
+}
+
+/** Dùng cho đơn vị hệ thống — công nợ gộp toàn bộ đơn vị đang hoạt động. */
+export async function sumCongNoAllDonVi() {
+  const db = getDb();
+
+  const rows = await db
+    .select({
+      tongCongNo: sql<string>`COALESCE(SUM(${khoanPhaiThu.tongTien} - ${khoanPhaiThu.giamTru} - ${khoanPhaiThu.daThu}), 0)`,
+    })
+    .from(khoanPhaiThu)
+    .innerJoin(donVi, eq(khoanPhaiThu.donViId, donVi.id))
+    .where(eq(donVi.trangThai, "hoat_dong"));
 
   return rows[0] ?? { tongCongNo: "0.00" };
 }

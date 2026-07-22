@@ -10,6 +10,7 @@ import { auditLogRouter } from "./routers/audit-log.router.js";
 import { authRouter } from "./routers/auth.router.js";
 import { baoGiangRouter } from "./routers/baoGiang.router.js";
 import { chuongTrinhRouter } from "./routers/chuongTrinh.router.js";
+import { dashboardRouter } from "./routers/dashboard.router.js";
 import { diemDanhRouter } from "./routers/diemDanh.router.js";
 import { donViRouter } from "./routers/donVi.router.js";
 import { giaoVienRouter } from "./routers/giaoVien.router.js";
@@ -70,6 +71,7 @@ app.use("/api/tai-chinh", taiChinhRouter);
 app.use("/api/trao-doi", traoDoiRouter);
 app.use("/api/thong-bao", thongBaoRouter);
 app.use("/api/portal", portalRouter);
+app.use("/api/dashboard", dashboardRouter);
 
 if (env.nodeEnv === "production") {
   const clientDirectory = path.resolve(process.cwd(), "dist-client");

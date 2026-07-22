@@ -1231,3 +1231,129 @@ sự tồn tại (đã chuyển sang "Trường Mầm non Hoa Nắng" từ 2026-
   hiện đúng trở lại, không cần thao tác gán lại vai trò qua `/users/13`.
 - Xem `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md` mục 11.
 - Kiểm tra: `pnpm typecheck`, `pnpm build` — PASS.
+
+### Đối chiếu tham khảo ngoài + phân bổ luồng/layout cho phần còn thiếu (2026-07-22)
+
+Đối chiếu BPD gốc (`extracted.txt`) với tính năng thật của Easy Edu/CenterOnline/DotB EMS
+(trung tâm ngoại ngữ), KidsOnline/OneKids/MISA EMIS Kindergarten (mầm non), FACTS/OpenEduCat
+(kiến trúc lớn) — chỉ rút phần đã có trong BPD mà app chưa làm, không sao chép tính năng ngoài
+phạm vi (marketing/CRM, camera/AI điểm danh, chat realtime/SMS-Zalo, vận chuyển/căn tin/payroll
+— đều là các câu hỏi BPD mục 15 còn để ngỏ, không phải yêu cầu đã chốt).
+
+Cập nhật `docs/00_MASTER_CHECKLIST.md`:
+
+- Thêm mới **mục L. Báo cáo & Dashboard** (tương ứng M15/REP-01..04 trong BPD, trước đây không
+  có chữ cái riêng nên rơi mất dấu vết): L01 Dashboard vận hành (hiện đang số liệu cứng ở
+  `DashboardPage.tsx`), L02 báo cáo tuyển sinh, L03 báo cáo chuyên cần/học tập — cả 3 chưa
+  làm, đã ghi rõ luồng và layout dự kiến (dùng khuôn `FinanceReportPage`/`/finance/bao-cao`
+  làm mẫu). L04 báo cáo tài chính đã có (H09) nên đánh dấu xong.
+- Đánh dấu lại **J01 Portal phụ huynh = đã có phần lõi** (trước đây để trống hoàn toàn) — tổng
+  quan chung + nhóm theo đơn vị từng con, xem `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md`
+  mục 11.
+- Phát hiện thêm khi rà lại J03: quick-link Portal phụ huynh trỏ tới `/notifications` và
+  `/communications` nhưng vai trò `phu_huynh` chưa được seed bất kỳ quyền nào cho 2 route này —
+  bấm vào sẽ lỗi 403. Ghi nhận là việc cần xử lý trước khi tick J03, chưa sửa trong đợt này.
+- Ghi phân bổ luồng/layout cho các mục còn thiếu quan trọng nhất, chưa code, chỉ lên kế hoạch
+  vị trí đặt tính năng để lần sau làm nhanh hơn:
+  - **C05** (kiểm tra đầu vào): section mới trong `LeadDetailPage`, chỉ hiện với đơn vị
+    `ngoai_ngu`.
+  - **D02+F06+G07** (mầm non): gộp thành 1 "Nhật ký ngày" — mở rộng ngay trang `/attendance`
+    theo cấu hình `loaiHinhDaoTao = mam_non`, không tạo trang/module riêng.
+  - **H08** (hoàn phí/chuyển phí/bảo lưu): nút mới trong chi tiết khoản phải thu ở
+    `KyThuDetailPage`, cần quy trình duyệt riêng — đây là khoảng trống tài chính lớn nhất còn
+    lại, cả 4 sản phẩm tham khảo đều coi là tính năng lõi.
+  - **J06** (học phí trong Portal): thêm block "Học phí" chỉ đọc vào từng thẻ con trong
+    `PortalLandingPage.tsx`, tái dùng dữ liệu `KhoanPhaiThu`/`PhieuThu` đã có, không cần route
+    mới — ưu tiên hơn J02/J04 vì rẻ và dữ liệu đã sẵn có.
+- Không đổi mô hình tài chính (kỳ thu tách khỏi khoản phải thu) theo FACTS — cách hiện tại phù
+  hợp hơn với thu học phí theo tháng/kỳ ở VN.
+- Ghi nhận vào backlog kiến trúc (chưa cấp thiết): BPD gốc đề xuất tách `Person` dùng chung cho
+  `HocSinh`/`PhuHuynh`/`GiaoVien`/`NguoiDung`, hiện vẫn là các bảng độc lập — giống FACTS/
+  OpenEduCat cũng làm vậy, nhưng để càng lâu retrofit sau càng tốn.
+- Không cần sửa code trong đợt này — chỉ cập nhật tài liệu/checklist để phân bổ kế hoạch.
+
+---
+
+## L01 + J06 + J03 — Dashboard thật, học phí trong Portal, sửa thông báo/trao đổi cho phụ huynh (2026-07-22)
+
+Làm 3 việc ưu tiên demo đã thống nhất ở mục trên, theo đúng thứ tự đề xuất.
+
+**L01 — Dashboard vận hành thật:**
+- Thêm `server/db/dashboard.repository.ts` (đếm học sinh đang học, lớp đang học, lead mới từ
+  đầu tháng — có bản gộp cho đơn vị hệ thống) và `sumCongNoAllDonVi` trong
+  `taiChinh.repository.ts` (bản gộp của `sumCongNoByDonVi` sẵn có).
+- `server/services/dashboard.service.ts` (`getDashboardSummary`) gộp thêm lịch học hôm nay
+  (tái dùng `listThoiKhoaBieu` như Portal đã dùng) — route mới `GET /api/dashboard/summary`.
+- `DashboardPage.tsx` bỏ hẳn số liệu cứng (`"486"`, `"28"`...) và 4 lớp học giả lập; 4 thẻ
+  KPI + bảng "Lịch học hôm nay" giờ đọc đúng dữ liệu thật theo đơn vị đang chọn (gộp cho đơn vị
+  hệ thống, riêng lịch học hôm nay trả rỗng ở đơn vị hệ thống vì không tổ chức lớp — đúng phạm
+  vi đã chốt ở A01).
+
+**J06 — Học phí trong Portal phụ huynh:**
+- Thêm `listKhoanPhaiThuByHocSinh` (`taiChinh.repository.ts`) — toàn bộ khoản phải thu của một
+  học sinh kèm tên kỳ thu.
+- `getParentPortalOverview` gọi thêm hàm này cho từng con, trả kèm `khoanPhaiThu` trong mỗi
+  phần tử `children`.
+- `PortalLandingPage.tsx` thêm block "Học phí" (chỉ đọc) vào mỗi thẻ con: tên kỳ thu, tổng
+  tiền, trạng thái, số còn lại nếu có. Chưa làm phần xem biên nhận chi tiết (`PhieuThuDetailPage`
+  đang khoá theo `tai_chinh.xem`/`tai_chinh.quan_ly`) — để bước sau.
+
+**J03 — Thông báo mở cho phụ huynh, trao đổi chuyển hẳn vào Portal:**
+- `server/middleware/permission.middleware.ts` thêm `requireAnyPermissionOrRole` — cho qua nếu
+  có 1 trong các mã quyền liệt kê HOẶC vai trò tại đơn vị hiện tại nằm trong danh sách vai trò
+  liệt kê (dùng đúng cách `portal.router.ts` đã kiểm tra `vaiTro` trực tiếp).
+- `thongBao.router.ts`: `GET /` và `POST /:id/da-doc` dùng `requireAnyPermissionOrRole` với vai
+  trò `phu_huynh` — chỉ áp dụng cho xem/xác nhận đọc, tạo thông báo vẫn management-only.
+- Vấn đề phát sinh: đơn vị "đang chọn" của phụ huynh thường là một đơn vị neo chung (ví dụ đơn
+  vị hệ thống — xem ca `0933873165` ở mục trước), không phải đơn vị của con. Nếu dùng thẳng
+  `loaiDonVi === "he_thong"` để quyết định gộp, phụ huynh sẽ thấy TOÀN BỘ thông báo của mọi đơn
+  vị trong hệ thống, không chỉ đơn vị con học. Sửa: thêm `listThongBaoByDonViIds` (gộp đúng
+  danh sách đơn vị) và `findThongBaoByIdAny`/`getGuardianDonViIds`
+  (`phuHuynh.service.ts`) — khi người gọi là phụ huynh không có quyền quản lý, `listThongBao`/
+  `confirmThongBaoDaDoc` gộp đúng theo đơn vị của các con, bỏ qua đơn vị đang chọn.
+- `ThongBaoPage.tsx`: cột "Đơn vị" hiện thêm cho phụ huynh (không chỉ đơn vị hệ thống); phụ
+  huynh xem tên đơn vị dạng chữ thường (không dùng `OrgLink` — phụ huynh không có phiên làm
+  việc ở đơn vị con nên đổi đơn vị qua `OrgLink` sẽ thất bại).
+- **Trao đổi**: quyết định KHÔNG mở trang `/communications` cho phụ huynh — trang này gọi
+  `listHocSinhApi`/`listLopHocApi` để đổ dropdown lọc + form tạo mới, đòi `hoc_sinh.xem`/
+  `lop_hoc.xem` mà phụ huynh không có; nếu cấp quyền đó sẽ lộ toàn bộ danh sách học sinh/lớp
+  của đơn vị cho phụ huynh — vi phạm rõ ràng "Thông tin nhạy cảm của học viên khác... không
+  được hiển thị" (BPD 7.7). Thay vào đó: `getParentPortalOverview` gọi thêm `listTraoDoi` (tái
+  dùng nguyên hàm service của I04) lọc theo đúng `hocSinhId` cho từng con, hiển thị "Trao đổi
+  gần đây" (chỉ xem, 5 dòng mới nhất) ngay trong thẻ con ở Portal. 2 quick-link Portal từng trỏ
+  `/communications` đổi về `/portal/parent` (tự tham chiếu, vì đã hiện sẵn ngay tại đó).
+- **Phát hiện thêm (lỗi có sẵn từ trước, không liên quan đợt sửa phụ huynh)**: khi đọc kỹ
+  `traoDoi.repository.ts` để tái dùng, phát hiện `client/src/features/traoDoi/traoDoiApi.ts`
+  gộp dữ liệu sai — server luôn trả `{traoDoi, hocSinh, lopHoc, nguoiTao, donVi}` (các trường
+  là anh em, không lồng trong `traoDoi`), nhưng client cũ chỉ gộp `{...row.traoDoi, donVi}`,
+  làm rớt hẳn `hocSinh`/`lopHoc`/`nguoiTao`. Trang `/communications` (`TraoDoiPage.tsx`) dùng
+  `item.hocSinh.hoTen`/`item.nguoiTao.hoTen` trực tiếp — lẽ ra sẽ lỗi runtime ngay khi hiển thị
+  bất kỳ dòng trao đổi nào (module vừa làm ngày 22/07, có thể chưa ai kịp test qua UI thật với
+  dữ liệu thật). Đã sửa `flattenTraoDoiRow` gộp đủ cả 4 trường cho cả `listTraoDoiApi` và
+  `createTraoDoiApi`.
+- Cập nhật `config/portal.ts`: 2 quick-link trao đổi đổi hướng, 3 "notices" của vai trò phụ
+  huynh viết lại cho khớp thực tế (trước đây nói "chưa dùng được"/"cần bổ sung quyền sau" —
+  giờ đã làm).
+- Checklist: J01/J03/J06/L01 cập nhật trong `docs/00_MASTER_CHECKLIST.md`.
+- Kiểm tra: `pnpm typecheck`, `pnpm build` — PASS. Chưa test tay qua trình duyệt thật (đề nghị
+  test lại với tài khoản `0933873165` — giờ nên thấy đúng thông báo/trao đổi/học phí của con ở
+  Trường Mầm non Hoa Nắng, không lẫn dữ liệu đơn vị khác).
+
+### Hotfix — Vỡ trang `/portal/parent` khi có trao đổi (2026-07-22)
+
+Người dùng test tay qua trình duyệt thật ngay sau mục trên, phát hiện `RangeError: Invalid
+time value` tại `formatDateTime` trong `PortalLandingPage.tsx`, vỡ toàn bộ trang khi một con có
+ít nhất một dòng trao đổi.
+
+- Nguyên nhân: đúng lỗi "nested vs phẳng" vừa tìm và sửa ở `traoDoiApi.ts` (mục trên), nhưng
+  lần này tự lặp lại ở phía server — `getParentPortalOverview` gán thẳng kết quả `listTraoDoi`
+  (dạng `{traoDoi: {...}, hocSinh, lopHoc, nguoiTao, donVi}`) vào `child.traoDoi` mà không gỡ
+  phẳng, trong khi kiểu `ParentPortalTraoDoi` ở client khai báo các trường (`id`, `createdAt`,
+  `nguoiGuiVaiTro`...) nằm trực tiếp. Riêng phần `khoanPhaiThu` cùng hàm đã gỡ phẳng đúng —
+  chỉ sót đúng `traoDoi`.
+- Sửa: `server/services/portal.service.ts` gỡ phẳng `traoDoi` giống hệt cách đã làm với
+  `khoanPhaiThu` (map lấy đúng field từ `item.traoDoi`, giữ `item.nguoiTao`).
+- Test tay qua trình duyệt thật (đăng nhập `0933873165`): Portal hiện đúng — 2 con, nhóm đúng
+  2 đơn vị (Trung tâm Ngoại ngữ Quận 8, Trường Mầm non Hoa Nắng), mục "Trao đổi gần đây" của
+  "Nguyen Khang" hiện đúng ngày giờ + nội dung, không còn lỗi console. `pnpm typecheck`,
+  `pnpm build` — PASS.

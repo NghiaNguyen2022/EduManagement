@@ -34,6 +34,23 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+function formatTien(value: string) {
+  return `${Number(value).toLocaleString("vi-VN")} ₫`;
+}
+
+const KHOAN_PHAI_THU_TRANG_THAI_LABEL: Record<string, string> = {
+  chua_thu: "Chưa thu",
+  thu_mot_phan: "Thu một phần",
+  da_thu_du: "Đã thu đủ",
+};
+
+const NGUOI_GUI_LABEL: Record<string, string> = {
+  giao_vien: "Giáo viên",
+  phu_huynh: "Phụ huynh",
+  hoc_vu: "Học vụ",
+  khac: "Khác",
+};
+
 export function PortalLandingPage() {
   const { auth } = useAuth();
   const { roleSlug } = useParams();
@@ -287,6 +304,46 @@ export function PortalLandingPage() {
                                   {item.giaoVienHoTen || "Chưa phân công"} ·{" "}
                                   {item.buoiHoc.phongHoc || "—"}
                                 </small>
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        <div className="portal-fee-box">
+                          <strong>Học phí</strong>
+                          {child.khoanPhaiThu.length === 0 ? (
+                            <div className="empty-cell">Chưa có khoản phải thu nào.</div>
+                          ) : (
+                            child.khoanPhaiThu.map((item) => {
+                              const conLai =
+                                Number(item.tongTien) - Number(item.giamTru) - Number(item.daThu);
+
+                              return (
+                                <div className="portal-fee-row" key={item.id}>
+                                  <span>{item.tenKyThu}</span>
+                                  <strong>{formatTien(item.tongTien)}</strong>
+                                  <small>
+                                    {KHOAN_PHAI_THU_TRANG_THAI_LABEL[item.trangThai]}
+                                    {conLai > 0 ? ` · Còn lại ${formatTien(String(conLai))}` : ""}
+                                  </small>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+
+                        <div className="portal-exchange-box">
+                          <strong>Trao đổi gần đây</strong>
+                          {child.traoDoi.length === 0 ? (
+                            <div className="empty-cell">Chưa có trao đổi nào.</div>
+                          ) : (
+                            child.traoDoi.map((item) => (
+                              <div className="portal-exchange-row" key={item.id}>
+                                <span>{formatDateTime(item.createdAt)}</span>
+                                <strong>
+                                  {NGUOI_GUI_LABEL[item.nguoiGuiVaiTro] ?? item.nguoiGuiVaiTro}
+                                </strong>
+                                <small>{item.noiDung}</small>
                               </div>
                             ))
                           )}

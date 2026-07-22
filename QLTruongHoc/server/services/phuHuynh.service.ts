@@ -14,12 +14,25 @@ import {
   findGuardianLinkById,
   findPhuHuynhById,
   findPhuHuynhByPhoneGlobal,
+  listPhuHuynhByNguoiDungId,
   updateGuardianLink,
   updatePhuHuynhNguoiDungId,
 } from "../db/phuHuynh.repository.js";
 import { findRoleByCode } from "../db/role.repository.js";
 import { createUserWithRole, findUserById, findUserByUsername } from "../db/user.repository.js";
 import { createTemporaryPassword } from "./user.service.js";
+
+/**
+ * Danh sách đơn vị mà tài khoản này là phụ huynh (có con đang học), dùng để
+ * gộp dữ liệu chỉ-xem (thông báo, học phí...) đúng phạm vi con của họ — thay
+ * vì dựa vào đơn vị "đang chọn" của phiên đăng nhập (chỉ là nơi neo phiên,
+ * xem `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md` mục 11).
+ */
+export async function getGuardianDonViIds(userId: number) {
+  const guardians = await listPhuHuynhByNguoiDungId(userId);
+
+  return Array.from(new Set(guardians.map((guardian) => guardian.donViId)));
+}
 
 /**
  * Ném ra khi số điện thoại đã khớp một hồ sơ phụ huynh thuộc đơn vị KHÁC đơn vị

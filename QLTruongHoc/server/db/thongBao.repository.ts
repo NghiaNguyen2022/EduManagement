@@ -1,4 +1,4 @@
-import { and, count, desc, eq, like } from "drizzle-orm";
+import { and, count, desc, eq, inArray, like } from "drizzle-orm";
 
 import { donVi, thongBao, thongBaoDaDoc } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
@@ -44,6 +44,52 @@ export async function listThongBaoAllDonVi(userId: number) {
     .innerJoin(donVi, eq(thongBao.donViId, donVi.id))
     .where(eq(donVi.trangThai, "hoat_dong"))
     .orderBy(donVi.tenDonVi, desc(thongBao.createdAt));
+}
+
+/**
+ * Dùng cho phụ huynh có con học ở nhiều đơn vị — xem gộp đúng các đơn vị con
+ * đang theo học, khác với `listThongBaoAllDonVi` (gộp TOÀN BỘ đơn vị, chỉ hợp
+ * lý cho quản trị hệ thống).
+ */
+export async function listThongBaoByDonViIds(donViIds: number[], userId: number) {
+  const db = getDb();
+
+  if (donViIds.length === 0) {
+    return [];
+  }
+
+  return db
+    .select({
+      thongBao,
+      donVi: {
+        id: donVi.id,
+        maDonVi: donVi.maDonVi,
+        tenDonVi: donVi.tenDonVi,
+      },
+      daDocAt: thongBaoDaDoc.daDocAt,
+    })
+    .from(thongBao)
+    .leftJoin(
+      thongBaoDaDoc,
+      and(eq(thongBaoDaDoc.thongBaoId, thongBao.id), eq(thongBaoDaDoc.nguoiDungId, userId)),
+    )
+    .innerJoin(donVi, eq(thongBao.donViId, donVi.id))
+    .where(inArray(thongBao.donViId, donViIds))
+    .orderBy(donVi.tenDonVi, desc(thongBao.createdAt));
+}
+
+/**
+ * Dùng cho phụ huynh xem gộp nhiều đơn vị — đơn vị "đang chọn" của phụ huynh
+ * (thường là một đơn vị neo chung) không nhất thiết trùng đơn vị sở hữu thông
+ * báo. Việc kiểm tra thông báo có thuộc đúng đơn vị được phép xem hay không
+ * do tầng service đảm nhiệm (so với danh sách đơn vị con đang học).
+ */
+export async function findThongBaoByIdAny(id: number) {
+  const db = getDb();
+
+  const rows = await db.select().from(thongBao).where(eq(thongBao.id, id)).limit(1);
+
+  return rows[0] ?? null;
 }
 
 export async function findThongBaoById(donViId: number, id: number) {

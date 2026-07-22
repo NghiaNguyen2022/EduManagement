@@ -1,7 +1,9 @@
 import { findDonViById } from "../db/donVi.repository.js";
 import { listEnrollmentsByHocSinh } from "../db/lopHoc.repository.js";
 import { listPhuHuynhByNguoiDungId, listHocSinhByPhuHuynhId } from "../db/phuHuynh.repository.js";
+import { listKhoanPhaiThuByHocSinh } from "../db/taiChinh.repository.js";
 import { listThoiKhoaBieu } from "./lichHoc.service.js";
+import { listTraoDoi } from "./traoDoi.service.js";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -97,6 +99,39 @@ export async function getParentPortalOverview(input: { userId: number }) {
               )
               .slice(0, 8);
 
+            // Chỉ xem — form ghi trao đổi mới vẫn dành cho giáo viên/học vụ ở
+            // `/communications`, chưa mở cho phụ huynh tự ghi trong đợt này.
+            // Lưu ý: `listTraoDoi` trả về dạng nested `{traoDoi, hocSinh, lopHoc,
+            // nguoiTao, donVi}` (xem `TraoDoiRow`) — phải gỡ phẳng ra đây, không
+            // dùng thẳng như dạng phẳng (đã có đúng lỗi này ở `traoDoiApi.ts`
+            // phía client, xem PROJECT_SUMMARY.md).
+            const traoDoi = (
+              await listTraoDoi(row.hocSinh.donViId, undefined, {
+                hocSinhId: row.hocSinh.id,
+              })
+            )
+              .slice(0, 5)
+              .map((item) => ({
+                id: item.traoDoi.id,
+                nguoiGuiVaiTro: item.traoDoi.nguoiGuiVaiTro,
+                kenhLienLac: item.traoDoi.kenhLienLac,
+                noiDung: item.traoDoi.noiDung,
+                ketQua: item.traoDoi.ketQua,
+                createdAt: item.traoDoi.createdAt,
+                nguoiTao: item.nguoiTao,
+              }));
+
+            // Chỉ xem — số liệu đã có sẵn từ module Tài chính (H01-H09),
+            // không tính toán lại ở đây.
+            const khoanPhaiThu = (await listKhoanPhaiThuByHocSinh(row.hocSinh.id)).map((item) => ({
+              id: item.khoanPhaiThu.id,
+              tongTien: item.khoanPhaiThu.tongTien,
+              giamTru: item.khoanPhaiThu.giamTru,
+              daThu: item.khoanPhaiThu.daThu,
+              trangThai: item.khoanPhaiThu.trangThai,
+              tenKyThu: item.kyThu.tenKyThu,
+            }));
+
             return {
               lienKet: row.lienKet,
               hocSinh: {
@@ -122,6 +157,8 @@ export async function getParentPortalOverview(input: { userId: number }) {
                   },
               activeClasses,
               schedules,
+              traoDoi,
+              khoanPhaiThu,
               scores: {
                 available: false,
                 title: "Điểm số chưa có nguồn dữ liệu",

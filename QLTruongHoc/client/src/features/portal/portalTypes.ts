@@ -1,5 +1,25 @@
 import type { GuardianLinkItem, HocSinhItem } from "../hocSinh/hocSinhTypes";
 import type { ThoiKhoaBieuItem } from "../lichHoc/lichHocTypes";
+import type { NguoiGuiVaiTro, KenhLienLac } from "../traoDoi/traoDoiTypes";
+
+export type ParentPortalTraoDoi = {
+  id: number;
+  nguoiGuiVaiTro: NguoiGuiVaiTro;
+  kenhLienLac: KenhLienLac;
+  noiDung: string;
+  ketQua: string | null;
+  createdAt: string;
+  nguoiTao: { id: number; hoTen: string; tenDangNhap: string };
+};
+
+export type ParentPortalKhoanPhaiThu = {
+  id: number;
+  tongTien: string;
+  giamTru: string;
+  daThu: string;
+  trangThai: "chua_thu" | "thu_mot_phan" | "da_thu_du";
+  tenKyThu: string;
+};
 
 export type ParentPortalChild = {
   lienKet: GuardianLinkItem;
@@ -28,6 +48,8 @@ export type ParentPortalChild = {
     };
   }>;
   schedules: ThoiKhoaBieuItem[];
+  traoDoi: ParentPortalTraoDoi[];
+  khoanPhaiThu: ParentPortalKhoanPhaiThu[];
   scores: {
     available: boolean;
     title: string;

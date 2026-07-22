@@ -54,6 +54,13 @@ export function ThongBaoPage() {
   const [busyReadId, setBusyReadId] = useState<number | null>(null);
 
   const isHeThong = auth?.currentOrganization?.loaiDonVi === "he_thong";
+  const isPhuHuynh = auth?.currentOrganization?.vaiTro.includes("phu_huynh") ?? false;
+  /**
+   * Phụ huynh có con học nhiều đơn vị cũng xem gộp theo đơn vị (giống đơn vị
+   * hệ thống), dù đơn vị "đang chọn" của họ không phải đơn vị hệ thống — xem
+   * `resolveGuardianDonViIds` ở `thongBao.router.ts`.
+   */
+  const showDonViColumn = isHeThong || isPhuHuynh;
 
   const canManage = useMemo(() => {
     const permissions = auth?.currentOrganization?.quyen ?? [];
@@ -143,9 +150,11 @@ export function ThongBaoPage() {
       <PageHeader
         title="Thông báo nội bộ"
         subtitle={
-          isHeThong
-            ? "Xem gộp thông báo của các đơn vị đang hoạt động"
-            : "Quản lý thông báo nội bộ trong đơn vị đang làm việc"
+          isPhuHuynh
+            ? "Xem thông báo từ các đơn vị con đang theo học"
+            : isHeThong
+              ? "Xem gộp thông báo của các đơn vị đang hoạt động"
+              : "Quản lý thông báo nội bộ trong đơn vị đang làm việc"
         }
       />
 
@@ -270,7 +279,7 @@ export function ThongBaoPage() {
                 <th>Phạm vi</th>
                 <th>Đối tượng</th>
                 <th>Ngày tạo</th>
-                {isHeThong ? <th>Đơn vị</th> : null}
+                {showDonViColumn ? <th>Đơn vị</th> : null}
               </tr>
             </thead>
 
@@ -327,9 +336,17 @@ export function ThongBaoPage() {
                   <td>{PHAM_VI_LABEL[item.phamVi]}</td>
                   <td>{item.doiTuong ?? "—"}</td>
                   <td>{formatDateTime(item.createdAt)}</td>
-                  {isHeThong ? (
+                  {showDonViColumn ? (
                     <td>
-                      <OrgLink donVi={item.donVi} to="/notifications" />
+                      {isPhuHuynh ? (
+                        // Phụ huynh không có phiên làm việc ở đơn vị của con
+                        // (không được gán vai trò riêng từng đơn vị — xem
+                        // getGuardianDonViIds), nên chỉ hiện tên, không dùng
+                        // OrgLink (sẽ thất bại vì không đổi được sang đơn vị đó).
+                        (item.donVi?.tenDonVi ?? "—")
+                      ) : (
+                        <OrgLink donVi={item.donVi} to="/notifications" />
+                      )}
                     </td>
                   ) : null}
                 </tr>
@@ -337,7 +354,7 @@ export function ThongBaoPage() {
 
               {!loading && filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={isHeThong ? 5 : 4} className="empty-cell">
+                  <td colSpan={showDonViColumn ? 5 : 4} className="empty-cell">
                     Chưa có thông báo nào phù hợp.
                   </td>
                 </tr>

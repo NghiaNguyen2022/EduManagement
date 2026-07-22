@@ -70,26 +70,25 @@ export const portalRoles: PortalRoleDefinition[] = [
         to: "/notifications",
       },
       {
-        label: "Mở trao đổi với giáo viên",
-        description: "Dùng cho nhắn tin/ghi nhận trao đổi theo học sinh.",
-        to: "/communications",
+        label: "Xem trao đổi với giáo viên",
+        description: "Trao đổi gần đây của từng con đã hiện ngay trong trang này.",
+        to: "/portal/parent",
       },
     ],
     notices: [
       {
-        title: "Cần xem nhanh trong ngày",
+        title: "Đã xem được ngay trong trang này",
         detail:
-          "Portal phụ huynh nên vào được ngay lịch học, thông báo và trao đổi, không phải tìm trong menu nội bộ.",
+          "Học phí, trao đổi gần đây và lịch học của từng con đã hiện ngay trong Portal, nhóm theo từng đơn vị con đang học.",
       },
       {
-        title: "Nếu muốn xem chuyên cần hoặc học phí",
+        title: "Thông báo dùng chung với đơn vị",
         detail:
-          "Các màn đó có thể cần bổ sung quyền/phân quyền riêng. Khi cần, mình sẽ quay lại chức năng phân quyền.",
+          "Trang Thông báo nội bộ đã mở cho phụ huynh xem/xác nhận đã đọc; chưa lọc riêng theo đúng lớp/con (I05 còn để sau).",
       },
       {
-        title: "Làm theo hướng an toàn",
-        detail:
-          "Hiện tại chỉ dùng các màn đã có sẵn và đang mở trong code để tránh thêm quyền mới vội.",
+        title: "Chưa có ở bản này",
+        detail: "Chuyên cần (điểm danh) và điểm số/kết quả học tập — để bước sau khi có mô hình dữ liệu phù hợp.",
       },
     ],
     quickLinks: [
@@ -110,8 +109,8 @@ export const portalRoles: PortalRoleDefinition[] = [
       },
       {
         label: "Trao đổi phụ huynh",
-        description: "Ghi nhận trao đổi với giáo viên/học vụ theo học sinh.",
-        to: "/communications",
+        description: "Xem trao đổi gần đây với giáo viên/học vụ theo từng con.",
+        to: "/portal/parent",
       },
     ],
     stats: [

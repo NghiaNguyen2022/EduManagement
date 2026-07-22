@@ -6,12 +6,30 @@ type ApiResponse<T> = {
   error?: string;
 };
 
-type TraoDoiRowResponse =
-  | TraoDoiItem
-  | {
-      traoDoi: TraoDoiItem;
-      donVi?: TraoDoiItem["donVi"];
-    };
+/**
+ * Hình dạng thật server trả về — luôn nested (`traoDoi` chỉ chứa các trường vô
+ * hướng, `hocSinh`/`lopHoc`/`nguoiTao`/`donVi` là các khoá anh em), không có
+ * dạng phẳng nào khác. Trước đây gộp nhầm chỉ `{...row.traoDoi, donVi}`, làm
+ * mất hẳn `hocSinh`/`lopHoc`/`nguoiTao` — vỡ mọi chỗ trang dùng
+ * `item.hocSinh.hoTen`.
+ */
+type TraoDoiRowResponse = {
+  traoDoi: Omit<TraoDoiItem, "hocSinh" | "lopHoc" | "nguoiTao" | "donVi">;
+  hocSinh: TraoDoiItem["hocSinh"];
+  lopHoc?: TraoDoiItem["lopHoc"];
+  nguoiTao: TraoDoiItem["nguoiTao"];
+  donVi?: TraoDoiItem["donVi"];
+};
+
+function flattenTraoDoiRow(row: TraoDoiRowResponse): TraoDoiItem {
+  return {
+    ...row.traoDoi,
+    hocSinh: row.hocSinh,
+    lopHoc: row.lopHoc,
+    nguoiTao: row.nguoiTao,
+    donVi: row.donVi,
+  };
+}
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -50,7 +68,7 @@ export async function listTraoDoiApi(input?: {
     `/api/trao-doi${params.toString() ? `?${params.toString()}` : ""}`,
   );
 
-  return rows.map((row) => ("traoDoi" in row ? { ...row.traoDoi, donVi: row.donVi } : row));
+  return rows.map(flattenTraoDoiRow);
 }
 
 export function createTraoDoiApi(input: TraoDoiFormInput) {
@@ -64,5 +82,5 @@ export function createTraoDoiApi(input: TraoDoiFormInput) {
       noiDung: input.noiDung,
       ketQua: input.ketQua,
     }),
-  }).then((row) => ("traoDoi" in row ? { ...row.traoDoi, donVi: row.donVi } : row));
+  }).then(flattenTraoDoiRow);
 }

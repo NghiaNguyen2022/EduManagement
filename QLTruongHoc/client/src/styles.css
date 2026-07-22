@@ -631,7 +631,9 @@ button {
 .portal-score-box,
 .portal-schedule-row,
 .portal-upcoming-row,
-.portal-class-chip {
+.portal-class-chip,
+.portal-fee-row,
+.portal-exchange-row {
   border: 1px solid var(--edu-color-border);
   border-radius: var(--edu-radius-medium);
   background: var(--edu-color-surface-soft);
@@ -709,15 +711,30 @@ button {
 
 .portal-class-list,
 .portal-child-schedule,
-.portal-upcoming-list {
+.portal-upcoming-list,
+.portal-fee-box,
+.portal-exchange-box {
   display: grid;
   gap: 10px;
 }
 
 .portal-class-chip,
 .portal-schedule-row,
-.portal-upcoming-row {
+.portal-upcoming-row,
+.portal-fee-row,
+.portal-exchange-row {
   padding: 12px 14px;
+}
+
+.portal-fee-row,
+.portal-exchange-row {
+  display: grid;
+  gap: 4px;
+}
+
+.portal-fee-row strong,
+.portal-exchange-row strong {
+  display: block;
 }
 
 .portal-class-chip {
