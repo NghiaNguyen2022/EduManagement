@@ -1,47 +1,25 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import {
-  DateField,
-  SelectField,
-  TextField,
-} from "../components/form";
-import {
-  PageHeader,
-} from "../components/shared/PageHeader";
-import {
-  Pagination,
-} from "../components/shared/Pagination";
-import {
-  SectionCard,
-} from "../components/shared/SectionCard";
-import {
-  useAuth,
-} from "../features/auth/AuthContext";
+import { DateField, SelectField, TextField } from "../components/form";
+import { PageHeader } from "../components/shared/PageHeader";
+import { Pagination } from "../components/shared/Pagination";
+import { SectionCard } from "../components/shared/SectionCard";
+import { useAuth } from "../features/auth/AuthContext";
 import {
   getAuditLogDetailApi,
   listAuditActionsApi,
   listAuditLogsApi,
 } from "../features/auditLogs/auditLogApi";
-import type {
-  AuditLogDetail,
-  AuditLogItem,
-} from "../features/auditLogs/auditLogTypes";
+import type { AuditLogDetail, AuditLogItem } from "../features/auditLogs/auditLogTypes";
 
 const PAGE_SIZE = 20;
 
 function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat(
-    "vi-VN",
-    {
-      dateStyle: "short",
-      timeStyle: "medium",
-      timeZone: "Asia/Ho_Chi_Minh",
-    },
-  ).format(new Date(value));
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "short",
+    timeStyle: "medium",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(new Date(value));
 }
 
 function actionLabel(action: string) {
@@ -59,6 +37,15 @@ function actionLabel(action: string) {
     "user.add_assignment": "Thêm vai trò · đơn vị",
     "user.remove_assignment": "Xóa vai trò · đơn vị",
     "role.update_permissions": "Thay đổi phân quyền",
+    "thong_bao.create": "Tạo thông báo",
+    "thong_bao.mark_read": "Xác nhận đã đọc thông báo",
+    "trao_doi.create": "Ghi trao đổi phụ huynh",
+    "hoc_sinh.add_guardian": "Thêm phụ huynh",
+    "hoc_sinh.add_guardian_cross_org": "Thêm phụ huynh (dùng chung hồ sơ khác đơn vị)",
+    "hoc_sinh.update_guardian": "Cập nhật liên kết phụ huynh",
+    "hoc_sinh.remove_guardian": "Gỡ liên kết phụ huynh",
+    "hoc_sinh.guardian_account_create": "Tạo tài khoản phụ huynh",
+    "hoc_sinh.guardian_account_existing": "Phụ huynh đã có tài khoản",
   };
 
   return labels[action] ?? action;
@@ -67,77 +54,45 @@ function actionLabel(action: string) {
 export function SystemAuditLogPage() {
   const { auth } = useAuth();
 
-  const [items, setItems] =
-    useState<AuditLogItem[]>([]);
-  const [actions, setActions] =
-    useState<string[]>([]);
-  const [selected, setSelected] =
-    useState<AuditLogDetail | null>(null);
+  const [items, setItems] = useState<AuditLogItem[]>([]);
+  const [actions, setActions] = useState<string[]>([]);
+  const [selected, setSelected] = useState<AuditLogDetail | null>(null);
 
-  const [search, setSearch] =
-    useState("");
-  const [action, setAction] =
-    useState("");
-  const [level, setLevel] =
-    useState("");
-  const [fromDate, setFromDate] =
-    useState("");
-  const [toDate, setToDate] =
-    useState("");
-  const [page, setPage] =
-    useState(1);
-  const [total, setTotal] =
-    useState(0);
-  const [loading, setLoading] =
-    useState(true);
-  const [error, setError] =
-    useState("");
+  const [search, setSearch] = useState("");
+  const [action, setAction] = useState("");
+  const [level, setLevel] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const hasFilter = useMemo(
-    () =>
-      Boolean(
-        search ||
-          action ||
-          level ||
-          fromDate ||
-          toDate,
-      ),
-    [
-      search,
-      action,
-      level,
-      fromDate,
-      toDate,
-    ],
+    () => Boolean(search || action || level || fromDate || toDate),
+    [search, action, level, fromDate, toDate],
   );
 
-  async function loadLogs(
-    targetPage = page,
-  ) {
+  async function loadLogs(targetPage = page) {
     setLoading(true);
     setError("");
 
     try {
-      const result =
-        await listAuditLogsApi({
-          search,
-          action,
-          level,
-          fromDate,
-          toDate,
-          page: targetPage,
-          pageSize: PAGE_SIZE,
-        });
+      const result = await listAuditLogsApi({
+        search,
+        action,
+        level,
+        fromDate,
+        toDate,
+        page: targetPage,
+        pageSize: PAGE_SIZE,
+      });
 
       setItems(result.items);
       setPage(result.pagination.page);
       setTotal(result.pagination.total);
     } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Không thể tải nhật ký.",
-      );
+      setError(loadError instanceof Error ? loadError.message : "Không thể tải nhật ký.");
     } finally {
       setLoading(false);
     }
@@ -151,22 +106,15 @@ export function SystemAuditLogPage() {
     void loadLogs(1);
   }, [auth?.currentOrganization?.id]);
 
-  async function openDetail(
-    logId: number,
-  ) {
+  async function openDetail(logId: number) {
     setError("");
 
     try {
-      const detail =
-        await getAuditLogDetailApi(logId);
+      const detail = await getAuditLogDetailApi(logId);
 
       setSelected(detail);
     } catch (detailError) {
-      setError(
-        detailError instanceof Error
-          ? detailError.message
-          : "Không thể tải chi tiết.",
-      );
+      setError(detailError instanceof Error ? detailError.message : "Không thể tải chi tiết.");
     }
   }
 
@@ -190,16 +138,9 @@ export function SystemAuditLogPage() {
         subtitle="Theo dõi các thao tác quan trọng liên quan đến đăng nhập, người dùng và phân quyền."
       />
 
-      {error ? (
-        <div className="form-error">
-          {error}
-        </div>
-      ) : null}
+      {error ? <div className="form-error">{error}</div> : null}
 
-      <SectionCard
-        title="Bộ lọc"
-        subtitle="Tìm nhanh các thao tác cần kiểm tra."
-      >
+      <SectionCard title="Bộ lọc" subtitle="Tìm nhanh các thao tác cần kiểm tra.">
         <div className="audit-filter-panel">
           <div className="audit-filter-panel__primary">
             <div className="audit-filter-panel__search">
@@ -217,12 +158,10 @@ export function SystemAuditLogPage() {
                 label="Hành động"
                 value={action}
                 placeholder="Tất cả hành động"
-                options={actions.map(
-                  (item) => ({
-                    value: item,
-                    label: actionLabel(item),
-                  }),
-                )}
+                options={actions.map((item) => ({
+                  value: item,
+                  label: actionLabel(item),
+                }))}
                 onChange={setAction}
               />
             </div>
@@ -272,22 +211,12 @@ export function SystemAuditLogPage() {
 
             <div className="audit-filter-panel__buttons">
               {hasFilter ? (
-                <button
-                  type="button"
-                  className="text-button"
-                  onClick={resetFilters}
-                >
+                <button type="button" className="text-button" onClick={resetFilters}>
                   Xóa lọc
                 </button>
               ) : null}
 
-              <button
-                type="button"
-                className="primary-button"
-                onClick={() =>
-                  void loadLogs(1)
-                }
-              >
+              <button type="button" className="primary-button" onClick={() => void loadLogs(1)}>
                 Áp dụng
               </button>
             </div>
@@ -297,11 +226,7 @@ export function SystemAuditLogPage() {
 
       <SectionCard
         title="Lịch sử hoạt động"
-        subtitle={
-          loading
-            ? "Đang tải dữ liệu..."
-            : `${total} bản ghi`
-        }
+        subtitle={loading ? "Đang tải dữ liệu..." : `${total} bản ghi`}
       >
         <div className="audit-table-wrap">
           <table className="audit-table">
@@ -320,52 +245,25 @@ export function SystemAuditLogPage() {
             <tbody>
               {items.map((item) => (
                 <tr key={item.id}>
+                  <td>{formatDateTime(item.createdAt)}</td>
                   <td>
-                    {formatDateTime(
-                      item.createdAt,
-                    )}
+                    <strong>{actionLabel(item.hanhDong)}</strong>
+                    <small>{item.hanhDong}</small>
                   </td>
                   <td>
-                    <strong>
-                      {actionLabel(
-                        item.hanhDong,
-                      )}
-                    </strong>
-                    <small>
-                      {item.hanhDong}
-                    </small>
+                    <span>{item.nguoiDungHoTen || "Hệ thống"}</span>
+                    <small>{item.nguoiDungTenDangNhap || "—"}</small>
                   </td>
                   <td>
-                    <span>
-                      {item.nguoiDungHoTen ||
-                        "Hệ thống"}
-                    </span>
-                    <small>
-                      {item.nguoiDungTenDangNhap ||
-                        "—"}
-                    </small>
+                    <span>{item.donViTen || "Toàn hệ thống"}</span>
+                    <small>{item.donViMa || "—"}</small>
                   </td>
+                  <td>{item.noiDung || "—"}</td>
                   <td>
-                    <span>
-                      {item.donViTen ||
-                        "Toàn hệ thống"}
-                    </span>
-                    <small>
-                      {item.donViMa || "—"}
-                    </small>
-                  </td>
-                  <td>
-                    {item.noiDung || "—"}
-                  </td>
-                  <td>
-                    <span
-                      className={`audit-level audit-level--${item.mucDo}`}
-                    >
-                      {item.mucDo ===
-                      "thong_tin"
+                    <span className={`audit-level audit-level--${item.mucDo}`}>
+                      {item.mucDo === "thong_tin"
                         ? "Thông tin"
-                        : item.mucDo ===
-                            "canh_bao"
+                        : item.mucDo === "canh_bao"
                           ? "Cảnh báo"
                           : "Lỗi"}
                     </span>
@@ -374,11 +272,7 @@ export function SystemAuditLogPage() {
                     <button
                       type="button"
                       className="text-button"
-                      onClick={() =>
-                        void openDetail(
-                          item.id,
-                        )
-                      }
+                      onClick={() => void openDetail(item.id)}
                     >
                       Chi tiết
                     </button>
@@ -386,13 +280,9 @@ export function SystemAuditLogPage() {
                 </tr>
               ))}
 
-              {!loading &&
-              items.length === 0 ? (
+              {!loading && items.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="empty-cell"
-                  >
+                  <td colSpan={7} className="empty-cell">
                     Chưa có nhật ký phù hợp.
                   </td>
                 </tr>
@@ -414,32 +304,14 @@ export function SystemAuditLogPage() {
 
       {selected ? (
         <div className="audit-detail-overlay">
-          <section
-            className="audit-detail"
-            role="dialog"
-            aria-modal="true"
-          >
+          <section className="audit-detail" role="dialog" aria-modal="true">
             <header>
               <div>
-                <h2>
-                  {actionLabel(
-                    selected.hanhDong,
-                  )}
-                </h2>
-                <p>
-                  {formatDateTime(
-                    selected.createdAt,
-                  )}
-                </p>
+                <h2>{actionLabel(selected.hanhDong)}</h2>
+                <p>{formatDateTime(selected.createdAt)}</p>
               </div>
 
-              <button
-                type="button"
-                className="text-button"
-                onClick={() =>
-                  setSelected(null)
-                }
-              >
+              <button type="button" className="text-button" onClick={() => setSelected(null)}>
                 Đóng
               </button>
             </header>
@@ -447,60 +319,40 @@ export function SystemAuditLogPage() {
             <dl>
               <div>
                 <dt>Người thực hiện</dt>
-                <dd>
-                  {selected.nguoiDungHoTen ||
-                    "Hệ thống"}
-                </dd>
+                <dd>{selected.nguoiDungHoTen || "Hệ thống"}</dd>
               </div>
 
               <div>
                 <dt>Đơn vị</dt>
-                <dd>
-                  {selected.donViTen ||
-                    "Toàn hệ thống"}
-                </dd>
+                <dd>{selected.donViTen || "Toàn hệ thống"}</dd>
               </div>
 
               <div>
                 <dt>Địa chỉ IP</dt>
-                <dd>
-                  {selected.diaChiIp ||
-                    "Không có"}
-                </dd>
+                <dd>{selected.diaChiIp || "Không có"}</dd>
               </div>
 
               <div>
                 <dt>Đối tượng</dt>
                 <dd>
-                  {selected.doiTuong ||
-                    "Không có"}
-                  {selected.doiTuongId
-                    ? ` #${selected.doiTuongId}`
-                    : ""}
+                  {selected.doiTuong || "Không có"}
+                  {selected.doiTuongId ? ` #${selected.doiTuongId}` : ""}
                 </dd>
               </div>
             </dl>
 
             <section>
               <h3>Nội dung</h3>
-              <p>
-                {selected.noiDung ||
-                  "Không có nội dung."}
-              </p>
+              <p>{selected.noiDung || "Không có nội dung."}</p>
             </section>
 
             {selected.duLieu ? (
               <section>
                 <h3>Dữ liệu bổ sung</h3>
                 <pre>
-                  {typeof selected.duLieu ===
-                  "string"
+                  {typeof selected.duLieu === "string"
                     ? selected.duLieu
-                    : JSON.stringify(
-                        selected.duLieu,
-                        null,
-                        2,
-                      )}
+                    : JSON.stringify(selected.duLieu, null, 2)}
                 </pre>
               </section>
             ) : null}

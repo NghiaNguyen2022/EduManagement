@@ -44,3 +44,17 @@ H01-H07 (`PhieuThu`, `KhoanPhaiThu`, `KyThu`). Xem các hàm mới trong
 `server/db/taiChinh.repository.ts` (`sumPhieuThuTrongKhoang`, `sumCongNoByDonVi`,
 `listKyThuBaoCaoByDonVi`, `listKyThuBaoCaoAllDonVi`) và
 `server/services/taiChinh.service.ts` (`getBaoCaoTaiChinh`).
+
+## 5. Trạng thái triển khai
+
+Phần H09 đã được triển khai đúng theo phân tích ở trên:
+
+- Backend: `server/db/taiChinh.repository.ts`, `server/services/taiChinh.service.ts`, `server/routers/taiChinh.router.ts`.
+- Frontend: `client/src/pages/FinanceReportPage.tsx`, `client/src/features/taiChinh/taiChinhApi.ts`, `client/src/features/taiChinh/taiChinhTypes.ts`.
+- UI: trang `/finance/bao-cao` có bộ lọc khoảng ngày, 2 thẻ tổng hợp, và bảng thu theo kỳ thu; đơn vị hệ thống xem gộp toàn bộ đơn vị đang hoạt động.
+- Điều hướng: nút "Báo cáo tài chính" ở trang `/finance` dẫn sang trang này.
+- Kiểm tra: `pnpm typecheck` và `pnpm build` đã pass.
+
+## 6. Phạm vi còn lại
+
+Chưa làm biểu đồ trực quan và xuất file. Nếu cần, đó sẽ là một slice riêng để không làm báo cáo hiện tại phình ra nhanh.

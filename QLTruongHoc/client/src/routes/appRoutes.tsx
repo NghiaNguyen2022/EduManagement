@@ -1,12 +1,6 @@
-import type {
-  ReactNode,
-} from "react";
+import type { ReactNode } from "react";
 
-export type LoaiHinhDaoTao =
-  | "mam_non"
-  | "ngoai_ngu"
-  | "tin_hoc"
-  | "khac";
+export type LoaiHinhDaoTao = "mam_non" | "ngoai_ngu" | "tin_hoc" | "khac";
 
 export type AppRouteDefinition = {
   id: string;
@@ -39,70 +33,75 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "admissions",
     path: "/admissions",
     label: "Tuyển sinh",
-    group: "Tuyển sinh",
-    permissions: [
-      "tuyen_sinh.xem",
-      "tuyen_sinh.quan_ly",
-    ],
+    group: "Tổng quan",
+    permissions: ["tuyen_sinh.xem", "tuyen_sinh.quan_ly"],
   },
   {
     id: "students",
     path: "/students",
     label: "Học sinh · Học viên",
     group: "Đào tạo",
-    permissions: [
-      "hoc_sinh.xem",
-      "hoc_sinh.quan_ly",
-    ],
+    permissions: ["hoc_sinh.xem", "hoc_sinh.quan_ly"],
   },
   {
     id: "teachers",
     path: "/teachers",
     label: "Giáo viên",
     group: "Đào tạo",
-    permissions: [
-      "lop_hoc.xem",
-      "lop_hoc.quan_ly",
-    ],
+    permissions: ["lop_hoc.xem", "lop_hoc.quan_ly"],
   },
   {
     id: "classes",
     path: "/classes",
     label: "Lớp học",
     group: "Đào tạo",
-    permissions: [
-      "lop_hoc.xem",
-      "lop_hoc.quan_ly",
-    ],
+    permissions: ["lop_hoc.xem", "lop_hoc.quan_ly"],
   },
   {
     id: "schedule",
     path: "/schedule",
     label: "Lịch học",
     group: "Đào tạo",
-    permissions: [
-      "lop_hoc.xem",
-      "lop_hoc.quan_ly",
-    ],
+    permissions: ["lop_hoc.xem", "lop_hoc.quan_ly"],
   },
   {
     id: "attendance",
     path: "/attendance",
     label: "Điểm danh",
     group: "Đào tạo",
-    permissions: [
-      "diem_danh.xem",
-      "diem_danh.thuc_hien",
-    ],
+    permissions: ["diem_danh.xem", "diem_danh.thuc_hien"],
   },
   {
     id: "finance",
     path: "/finance",
     label: "Học phí · Công nợ",
     group: "Tài chính",
+    permissions: ["tai_chinh.xem", "tai_chinh.quan_ly"],
+  },
+  {
+    id: "notifications",
+    path: "/notifications",
+    label: "Thông báo nội bộ",
+    group: "Tổng quan",
     permissions: [
-      "tai_chinh.xem",
+      "don_vi.quan_ly",
+      "tuyen_sinh.quan_ly",
+      "hoc_sinh.quan_ly",
+      "lop_hoc.quan_ly",
       "tai_chinh.quan_ly",
+    ],
+  },
+  {
+    id: "communications",
+    path: "/communications",
+    label: "Trao đổi phụ huynh",
+    group: "Tổng quan",
+    permissions: [
+      "hoc_sinh.xem",
+      "lop_hoc.xem",
+      "hoc_sinh.quan_ly",
+      "lop_hoc.quan_ly",
+      "tuyen_sinh.quan_ly",
     ],
   },
   {
@@ -110,65 +109,42 @@ export const appRoutes: AppRouteDefinition[] = [
     path: "/organizations",
     label: "Cây đơn vị",
     group: "Hệ thống",
-    permissions: [
-      "don_vi.xem",
-      "don_vi.quan_ly",
-      "he_thong.quan_tri",
-    ],
+    permissions: ["don_vi.xem", "don_vi.quan_ly", "he_thong.quan_tri"],
   },
   {
     id: "users",
     path: "/users",
     label: "Quản lý người dùng",
     group: "Hệ thống",
-    permissions: [
-      "nguoi_dung.xem",
-      "nguoi_dung.quan_ly",
-    ],
+    permissions: ["nguoi_dung.xem", "nguoi_dung.quan_ly"],
   },
   {
     id: "roles",
     path: "/roles",
     label: "Vai trò · Phân quyền",
     group: "Hệ thống",
-    permissions: [
-      "phan_quyen.xem",
-      "phan_quyen.quan_ly",
-    ],
+    permissions: ["phan_quyen.xem", "phan_quyen.quan_ly"],
   },
   {
     id: "audit-logs",
     path: "/audit-logs",
     label: "Nhật ký hệ thống",
     group: "Hệ thống",
-    permissions: [
-      "phan_quyen.xem",
-      "phan_quyen.quan_ly",
-    ],
+    permissions: ["phan_quyen.xem", "phan_quyen.quan_ly"],
   },
   {
     id: "settings",
     path: "/settings",
     label: "Cấu hình hệ thống",
     group: "Hệ thống",
-    permissions: [
-      "he_thong.quan_tri",
-      "don_vi.quan_ly",
-    ],
+    permissions: ["he_thong.quan_tri", "don_vi.quan_ly"],
     comingSoon: true,
   },
 ];
 
-export function findRouteByPath(
-  pathname: string,
-) {
+export function findRouteByPath(pathname: string) {
   return (
-    appRoutes.find(
-      (route) =>
-        pathname === route.path ||
-        pathname.startsWith(
-          `${route.path}/`,
-        ),
-    ) ?? appRoutes[0]
+    appRoutes.find((route) => pathname === route.path || pathname.startsWith(`${route.path}/`)) ??
+    appRoutes[0]
   );
 }

@@ -14,10 +14,7 @@ type ApiResponse<T> = {
   error?: string;
 };
 
-async function request<T>(
-  url: string,
-  options?: RequestInit,
-): Promise<T> {
+async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     credentials: "include",
     headers: {
@@ -27,31 +24,25 @@ async function request<T>(
     ...options,
   });
 
-  const payload =
-    (await response.json()) as ApiResponse<T>;
+  const payload = (await response.json()) as ApiResponse<T>;
 
   if (!response.ok || !payload.ok) {
-    throw new Error(
-      payload.error || "Yêu cầu thất bại.",
-    );
+    throw new Error(payload.error || "Yêu cầu thất bại.");
   }
 
   return payload.data as T;
 }
 
 export async function listHocSinhApi() {
-  const rows = await request<
-    (HocSinhItem | { hocSinh: HocSinhItem; donVi: HocSinhItem["donVi"] })[]
-  >("/api/hoc-sinh");
+  const rows =
+    await request<(HocSinhItem | { hocSinh: HocSinhItem; donVi: HocSinhItem["donVi"] })[]>(
+      "/api/hoc-sinh",
+    );
 
-  return rows.map((row) =>
-    "hocSinh" in row ? { ...row.hocSinh, donVi: row.donVi } : row,
-  );
+  return rows.map((row) => ("hocSinh" in row ? { ...row.hocSinh, donVi: row.donVi } : row));
 }
 
-export function createHocSinhApi(
-  input: HocSinhFormInput,
-) {
+export function createHocSinhApi(input: HocSinhFormInput) {
   return request<HocSinhItem>("/api/hoc-sinh", {
     method: "POST",
     body: JSON.stringify(input),
@@ -59,22 +50,14 @@ export function createHocSinhApi(
 }
 
 export function getHocSinhDetailApi(id: number) {
-  return request<HocSinhDetail>(
-    `/api/hoc-sinh/${id}`,
-  );
+  return request<HocSinhDetail>(`/api/hoc-sinh/${id}`);
 }
 
-export function updateHocSinhApi(
-  id: number,
-  input: HocSinhFormInput,
-) {
-  return request<HocSinhItem>(
-    `/api/hoc-sinh/${id}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(input),
-    },
-  );
+export function updateHocSinhApi(id: number, input: HocSinhFormInput) {
+  return request<HocSinhItem>(`/api/hoc-sinh/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
 export function setHocSinhTrangThaiApi(
@@ -85,26 +68,58 @@ export function setHocSinhTrangThaiApi(
     ngayHieuLuc?: string;
   },
 ) {
-  return request<HocSinhItem>(
-    `/api/hoc-sinh/${id}/trang-thai`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(input),
-    },
-  );
-}
-
-export function addGuardianApi(
-  hocSinhId: number,
-  input: GuardianFormInput,
-) {
-  return request<{
-    link: GuardianLinkItem;
-    guardian: PhuHuynhItem;
-  }>(`/api/hoc-sinh/${hocSinhId}/phu-huynh`, {
-    method: "POST",
+  return request<HocSinhItem>(`/api/hoc-sinh/${id}/trang-thai`, {
+    method: "PATCH",
     body: JSON.stringify(input),
   });
+}
+
+export type CrossOrgGuardianInfo = {
+  hoTen: string;
+  maPhuHuynh: string;
+  donVi: { id: number; maDonVi: string; tenDonVi: string };
+};
+
+export class CrossOrgGuardianConfirmError extends Error {
+  guardianInfo: CrossOrgGuardianInfo;
+
+  constructor(message: string, guardianInfo: CrossOrgGuardianInfo) {
+    super(message);
+    this.guardianInfo = guardianInfo;
+  }
+}
+
+export async function addGuardianApi(
+  hocSinhId: number,
+  input: GuardianFormInput & { confirmCrossOrgReuse?: boolean },
+) {
+  const response = await fetch(`/api/hoc-sinh/${hocSinhId}/phu-huynh`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  const payload = (await response.json()) as ApiResponse<{
+    link: GuardianLinkItem;
+    guardian: PhuHuynhItem;
+  }> & {
+    needsConfirmation?: boolean;
+    guardianInfo?: CrossOrgGuardianInfo;
+  };
+
+  if (!response.ok || !payload.ok) {
+    if (payload.needsConfirmation && payload.guardianInfo) {
+      throw new CrossOrgGuardianConfirmError(
+        payload.error || "Cần xác nhận trước khi dùng chung hồ sơ.",
+        payload.guardianInfo,
+      );
+    }
+
+    throw new Error(payload.error || "Không thể thêm phụ huynh.");
+  }
+
+  return payload.data as { link: GuardianLinkItem; guardian: PhuHuynhItem };
 }
 
 export function updateGuardianApi(
@@ -118,48 +133,30 @@ export function updateGuardianApi(
     nhanThongTinHocPhi: boolean;
   },
 ) {
-  return request(
-    `/api/hoc-sinh/${hocSinhId}/phu-huynh/${linkId}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(input),
-    },
-  );
+  return request(`/api/hoc-sinh/${hocSinhId}/phu-huynh/${linkId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
-export function createGuardianAccountApi(
-  hocSinhId: number,
-  linkId: number,
-) {
+export function createGuardianAccountApi(hocSinhId: number, linkId: number) {
   return request<{
     created: boolean;
     nguoiDungId: number;
     tenDangNhap: string | null;
     temporaryPassword: string | null;
-  }>(
-    `/api/hoc-sinh/${hocSinhId}/phu-huynh/${linkId}/tai-khoan`,
-    { method: "POST" },
-  );
+  }>(`/api/hoc-sinh/${hocSinhId}/phu-huynh/${linkId}/tai-khoan`, { method: "POST" });
 }
 
-export async function removeGuardianApi(
-  hocSinhId: number,
-  linkId: number,
-) {
-  const response = await fetch(
-    `/api/hoc-sinh/${hocSinhId}/phu-huynh/${linkId}`,
-    {
-      method: "DELETE",
-      credentials: "include",
-    },
-  );
+export async function removeGuardianApi(hocSinhId: number, linkId: number) {
+  const response = await fetch(`/api/hoc-sinh/${hocSinhId}/phu-huynh/${linkId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
 
-  const payload =
-    (await response.json()) as ApiResponse<unknown>;
+  const payload = (await response.json()) as ApiResponse<unknown>;
 
   if (!response.ok || !payload.ok) {
-    throw new Error(
-      payload.error || "Không thể gỡ liên kết.",
-    );
+    throw new Error(payload.error || "Không thể gỡ liên kết.");
   }
 }

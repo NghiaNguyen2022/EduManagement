@@ -1,11 +1,8 @@
 import { hash } from "bcryptjs";
 
-import {
-  createAuditLog,
-} from "../db/audit.repository.js";
-import {
-  findHocSinhById,
-} from "../db/hocSinh.repository.js";
+import { createAuditLog } from "../db/audit.repository.js";
+import { findDonViById } from "../db/donVi.repository.js";
+import { findHocSinhById } from "../db/hocSinh.repository.js";
 import {
   clearPrimaryContact,
   countGuardianLinksForHocSinh,
@@ -16,34 +13,39 @@ import {
   findGuardianLink,
   findGuardianLinkById,
   findPhuHuynhById,
-  findPhuHuynhByPhone,
+  findPhuHuynhByPhoneGlobal,
   updateGuardianLink,
   updatePhuHuynhNguoiDungId,
 } from "../db/phuHuynh.repository.js";
 import { findRoleByCode } from "../db/role.repository.js";
-import {
-  createUserWithRole,
-  findUserById,
-  findUserByUsername,
-} from "../db/user.repository.js";
+import { createUserWithRole, findUserById, findUserByUsername } from "../db/user.repository.js";
 import { createTemporaryPassword } from "./user.service.js";
 
-type MoiQuanHe =
-  | "cha"
-  | "me"
-  | "ong"
-  | "ba"
-  | "nguoi_giam_ho"
-  | "khac";
+/**
+ * Ném ra khi số điện thoại đã khớp một hồ sơ phụ huynh thuộc đơn vị KHÁC đơn vị
+ * đang thao tác — đúng chủ đích "một phụ huynh có con học nhiều đơn vị" (dùng
+ * chung 1 hồ sơ/tài khoản), nhưng cần người dùng xác nhận rõ ràng trước khi
+ * gộp, để tránh gán nhầm danh tính chỉ vì trùng số điện thoại giữa 2 đơn vị
+ * không liên quan.
+ */
+export class CrossOrgGuardianConfirmError extends Error {
+  guardianInfo: {
+    hoTen: string;
+    maPhuHuynh: string;
+    donVi: { id: number; maDonVi: string; tenDonVi: string };
+  };
 
-const MOI_QUAN_HE_HOP_LE: MoiQuanHe[] = [
-  "cha",
-  "me",
-  "ong",
-  "ba",
-  "nguoi_giam_ho",
-  "khac",
-];
+  constructor(guardianInfo: CrossOrgGuardianConfirmError["guardianInfo"]) {
+    super(
+      `Số điện thoại này đã là phụ huynh ${guardianInfo.hoTen} (${guardianInfo.maPhuHuynh}) tại đơn vị ${guardianInfo.donVi.tenDonVi}. Vui lòng xác nhận để dùng chung hồ sơ cho phụ huynh có con học nhiều đơn vị.`,
+    );
+    this.guardianInfo = guardianInfo;
+  }
+}
+
+type MoiQuanHe = "cha" | "me" | "ong" | "ba" | "nguoi_giam_ho" | "khac";
+
+const MOI_QUAN_HE_HOP_LE: MoiQuanHe[] = ["cha", "me", "ong", "ba", "nguoi_giam_ho", "khac"];
 
 async function sinhMaPhuHuynh(donViId: number) {
   const total = await countPhuHuynhTheoMaPrefix(donViId, "PH");
@@ -66,13 +68,17 @@ export async function addGuardianToStudent(input: {
   duocDonTre: boolean;
   nhanThongBao: boolean;
   nhanThongTinHocPhi: boolean;
+  /**
+   * Bắt buộc = true khi số điện thoại khớp một hồ sơ phụ huynh ở đơn vị
+   * khác — người dùng đã xem thông tin hồ sơ đó và xác nhận đây đúng là
+   * cùng một phụ huynh (có con học nhiều đơn vị), không phải trùng lặp
+   * ngẫu nhiên. Xem `CrossOrgGuardianConfirmError`.
+   */
+  confirmCrossOrgReuse?: boolean;
   actorUserId: number;
   ipAddress?: string;
 }) {
-  const student = await findHocSinhById(
-    input.donViId,
-    input.hocSinhId,
-  );
+  const student = await findHocSinhById(input.donViId, input.hocSinhId);
 
   if (!student) {
     throw new Error("Không tìm thấy học sinh trong đơn vị hiện tại.");
@@ -88,11 +94,11 @@ export async function addGuardianToStudent(input: {
     throw new Error("Mối quan hệ không hợp lệ.");
   }
 
-  let guardian = await findPhuHuynhByPhone(input.donViId, dienThoai);
+  let guardian = await findPhuHuynhByPhoneGlobal(dienThoai);
+  let isCrossOrgReuse = false;
 
   if (!guardian) {
     const hoTen = input.hoTen?.trim();
-
     if (!hoTen) {
       throw new Error(
         "Chưa có phụ huynh với số điện thoại này, vui lòng nhập họ tên để tạo hồ sơ mới.",
@@ -106,8 +112,7 @@ export async function addGuardianToStudent(input: {
       maPhuHuynh,
       hoTen,
       ngaySinh: input.ngaySinh || null,
-      gioiTinh:
-        (input.gioiTinh as "nam" | "nu" | "khac" | undefined) ?? null,
+      gioiTinh: (input.gioiTinh as "nam" | "nu" | "khac" | undefined) ?? null,
       dienThoai,
       email: input.email?.trim() || null,
       ngheNghiep: input.ngheNghiep?.trim() || null,
@@ -117,12 +122,31 @@ export async function addGuardianToStudent(input: {
     if (!guardian) {
       throw new Error("Không thể tạo hồ sơ phụ huynh.");
     }
+  } else if (guardian.donViId !== input.donViId) {
+    isCrossOrgReuse = true;
+
+    if (!input.confirmCrossOrgReuse) {
+      const guardianDonVi = await findDonViById(guardian.donViId);
+
+      throw new CrossOrgGuardianConfirmError({
+        hoTen: guardian.hoTen,
+        maPhuHuynh: guardian.maPhuHuynh,
+        donVi: guardianDonVi
+          ? {
+              id: guardianDonVi.id,
+              maDonVi: guardianDonVi.maDonVi,
+              tenDonVi: guardianDonVi.tenDonVi,
+            }
+          : {
+              id: guardian.donViId,
+              maDonVi: `DV-${guardian.donViId}`,
+              tenDonVi: "Đơn vị khác",
+            },
+      });
+    }
   }
 
-  const existedLink = await findGuardianLink(
-    input.hocSinhId,
-    guardian.id,
-  );
+  const existedLink = await findGuardianLink(input.hocSinhId, guardian.id);
 
   if (existedLink) {
     throw new Error("Phụ huynh này đã liên kết với học sinh.");
@@ -145,10 +169,12 @@ export async function addGuardianToStudent(input: {
   await createAuditLog({
     userId: input.actorUserId,
     organizationId: input.donViId,
-    action: "hoc_sinh.add_guardian",
+    action: isCrossOrgReuse ? "hoc_sinh.add_guardian_cross_org" : "hoc_sinh.add_guardian",
     objectType: "HocSinhPhuHuynh",
     objectId: link ? String(link.id) : null,
-    content: `Thêm phụ huynh ${guardian.hoTen} (${guardian.maPhuHuynh}) cho học sinh ${student.hoTen} (${student.maHocSinh}).`,
+    content: isCrossOrgReuse
+      ? `Thêm phụ huynh ${guardian.hoTen} (${guardian.maPhuHuynh}, hồ sơ gốc ở đơn vị #${guardian.donViId}) cho học sinh ${student.hoTen} (${student.maHocSinh}) — đã xác nhận dùng chung hồ sơ khác đơn vị.`
+      : `Thêm phụ huynh ${guardian.hoTen} (${guardian.maPhuHuynh}) cho học sinh ${student.hoTen} (${student.maHocSinh}).`,
     ipAddress: input.ipAddress,
   });
 
@@ -218,20 +244,14 @@ export async function removeGuardianLink(input: {
     throw new Error("Không tìm thấy liên kết phụ huynh.");
   }
 
-  const total = await countGuardianLinksForHocSinh(
-    found.lienKet.hocSinhId,
-  );
+  const total = await countGuardianLinksForHocSinh(found.lienKet.hocSinhId);
 
   if (total <= 1) {
-    throw new Error(
-      "Không thể gỡ liên kết cuối cùng của học sinh. Cần thêm phụ huynh khác trước.",
-    );
+    throw new Error("Không thể gỡ liên kết cuối cùng của học sinh. Cần thêm phụ huynh khác trước.");
   }
 
   if (found.lienKet.laLienHeChinh) {
-    throw new Error(
-      "Đây là liên hệ chính. Vui lòng chỉ định liên hệ chính khác trước khi gỡ.",
-    );
+    throw new Error("Đây là liên hệ chính. Vui lòng chỉ định liên hệ chính khác trước khi gỡ.");
   }
 
   await deleteGuardianLink(input.linkId);
@@ -255,9 +275,7 @@ async function sinhTenDangNhapPhuHuynh(dienThoai: string) {
   const base = normalizeUsernameFromPhone(dienThoai);
 
   if (!base) {
-    throw new Error(
-      "Không thể sinh tên đăng nhập vì phụ huynh chưa có số điện thoại hợp lệ.",
-    );
+    throw new Error("Không thể sinh tên đăng nhập vì phụ huynh chưa có số điện thoại hợp lệ.");
   }
 
   let candidate = base;
@@ -290,10 +308,18 @@ export async function createGuardianAccount(input: {
   }
 
   if (guardian.nguoiDungId) {
-    const existingUser = await findUserById(
-      guardian.nguoiDungId,
-    );
+    const existingUser = await findUserById(guardian.nguoiDungId);
 
+    /**
+     * Tài khoản có thể đã được tạo từ một đơn vị khác (phụ huynh có con học
+     * nhiều đơn vị, hồ sơ dùng chung qua số điện thoại — xem
+     * `CrossOrgGuardianConfirmError` ở trên). Không cần gán thêm vai trò
+     * `phu_huynh` riêng cho từng đơn vị con học: quyền xem dữ liệu con trên
+     * Portal (`getParentPortalOverview`) đi thẳng theo liên kết
+     * `PhuHuynh.nguoiDungId` — chính liên kết này (và bước xác nhận cross-org
+     * ở trên) mới là điểm chốt quyền thực sự, không phải việc có được gán
+     * vai trò ở đúng đơn vị đang chọn hay không.
+     */
     await createAuditLog({
       userId: input.actorUserId,
       organizationId: input.donViId,

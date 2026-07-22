@@ -28,11 +28,7 @@
   display: grid;
   place-items: center;
   border-radius: 18px;
-  background: linear-gradient(
-    135deg,
-    var(--edu-color-primary),
-    var(--edu-color-secondary)
-  );
+  background: linear-gradient(135deg, var(--edu-color-primary), var(--edu-color-secondary));
   color: white;
   font-weight: 900;
 }
@@ -50,6 +46,21 @@
   display: grid;
   gap: 16px;
   text-align: left;
+}
+
+.login-card__remember {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--edu-color-text-muted);
+  font-size: 13px;
+}
+
+.login-card__remember input {
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  margin: 0;
 }
 
 .login-card label {
@@ -88,6 +99,13 @@
   line-height: 1.55;
 }
 
+.login-card__hint {
+  margin: -4px 0 0;
+  color: var(--edu-color-text-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .organization-page {
   align-content: center;
 }
@@ -103,8 +121,7 @@
 .organization-grid {
   width: min(920px, 100%);
   display: grid;
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
 }
 

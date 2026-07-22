@@ -1,8 +1,6 @@
 .user-create-form {
   display: grid;
-  grid-template-columns:
-    repeat(5, minmax(0, 1fr))
-    auto;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
   gap: 14px;
   align-items: end;
 }
@@ -116,15 +114,213 @@
   cursor: pointer;
 }
 
+.thong-bao-page {
+  display: grid;
+  gap: 18px;
+}
+
+.thong-bao-card .section-card__body {
+  display: grid;
+  gap: 18px;
+}
+
+.thong-bao-form {
+  display: grid;
+  gap: 18px;
+}
+
+.thong-bao-form__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.thong-bao-form__field {
+  min-width: 0;
+}
+
+.thong-bao-form__field--span-2 {
+  grid-column: span 2;
+}
+
+.thong-bao-form__field--span-3 {
+  grid-column: span 3;
+}
+
+.thong-bao-form__field--span-5 {
+  grid-column: 1 / -1;
+}
+
+.thong-bao-form__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.thong-bao-form__actions .primary-button {
+  min-width: 172px;
+}
+
+.thong-bao-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(240px, 0.9fr);
+  gap: 14px;
+  align-items: end;
+}
+
+.thong-bao-toolbar > * {
+  min-width: 0;
+}
+
+.thong-bao-table {
+  table-layout: fixed;
+}
+
+.thong-bao-table th:first-child,
+.thong-bao-table td:first-child {
+  width: min(42%, 520px);
+}
+
+.thong-bao-table__main-cell {
+  padding-right: 16px;
+}
+
+.thong-bao-table__title {
+  font-weight: 600;
+  color: var(--edu-color-text);
+}
+
+.thong-bao-table__content {
+  line-height: 1.55;
+}
+
+.thong-bao-table__attachment {
+  margin-top: 8px;
+}
+
+.thong-bao-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.thong-bao-read-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.thong-bao-read-badge--read {
+  background: var(--edu-color-success-soft);
+  color: var(--edu-color-success);
+}
+
+.thong-bao-read-badge--unread {
+  background: var(--edu-color-warning-soft);
+  color: var(--edu-color-warning);
+}
+
+.thong-bao-read-button {
+  min-height: 32px;
+  padding-inline: 11px;
+  font-size: 12px;
+}
+
+.thong-bao-row-actions__meta {
+  color: var(--edu-color-text-muted);
+  font-size: 12px;
+}
+
+.thong-bao-attachment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--edu-color-border);
+  background: var(--edu-color-primary-soft);
+  color: var(--edu-color-primary-strong);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.thong-bao-attachment-link:hover {
+  transform: translateY(-1px);
+  border-color: var(--edu-color-primary);
+  background: var(--edu-color-primary-soft-hover, var(--edu-color-primary-soft));
+}
+
+.thong-bao-table .empty-cell {
+  padding-block: 22px;
+  color: var(--edu-color-text-muted);
+  text-align: center;
+}
+
 @media (max-width: 1180px) {
   .user-create-form {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .thong-bao-form__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .thong-bao-form__field--span-2,
+  .thong-bao-form__field--span-3,
+  .thong-bao-form__field--span-5 {
+    grid-column: auto;
+  }
+
+  .thong-bao-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .thong-bao-table th:first-child,
+  .thong-bao-table td:first-child {
+    width: auto;
   }
 }
 
 @media (max-width: 680px) {
   .user-create-form {
     grid-template-columns: 1fr;
+  }
+
+  .thong-bao-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .thong-bao-form__field--span-2,
+  .thong-bao-form__field--span-3,
+  .thong-bao-form__field--span-5 {
+    grid-column: auto;
+  }
+
+  .thong-bao-form__actions {
+    justify-content: stretch;
+  }
+
+  .thong-bao-form__actions .primary-button {
+    width: 100%;
+  }
+
+  .thong-bao-table th,
+  .thong-bao-table td {
+    padding-inline: 10px;
+  }
+
+  .thong-bao-row-actions {
+    align-items: flex-start;
   }
 }

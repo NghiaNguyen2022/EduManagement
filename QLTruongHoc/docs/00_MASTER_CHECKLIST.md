@@ -59,6 +59,24 @@
 > phí/chuyển phí/bảo lưu) để lại làm bước sau — cần thiết kế riêng phức tạp hơn. Xem
 > `PROJECT_SUMMARY.md` mục "H01/H02 — Danh mục khoản thu, Kỳ thu", "H03-H07 — Khoản phải thu,
 > miễn giảm, thu tiền, công nợ, biên nhận" và "H09 — Báo cáo tài chính".
+>
+> Cập nhật 2026-07-22 (rà soát I01-I04 + khung Portal): xác nhận chủ đích "một phụ huynh có
+> con học nhiều đơn vị" — D03 đổi sang tái sử dụng hồ sơ phụ huynh theo số điện thoại **toàn
+> hệ thống** (trước đây chỉ trong đơn vị), có xác nhận rõ ràng + audit riêng khi dùng chung
+> hồ sơ khác đơn vị. Sửa thêm: route mặc định sau đăng nhập không còn ép mọi vai trò nội bộ
+> vào Portal (chỉ phụ huynh), 2 quick-link Portal trỏ cứng vào ID bản ghi mẫu, 1 lỗi thứ tự
+> hook ở `PortalLandingPage`.
+>
+> Cập nhật 2026-07-22 (tiếp, sau test tay tài khoản thật): bỏ lại một lớp kiểm tra vừa thêm ở
+> `getParentPortalOverview` (yêu cầu có bản ghi phân quyền `phu_huynh` riêng theo từng đơn vị)
+> — test tay lộ ra tài khoản phụ huynh thật đang đăng nhập mặc định vào đơn vị hệ thống (do
+> lệch dữ liệu từ lần chuyển đơn vị trước đó) vẫn cần xem đúng con ở đơn vị khác. Xác nhận lại
+> mô hình đúng: phụ huynh đăng nhập vào một đơn vị neo chung (không mang ý nghĩa nghiệp vụ),
+> còn danh sách con luôn nhóm theo đúng đơn vị của từng con (Portal trả thêm `organizations`,
+> xử lý đúng cả 3 trường hợp nhiều con/nhiều đơn vị, một con/nhiều đơn vị, nhiều con/một đơn
+> vị). Điểm chốt an toàn thực sự là bước xác nhận khi ghép phụ huynh khác đơn vị, không phải
+> phân quyền theo từng đơn vị con học. Xem `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md`
+> mục 11 và `PROJECT_SUMMARY.md`.
 
 ## A. Nền tảng và đa đơn vị
 - [x] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)
@@ -90,7 +108,7 @@
 ## D. Học sinh và phụ huynh
 - [x] D01 Hồ sơ học sinh. (2026-07-21: API `/api/hoc-sinh` + trang `/students`, `/students/:id`. Mã học sinh tự sinh. Xem `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md`.)
 - [ ] D02 Hồ sơ sức khỏe mầm non. (Để Sprint 7.)
-- [x] D03 Quan hệ phụ huynh/người giám hộ. (2026-07-21: `PhuHuynh` + `HocSinhPhuHuynh`, tái sử dụng phụ huynh theo số điện thoại trong đơn vị, một liên hệ chính tại một thời điểm.)
+- [x] D03 Quan hệ phụ huynh/người giám hộ. (2026-07-21: `PhuHuynh` + `HocSinhPhuHuynh`, một liên hệ chính tại một thời điểm. Cập nhật 2026-07-22: tái sử dụng phụ huynh theo số điện thoại **toàn hệ thống**, không chỉ trong đơn vị — hỗ trợ phụ huynh có con học nhiều đơn vị; nếu khớp hồ sơ ở đơn vị khác, bắt buộc xác nhận qua `ConfirmDialog` trước khi dùng chung, có audit riêng `hoc_sinh.add_guardian_cross_org`. Xem `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md` mục 11.)
 - [x] D04 Người liên hệ chính và người đón trẻ. (`laLienHeChinh`, `duocDonTre` trên `HocSinhPhuHuynh`; chưa có UI ghi nhận người đón thực tế theo buổi — để Sprint 3/7.)
 - [x] D05 Lịch sử trạng thái học tập. (2026-07-21: `HocSinhTrangThaiLichSu` — ghi 1 dòng mỗi lần đổi `HocSinh.trangThai`, không ghi đè. Xem `docs/analysis/D05_D06_lich_su_trang_thai_hoc_tap.md`.)
 - [x] D06 Chuyển lớp/ngừng học/bảo lưu. (Chuyển lớp đã có từ E03. Bổ sung 2026-07-21: đổi trạng thái tổng thể học sinh sang `ngung_hoc`/`hoan_thanh`/`bao_luu` tự động đồng bộ tất cả `HocSinhLopHoc` đang hoạt động — trước đây 2 tầng trạng thái có thể lệch nhau.)
@@ -134,10 +152,10 @@
 - [x] H09 Báo cáo doanh thu, công nợ, thu theo đơn vị. (2026-07-22: trang `/finance/bao-cao` — tổng thu trong khoảng ngày lọc được, tổng công nợ hiện tại, bảng thu theo từng kỳ thu (đơn vị hệ thống xem gộp kèm cột "Đơn vị"). Chưa có biểu đồ.)
 
 ## I. Thông báo và trao đổi
-- [ ] I01 Thông báo toàn trường/theo lớp/cá nhân.
-- [ ] I02 Đính kèm tài liệu/hình ảnh.
-- [ ] I03 Xác nhận đã đọc.
-- [ ] I04 Trao đổi phụ huynh – giáo viên theo học sinh/lớp.
+- [x] I01 Thông báo toàn trường/theo lớp/cá nhân. (2026-07-22: API `/api/thong-bao` + trang `/notifications`, lưu phạm vi `toan_truong` / `theo_lop` / `ca_nhan`, đơn vị hệ thống xem gộp theo đơn vị đang hoạt động. I02-I05 còn để sau.)
+- [x] I02 Đính kèm tài liệu/hình ảnh. (2026-07-22: thêm một slot đính kèm duy nhất cho thông báo nội bộ — tên + liên kết; chưa làm upload đa tệp riêng.)
+- [x] I03 Xác nhận đã đọc. (2026-07-22: thêm bảng `ThongBaoDaDoc` theo từng người dùng, nút "Xác nhận đã đọc" ngay trên trang `/thong-bao`, badge trạng thái theo từng dòng.)
+- [x] I04 Trao đổi phụ huynh – giáo viên theo học sinh/lớp. (2026-07-22: API `/api/trao-doi` + trang `/communications`, ghi nhận trao đổi theo học sinh/lớp, xem gộp đơn vị hệ thống và lưu `trao_doi.create` vào nhật ký hệ thống.)
 - [ ] I05 Kiểm soát phạm vi và lưu lịch sử.
 
 ## J. Portal

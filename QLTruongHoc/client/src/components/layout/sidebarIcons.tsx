@@ -1,6 +1,4 @@
-import type {
-  ReactNode,
-} from "react";
+import type { ReactNode } from "react";
 
 const ICON_PROPS = {
   viewBox: "0 0 24 24",
@@ -73,6 +71,21 @@ export const sidebarIcons: Record<string, ReactNode> = {
     <svg {...ICON_PROPS}>
       <path d="M3 7.2A2.2 2.2 0 0 1 5.2 5h11.6A2.2 2.2 0 0 1 19 7.2V9h1.2A1.8 1.8 0 0 1 22 10.8v6.4A1.8 1.8 0 0 1 20.2 19H5.2A2.2 2.2 0 0 1 3 16.8V7.2Z" />
       <circle cx="17.1" cy="13.9" r="1.25" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+
+  notifications: (
+    <svg {...ICON_PROPS}>
+      <path d="M6 9.5A6 6 0 0 1 12 4a6 6 0 0 1 6 5.5V14l2 3H4l2-3V9.5Z" />
+      <path d="M10 19a2 2 0 0 0 4 0" />
+    </svg>
+  ),
+
+  communications: (
+    <svg {...ICON_PROPS}>
+      <path d="M4 5.5h12A3.5 3.5 0 0 1 19.5 9v6A3.5 3.5 0 0 1 16 18.5H9l-5 3v-3.5A3.5 3.5 0 0 1 0.5 14V9A3.5 3.5 0 0 1 4 5.5Z" />
+      <path d="M7 9.5h8" />
+      <path d="M7 12.5h5" />
     </svg>
   ),
 

@@ -437,6 +437,49 @@ trang — nằm **dưới** overlay nên bị che hoàn toàn, modal vẫn mở 
 
 ---
 
+## I01 — Thông báo nội bộ (2026-07-22)
+
+Chọn lát cắt nhỏ nhưng có giá trị thực để mở Sprint 6: thông báo nội bộ theo đơn vị. Phạm vi hiện tại là tạo và xem thông báo với 3 mức `toan_truong` / `theo_lop` / `ca_nhan`; chưa làm đính kèm, xác nhận đã đọc hay trao đổi hai chiều.
+
+- Database: thêm bảng `ThongBao` trong `drizzle/schemas/thongBao.ts`, có mã tự sinh theo năm, phạm vi, đối tượng áp dụng và người tạo.
+- Backend: `server/db/thongBao.repository.ts`, `server/services/thongBao.service.ts`, `server/routers/thongBao.router.ts`, đăng ký tại `server/index.ts`.
+- Frontend: trang `/thong-bao`, feature API/types riêng trong `client/src/features/thongBao/`, thêm vào menu và sidebar.
+- Quy ước hiển thị: đơn vị hệ thống xem gộp thông báo của các đơn vị đang hoạt động; đơn vị thường tạo/xem trong đơn vị hiện tại.
+- Test đã chạy: `pnpm typecheck`, `pnpm build`.
+- Còn lại: I02 đính kèm, I03 xác nhận đã đọc, I04 trao đổi phụ huynh–giáo viên, I05 kiểm soát phạm vi và lưu lịch sử chi tiết hơn.
+
+## I02 — Đính kèm tài liệu / hình ảnh (2026-07-22)
+
+Để giữ slice nhỏ và tránh mở hệ thống upload riêng, I02 được triển khai bằng một slot đính kèm duy nhất gắn trên thông báo nội bộ.
+
+- Database: thêm 2 cột `tepDinhKemTen` và `tepDinhKemUrl` vào `ThongBao`.
+- Backend: `server/services/thongBao.service.ts` chấp nhận đính kèm nếu có đủ tên và liên kết; `server/db/thongBao.repository.ts` lưu metadata này cùng thông báo.
+- Frontend: form tạo thông báo thêm 2 ô nhập đính kèm; danh sách hiển thị link mở tệp đính kèm trực tiếp.
+- Giới hạn hiện tại: chưa có upload file thật hay đa tệp; đây là phiên bản tối thiểu để hoàn thành checklist I02 trước.
+- Kiểm tra: `pnpm build` sẽ được chạy sau khi áp migration để xác nhận không vỡ biên dịch.
+
+## I03 — Xác nhận đã đọc (2026-07-22)
+
+Triển khai xác nhận đã đọc theo đúng nghĩa per-user, không dùng cột trạng thái chung trên `ThongBao`.
+
+- Database: thêm bảng `ThongBaoDaDoc` với khóa duy nhất `(thongBaoId, nguoiDungId)`.
+- Backend: list thông báo trả kèm `daDocAt` theo người dùng hiện tại; thêm route `POST /api/thong-bao/:id/da-doc` để lưu dấu xác nhận đọc.
+- Frontend: trang `/thong-bao` hiển thị badge `Đã đọc` / `Chưa đọc` và nút `Xác nhận đã đọc` trên từng dòng.
+- Audit: ghi `thong_bao.mark_read` vào `NhatKyHeThong` khi người dùng xác nhận.
+- Kiểm tra: sẽ chạy `pnpm typecheck` và `pnpm build` sau khi áp migration DB mới.
+
+## I04 — Trao đổi phụ huynh – giáo viên (2026-07-22)
+
+Triển khai một sổ trao đổi tối thiểu theo học sinh/lớp, bám vào khung sườn có sẵn của hệ thống.
+
+- Database: thêm bảng `TraoDoiHocSinh` để ghi log trao đổi theo học sinh, lớp, kênh liên lạc và vai trò người ghi.
+- Backend: thêm API `/api/trao-doi` để liệt kê và tạo trao đổi; đơn vị hệ thống xem gộp đơn vị đang hoạt động, có kèm đơn vị sở hữu.
+- Frontend: trang `/communications` có bộ lọc học sinh/lớp, form ghi trao đổi, và bảng lịch sử kèm liên kết sang hồ sơ học sinh/lớp.
+- Audit: ghi `trao_doi.create` vào `NhatKyHeThong` khi người dùng tạo trao đổi mới.
+- Kiểm tra: đã chạy `pnpm typecheck`, `pnpm build`, và áp migration DB dev.
+
+---
+
 ## E01-E04 — Chương trình, giáo viên, lớp học, xếp lớp (2026-07-21)
 
 Mở đầu Sprint 2, đúng 4 bước. Phạm vi: chương trình đào tạo, hồ sơ giáo viên, lớp học, xếp
@@ -1080,3 +1123,111 @@ modal `UserAssignmentPanel`, chưa có trang riêng). Làm cả 3 theo yêu cầ
     khẩu `demo_hocvu` là hành động an toàn vì mật khẩu tạm luôn là giá trị cố định có sẵn.
 - Checklist: không thuộc mục nào trong `docs/00_MASTER_CHECKLIST.md` — tiếp tục thuộc phạm vi
   cải tiến hạ tầng UI/UX, không phải tính năng nghiệp vụ mới.
+
+---
+
+## Rà soát I01-I04 + khung Portal, chốt D03 "phụ huynh nhiều đơn vị" (2026-07-22)
+
+Rà soát lại phần vừa thêm (I01-I04 — Thông báo/Trao đổi — và một khung Portal chưa lên
+checklist) theo checklist, mô tả yêu cầu, template style, cấu trúc route và component. I01-I04
+đạt yêu cầu. Khung Portal (`client/src/features/portal/`, `client/src/config/portal.ts`,
+`PortalLandingPage.tsx`, `server/routers|services/portal.*`) phát hiện một thay đổi nghiệp vụ
+lớn chưa ghi tài liệu: `addGuardianToStudent` đã đổi từ tái sử dụng phụ huynh theo số điện
+thoại **trong đơn vị** sang **toàn hệ thống**, để phục vụ Portal gộp dữ liệu con theo nhiều
+đơn vị cho một tài khoản phụ huynh.
+
+Xác nhận với người dùng: đây đúng là chủ đích — **một phụ huynh có thể có con học nhiều đơn
+vị** (một con hoặc nhiều con). Bổ sung các biện pháp an toàn/chuyên môn đi kèm quyết định này:
+
+- **Xác nhận rõ ràng khi ghép chéo đơn vị**: `server/services/phuHuynh.service.ts` thêm
+  `CrossOrgGuardianConfirmError` — khi số điện thoại khớp phụ huynh ở đơn vị khác,
+  `addGuardianToStudent` không tự động ghép mà báo lỗi kèm thông tin hồ sơ tìm thấy (họ tên,
+  mã phụ huynh, tên đơn vị gốc). `StudentDetailPage.tsx` bắt lỗi này, hiện `ConfirmDialog`
+  (đúng chuẩn popup 2 hành động của app) để người dùng xem và xác nhận trước khi gọi lại API
+  với `confirmCrossOrgReuse: true`. Ghép trong cùng đơn vị vẫn tự động như cũ (rủi ro thấp).
+- **Audit riêng cho ghép chéo đơn vị**: hành động `hoc_sinh.add_guardian_cross_org` (khác
+  `hoc_sinh.add_guardian` thường), ghi rõ đơn vị gốc của hồ sơ dùng chung.
+- **Cấp quyền tường minh theo A04**: `createGuardianAccount` giờ đảm bảo tài khoản phụ huynh
+  luôn có bản ghi `NguoiDungVaiTroDonVi` (vai trò `phu_huynh`) cho đúng đơn vị đang thao tác
+  khi dùng lại tài khoản đã tạo ở đơn vị khác — không chỉ dựa vào liên kết
+  `PhuHuynh.nguoiDungId` để suy ra quyền, giữ đúng nguyên tắc "phân quyền theo từng đơn vị".
+- **Portal chỉ gộp đơn vị đã được cấp quyền**: `getParentPortalOverview`
+  (`server/services/portal.service.ts`) lọc theo `NguoiDungVaiTroDonVi` đang hoạt động, không
+  tin tưởng tuyệt đối mọi dòng `PhuHuynh` tìm theo `nguoiDungId`.
+- Chi tiết đầy đủ (nguy cơ, luồng, test case): `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md`
+  mục 11. Checklist D03 cập nhật theo (`docs/00_MASTER_CHECKLIST.md`).
+
+Các vấn đề khác phát hiện khi rà soát khung Portal, đã sửa trong cùng đợt:
+
+- **Route mặc định sau đăng nhập / `/`**: trước đó đổi thẳng sang Portal cho **mọi** vai trò
+  (kể cả học vụ/kế toán/tuyển sinh/quản trị hệ thống), trong khi Portal của các vai trò này
+  mới chỉ là khung tĩnh (`portalRoles` trong `config/portal.ts`), chưa có dữ liệu thật. Thêm
+  `getDefaultLandingPath()` — chỉ đưa vai trò `phu_huynh` vào Portal, các vai trò còn lại vẫn
+  về `/dashboard` như trước. Portal các vai trò khác vẫn vào được qua `/portal/:roleSlug`.
+- **2 quick-link Portal trỏ cứng ID bản ghi mẫu**: `to: "/chuong-trinh/1"` (học vụ) và
+  `to: "/finance/phieu-thu/1"` (kế toán) trong `config/portal.ts` — đổi về trang danh sách an
+  toàn (`/classes`, `/finance`).
+- **Lỗi thứ tự hook ở `PortalLandingPage.tsx`**: một nhánh `return <Navigate />` sớm nằm trước
+  `useEffect`, vi phạm Rules of Hooks (số hook gọi ra không cố định giữa các lần render). Đưa
+  cả 2 nhánh điều hướng sớm xuống sau toàn bộ hook.
+- **Nhật ký hệ thống thiếu nhãn**: `SystemAuditLogPage.tsx` bổ sung nhãn cho
+  `thong_bao.mark_read`, `trao_doi.create`, `hoc_sinh.add_guardian_cross_org` và các hành động
+  `hoc_sinh.*` liên quan phụ huynh vốn chưa từng có nhãn từ trước.
+- **Dọn nhỏ**: bỏ 2 type alias thừa (`HocSinhLookupItem`, `LopHocLookupItem`) trùng hệt kiểu
+  gốc, không dùng ở đâu khác.
+- **Định dạng**: phần code mới (I01-I04, Portal) và một số file có sẵn bị thụt lề lại thành
+  6-space không nhất quán với chuẩn 2-space toàn repo (nhiều khả năng do editor khác cấu
+  hình). Thêm `.prettierrc.json` (2-space, trailing comma) và chạy `prettier --write` lại toàn
+  bộ file bị ảnh hưởng trong đợt này để đưa về đúng chuẩn.
+- Kiểm tra: `pnpm typecheck`, `pnpm build` — PASS.
+
+### Portal phụ huynh: hiển thị thông tin chung, quản lý chi tiết theo đơn vị (2026-07-22)
+
+Theo đúng 3 tình huống người dùng nêu ra (nhiều con nhiều đơn vị, một con nhiều đơn vị, nhiều
+con một đơn vị), chỉnh lại trang `/portal/parent`:
+
+- `getParentPortalOverview` (`server/services/portal.service.ts`) bỏ tham số `donViId` — không
+  còn phụ thuộc "đơn vị đang chọn" để tính toán dữ liệu. Trả thêm `organizations`: danh sách
+  con được nhóm theo từng đơn vị (`ParentPortalOrganizationGroup`), bên cạnh `children`/
+  `upcomingSessions` dạng phẳng (dùng để tính số liệu tổng — số con, số lớp, số buổi sắp tới).
+- `PortalLandingPage.tsx`: phần đầu trang ("Thông tin chung") không còn gắn với mã phụ huynh
+  của một đơn vị cụ thể (bỏ `selectedGuardian` theo `donViId` hiện tại, chỉ còn một hồ sơ đại
+  diện — vì các dòng `PhuHuynh` ở nhiều đơn vị đều là cùng một người). Phần "Con của bạn" tách
+  thành nhiều `SectionCard`, mỗi thẻ ứng với một đơn vị, chứa (các) con đang học ở đó.
+- Có chủ đích **giữ nguyên** bước chọn đơn vị làm việc sau đăng nhập — không đổi luồng phiên
+  đăng nhập; đây chỉ là thay đổi trong nội dung trang Portal.
+- Có chủ đích **không** thêm nút "vào đơn vị này" vì vai trò `phu_huynh` hiện chưa được seed
+  quyền nào khác ngoài Portal — chưa có trang nội bộ nào để dẫn tới sau khi chuyển đơn vị.
+- Xem `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md` mục 11.
+- Kiểm tra: `pnpm typecheck`, `pnpm build` — PASS. Chưa test tay qua trình duyệt (cần dữ liệu
+  mẫu phụ huynh có con ở nhiều đơn vị + đăng nhập thật để xác nhận hiển thị đúng).
+
+### Bỏ lớp kiểm tra phân quyền theo đơn vị thừa ở Portal phụ huynh (2026-07-22)
+
+Test tay với tài khoản thật (`0933873165` — "Nghia Nguyen") lộ ra lỗi: đăng nhập báo "Không
+tìm thấy hồ sơ phụ huynh trong hệ thống", dù hồ sơ `PhuHuynh`/`HocSinh` của tài khoản này thật
+sự tồn tại (đã chuyển sang "Trường Mầm non Hoa Nắng" từ 2026-07-21).
+
+- Nguyên nhân: bản đổi ở mục trên có thêm một lớp kiểm tra ở `getParentPortalOverview` — chỉ
+  gộp những đơn vị mà tài khoản có bản ghi phân quyền `phu_huynh` (`NguoiDungVaiTroDonVi`)
+  đang hoạt động. Tài khoản này chỉ có đúng một bản ghi phân quyền, gán ở **đơn vị hệ thống**
+  (còn sót lại từ trước khi chuyển dữ liệu `PhuHuynh` sang Mầm Non Hoa Nắng — lần chuyển đó
+  không chuyển luôn bản ghi phân quyền). Lớp kiểm tra mới lọc mất đúng hồ sơ hợp lệ.
+- Xác nhận lại với người dùng mô hình đúng: phụ huynh đăng nhập mặc định vào một đơn vị neo
+  chung (ví dụ đơn vị hệ thống — không mang ý nghĩa nghiệp vụ), còn **chi tiết đơn vị luôn suy
+  ra theo con** (qua `HocSinh.donViId`), không cần một bản ghi phân quyền `phu_huynh` riêng cho
+  từng đơn vị con học.
+- Sửa: bỏ hẳn lớp kiểm tra phân quyền theo đơn vị đó ở `server/services/portal.service.ts` —
+  quay lại tin thẳng mọi hồ sơ `PhuHuynh` tìm theo `nguoiDungId`. Bỏ luôn phần tự cấp thêm vai
+  trò `phu_huynh` theo đơn vị hiện tại ở `createGuardianAccount`
+  (`server/services/phuHuynh.service.ts`) — không còn cần thiết, và nếu giữ sẽ khiến tài khoản
+  phụ huynh nhiều đơn vị bị bắt chọn đơn vị làm việc ở màn hình đăng nhập (mất tính "mặc định
+  vào một đơn vị neo chung, đơn giản").
+- Điểm chốt an toàn thực sự vẫn giữ nguyên và không đổi: bước xác nhận
+  `CrossOrgGuardianConfirmError` khi ghép phụ huynh khác đơn vị (`addGuardianToStudent`) — chỉ
+  nhân viên `hoc_sinh.quan_ly` sau khi xác nhận rõ ràng mới tạo được liên kết, nên tin thẳng
+  `PhuHuynh.nguoiDungId` là đủ, không cần thêm một lớp phân quyền theo đơn vị nữa.
+- Không cần sửa dữ liệu của tài khoản `0933873165` — bỏ lớp kiểm tra là đủ để hồ sơ hợp lệ
+  hiện đúng trở lại, không cần thao tác gán lại vai trò qua `/users/13`.
+- Xem `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md` mục 11.
+- Kiểm tra: `pnpm typecheck`, `pnpm build` — PASS.

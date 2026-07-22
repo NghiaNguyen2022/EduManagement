@@ -1,18 +1,6 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-import {
-  changePasswordApi,
-  getMeApi,
-  loginApi,
-  logoutApi,
-  selectOrganizationApi,
-} from "./authApi";
+import { changePasswordApi, getMeApi, loginApi, logoutApi, selectOrganizationApi } from "./authApi";
 import type { AuthContextData } from "./authTypes";
 
 type ChangePasswordInput = {
@@ -24,29 +12,16 @@ type ChangePasswordInput = {
 type AuthContextValue = {
   auth: AuthContextData | null;
   loading: boolean;
-  login: (
-    username: string,
-    password: string,
-  ) => Promise<void>;
+  login: (username: string, password: string) => Promise<AuthContextData>;
   logout: () => Promise<void>;
-  selectOrganization: (
-    organizationId: number,
-  ) => Promise<void>;
-  changePassword: (
-    input: ChangePasswordInput,
-  ) => Promise<void>;
+  selectOrganization: (organizationId: number) => Promise<void>;
+  changePassword: (input: ChangePasswordInput) => Promise<void>;
 };
 
-const AuthContext =
-  createContext<AuthContextValue | null>(null);
+const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [auth, setAuth] =
-    useState<AuthContextData | null>(null);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [auth, setAuth] = useState<AuthContextData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -83,11 +58,10 @@ export function AuthProvider({
       loading,
 
       async login(username, password) {
-        const result = await loginApi(
-          username,
-          password,
-        );
+        const result = await loginApi(username, password);
         setAuth(result);
+
+        return result;
       },
 
       async logout() {
@@ -96,9 +70,7 @@ export function AuthProvider({
       },
 
       async selectOrganization(organizationId) {
-        const result = await selectOrganizationApi(
-          organizationId,
-        );
+        const result = await selectOrganizationApi(organizationId);
         setAuth(result);
       },
 
@@ -110,20 +82,14 @@ export function AuthProvider({
     [auth, loading],
   );
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error(
-      "useAuth phải được dùng trong AuthProvider.",
-    );
+    throw new Error("useAuth phải được dùng trong AuthProvider.");
   }
 
   return context;

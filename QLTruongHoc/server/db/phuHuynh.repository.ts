@@ -1,39 +1,49 @@
 import { and, count, eq, like } from "drizzle-orm";
 
-import {
-  hocSinh,
-  hocSinhPhuHuynh,
-  phuHuynh,
-} from "../../drizzle/schema.js";
+import { hocSinh, hocSinhPhuHuynh, phuHuynh } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
-const now = () =>
-  new Date().toISOString().slice(0, 19).replace("T", " ");
+const now = () => new Date().toISOString().slice(0, 19).replace("T", " ");
 
-export async function findPhuHuynhByPhone(
-  donViId: number,
-  dienThoai: string,
-) {
+export async function findPhuHuynhByPhone(donViId: number, dienThoai: string) {
   const db = getDb();
 
   const rows = await db
     .select()
     .from(phuHuynh)
-    .where(
-      and(
-        eq(phuHuynh.donViId, donViId),
-        eq(phuHuynh.dienThoai, dienThoai),
-      ),
-    )
+    .where(and(eq(phuHuynh.donViId, donViId), eq(phuHuynh.dienThoai, dienThoai)))
     .limit(1);
 
   return rows[0] ?? null;
 }
 
-export async function updatePhuHuynhNguoiDungId(input: {
-  id: number;
-  nguoiDungId: number;
-}) {
+export async function findPhuHuynhByPhoneGlobal(dienThoai: string) {
+  const db = getDb();
+
+  const rows = await db.select().from(phuHuynh).where(eq(phuHuynh.dienThoai, dienThoai)).limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function findPhuHuynhByNguoiDungId(donViId: number, nguoiDungId: number) {
+  const db = getDb();
+
+  const rows = await db
+    .select()
+    .from(phuHuynh)
+    .where(and(eq(phuHuynh.donViId, donViId), eq(phuHuynh.nguoiDungId, nguoiDungId)))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function listPhuHuynhByNguoiDungId(nguoiDungId: number) {
+  const db = getDb();
+
+  return db.select().from(phuHuynh).where(eq(phuHuynh.nguoiDungId, nguoiDungId));
+}
+
+export async function updatePhuHuynhNguoiDungId(input: { id: number; nguoiDungId: number }) {
   const db = getDb();
 
   await db
@@ -48,30 +58,18 @@ export async function updatePhuHuynhNguoiDungId(input: {
 export async function findPhuHuynhById(id: number) {
   const db = getDb();
 
-  const rows = await db
-    .select()
-    .from(phuHuynh)
-    .where(eq(phuHuynh.id, id))
-    .limit(1);
+  const rows = await db.select().from(phuHuynh).where(eq(phuHuynh.id, id)).limit(1);
 
   return rows[0] ?? null;
 }
 
-export async function countPhuHuynhTheoMaPrefix(
-  donViId: number,
-  prefix: string,
-) {
+export async function countPhuHuynhTheoMaPrefix(donViId: number, prefix: string) {
   const db = getDb();
 
   const rows = await db
     .select({ total: count() })
     .from(phuHuynh)
-    .where(
-      and(
-        eq(phuHuynh.donViId, donViId),
-        like(phuHuynh.maPhuHuynh, `${prefix}%`),
-      ),
-    );
+    .where(and(eq(phuHuynh.donViId, donViId), like(phuHuynh.maPhuHuynh, `${prefix}%`)));
 
   return rows[0]?.total ?? 0;
 }
@@ -107,9 +105,7 @@ export async function createPhuHuynh(input: {
   return findPhuHuynhByPhone(input.donViId, input.dienThoai);
 }
 
-export async function listGuardianLinksByHocSinh(
-  hocSinhId: number,
-) {
+export async function listGuardianLinksByHocSinh(hocSinhId: number) {
   const db = getDb();
 
   return db
@@ -118,36 +114,39 @@ export async function listGuardianLinksByHocSinh(
       phuHuynh,
     })
     .from(hocSinhPhuHuynh)
-    .innerJoin(
-      phuHuynh,
-      eq(hocSinhPhuHuynh.phuHuynhId, phuHuynh.id),
-    )
+    .innerJoin(phuHuynh, eq(hocSinhPhuHuynh.phuHuynhId, phuHuynh.id))
     .where(eq(hocSinhPhuHuynh.hocSinhId, hocSinhId));
 }
 
-export async function findGuardianLink(
-  hocSinhId: number,
-  phuHuynhId: number,
-) {
+export async function listHocSinhByPhuHuynhId(phuHuynhId: number) {
+  const db = getDb();
+
+  return db
+    .select({
+      lienKet: hocSinhPhuHuynh,
+      hocSinh,
+    })
+    .from(hocSinhPhuHuynh)
+    .innerJoin(hocSinh, eq(hocSinhPhuHuynh.hocSinhId, hocSinh.id))
+    .where(eq(hocSinhPhuHuynh.phuHuynhId, phuHuynhId))
+    .orderBy(hocSinh.hoTen);
+}
+
+export async function findGuardianLink(hocSinhId: number, phuHuynhId: number) {
   const db = getDb();
 
   const rows = await db
     .select()
     .from(hocSinhPhuHuynh)
     .where(
-      and(
-        eq(hocSinhPhuHuynh.hocSinhId, hocSinhId),
-        eq(hocSinhPhuHuynh.phuHuynhId, phuHuynhId),
-      ),
+      and(eq(hocSinhPhuHuynh.hocSinhId, hocSinhId), eq(hocSinhPhuHuynh.phuHuynhId, phuHuynhId)),
     )
     .limit(1);
 
   return rows[0] ?? null;
 }
 
-export async function findGuardianLinkById(
-  linkId: number,
-) {
+export async function findGuardianLinkById(linkId: number) {
   const db = getDb();
 
   const rows = await db
@@ -156,19 +155,14 @@ export async function findGuardianLinkById(
       donViId: hocSinh.donViId,
     })
     .from(hocSinhPhuHuynh)
-    .innerJoin(
-      hocSinh,
-      eq(hocSinhPhuHuynh.hocSinhId, hocSinh.id),
-    )
+    .innerJoin(hocSinh, eq(hocSinhPhuHuynh.hocSinhId, hocSinh.id))
     .where(eq(hocSinhPhuHuynh.id, linkId))
     .limit(1);
 
   return rows[0] ?? null;
 }
 
-export async function countGuardianLinksForHocSinh(
-  hocSinhId: number,
-) {
+export async function countGuardianLinksForHocSinh(hocSinhId: number) {
   const db = getDb();
 
   const rows = await db
@@ -179,9 +173,7 @@ export async function countGuardianLinksForHocSinh(
   return rows[0]?.total ?? 0;
 }
 
-export async function clearPrimaryContact(
-  hocSinhId: number,
-) {
+export async function clearPrimaryContact(hocSinhId: number) {
   const db = getDb();
 
   await db
@@ -196,13 +188,7 @@ export async function clearPrimaryContact(
 export async function createGuardianLink(input: {
   hocSinhId: number;
   phuHuynhId: number;
-  moiQuanHe:
-    | "cha"
-    | "me"
-    | "ong"
-    | "ba"
-    | "nguoi_giam_ho"
-    | "khac";
+  moiQuanHe: "cha" | "me" | "ong" | "ba" | "nguoi_giam_ho" | "khac";
   laLienHeChinh: boolean;
   duocDonTre: boolean;
   nhanThongBao: boolean;
@@ -227,13 +213,7 @@ export async function createGuardianLink(input: {
 
 export async function updateGuardianLink(input: {
   id: number;
-  moiQuanHe:
-    | "cha"
-    | "me"
-    | "ong"
-    | "ba"
-    | "nguoi_giam_ho"
-    | "khac";
+  moiQuanHe: "cha" | "me" | "ong" | "ba" | "nguoi_giam_ho" | "khac";
   laLienHeChinh: boolean;
   duocDonTre: boolean;
   nhanThongBao: boolean;
@@ -265,7 +245,5 @@ export async function updateGuardianLink(input: {
 export async function deleteGuardianLink(id: number) {
   const db = getDb();
 
-  await db
-    .delete(hocSinhPhuHuynh)
-    .where(eq(hocSinhPhuHuynh.id, id));
+  await db.delete(hocSinhPhuHuynh).where(eq(hocSinhPhuHuynh.id, id));
 }

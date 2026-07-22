@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import {
-  DateField,
-  SelectField,
-  TextField,
-} from "../components/form";
+import { DateField, SelectField, TextField } from "../components/form";
 import { ConfirmDialog } from "../components/shared/ConfirmDialog";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
@@ -13,12 +9,14 @@ import { useAuth } from "../features/auth/AuthContext";
 import {
   addGuardianApi,
   createGuardianAccountApi,
+  CrossOrgGuardianConfirmError,
   getHocSinhDetailApi,
   removeGuardianApi,
   setHocSinhTrangThaiApi,
   updateGuardianApi,
   updateHocSinhApi,
 } from "../features/hocSinh/hocSinhApi";
+import type { CrossOrgGuardianInfo } from "../features/hocSinh/hocSinhApi";
 import type {
   GuardianFormInput,
   GuardianLinkItem,
@@ -82,9 +80,7 @@ export function StudentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [infoForm, setInfoForm] = useState<HocSinhFormInput | null>(
-    null,
-  );
+  const [infoForm, setInfoForm] = useState<HocSinhFormInput | null>(null);
   const [savingInfo, setSavingInfo] = useState(false);
   const [savingStatus, setSavingStatus] = useState(false);
   const [statusForm, setStatusForm] = useState({
@@ -92,22 +88,18 @@ export function StudentDetailPage() {
     lyDo: "",
     ngayHieuLuc: todayIso(),
   });
-  const [guardianForm, setGuardianForm] = useState<GuardianFormInput>(
-    emptyGuardianForm,
-  );
+  const [guardianForm, setGuardianForm] = useState<GuardianFormInput>(emptyGuardianForm);
   const [savingGuardian, setSavingGuardian] = useState(false);
-  const [pendingRemove, setPendingRemove] =
-    useState<GuardianLinkItem | null>(null);
+  const [pendingCrossOrgGuardian, setPendingCrossOrgGuardian] =
+    useState<CrossOrgGuardianInfo | null>(null);
+  const [confirmCrossOrgBusy, setConfirmCrossOrgBusy] = useState(false);
+  const [pendingRemove, setPendingRemove] = useState<GuardianLinkItem | null>(null);
   const [removeBusy, setRemoveBusy] = useState(false);
-  const [creatingAccountLinkId, setCreatingAccountLinkId] =
-    useState<number | null>(null);
+  const [creatingAccountLinkId, setCreatingAccountLinkId] = useState<number | null>(null);
 
   const canManage = useMemo(() => {
     const permissions = auth?.currentOrganization?.quyen ?? [];
-    return (
-      permissions.includes("he_thong.quan_tri") ||
-      permissions.includes("hoc_sinh.quan_ly")
-    );
+    return permissions.includes("he_thong.quan_tri") || permissions.includes("hoc_sinh.quan_ly");
   }, [auth]);
 
   const canCreateGuardianAccount = useMemo(() => {
@@ -140,11 +132,7 @@ export function StudentDetailPage() {
         ngayNhapHoc: data.hocSinh.ngayNhapHoc ?? "",
       });
     } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Không thể tải học sinh.",
-      );
+      setError(loadError instanceof Error ? loadError.message : "Không thể tải học sinh.");
     } finally {
       setLoading(false);
     }
@@ -156,9 +144,7 @@ export function StudentDetailPage() {
     }
   }, [studentId, auth?.currentOrganization?.id]);
 
-  async function handleSaveInfo(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
+  async function handleSaveInfo(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!infoForm) return;
 
@@ -171,19 +157,13 @@ export function StudentDetailPage() {
       setNotice("Đã cập nhật hồ sơ học sinh.");
       await loadDetail();
     } catch (saveError) {
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : "Không thể cập nhật.",
-      );
+      setError(saveError instanceof Error ? saveError.message : "Không thể cập nhật.");
     } finally {
       setSavingInfo(false);
     }
   }
 
-  async function handleChangeStatus(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
+  async function handleChangeStatus(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!statusForm.trangThai) return;
@@ -198,47 +178,58 @@ export function StudentDetailPage() {
         lyDo: statusForm.lyDo || undefined,
         ngayHieuLuc: statusForm.ngayHieuLuc || undefined,
       });
-      setNotice(
-        `Đã đổi trạng thái sang ${TRANG_THAI_LABEL[statusForm.trangThai]}.`,
-      );
+      setNotice(`Đã đổi trạng thái sang ${TRANG_THAI_LABEL[statusForm.trangThai]}.`);
       await loadDetail();
     } catch (statusError) {
-      setError(
-        statusError instanceof Error
-          ? statusError.message
-          : "Không thể đổi trạng thái.",
-      );
+      setError(statusError instanceof Error ? statusError.message : "Không thể đổi trạng thái.");
     } finally {
       setSavingStatus(false);
     }
   }
 
-  async function handleAddGuardian(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
-    event.preventDefault();
+  async function submitAddGuardian(confirmCrossOrgReuse: boolean) {
     setError("");
     setNotice("");
+
+    try {
+      const result = await addGuardianApi(studentId, {
+        ...guardianForm,
+        confirmCrossOrgReuse,
+      });
+      setNotice(`Đã thêm phụ huynh ${result.guardian.hoTen} (${result.guardian.maPhuHuynh}).`);
+      setGuardianForm(emptyGuardianForm);
+      setPendingCrossOrgGuardian(null);
+      await loadDetail();
+    } catch (guardianError) {
+      if (guardianError instanceof CrossOrgGuardianConfirmError) {
+        setPendingCrossOrgGuardian(guardianError.guardianInfo);
+        return;
+      }
+
+      setError(
+        guardianError instanceof Error ? guardianError.message : "Không thể thêm phụ huynh.",
+      );
+    }
+  }
+
+  async function handleAddGuardian(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setSavingGuardian(true);
 
     try {
-      const result = await addGuardianApi(
-        studentId,
-        guardianForm,
-      );
-      setNotice(
-        `Đã thêm phụ huynh ${result.guardian.hoTen} (${result.guardian.maPhuHuynh}).`,
-      );
-      setGuardianForm(emptyGuardianForm);
-      await loadDetail();
-    } catch (guardianError) {
-      setError(
-        guardianError instanceof Error
-          ? guardianError.message
-          : "Không thể thêm phụ huynh.",
-      );
+      await submitAddGuardian(false);
     } finally {
       setSavingGuardian(false);
+    }
+  }
+
+  async function executeConfirmCrossOrgGuardian() {
+    setConfirmCrossOrgBusy(true);
+
+    try {
+      await submitAddGuardian(true);
+    } finally {
+      setConfirmCrossOrgBusy(false);
     }
   }
 
@@ -258,9 +249,7 @@ export function StudentDetailPage() {
       await loadDetail();
     } catch (updateError) {
       setError(
-        updateError instanceof Error
-          ? updateError.message
-          : "Không thể cập nhật liên hệ chính.",
+        updateError instanceof Error ? updateError.message : "Không thể cập nhật liên hệ chính.",
       );
     }
   }
@@ -271,10 +260,7 @@ export function StudentDetailPage() {
     setNotice("");
 
     try {
-      const result = await createGuardianAccountApi(
-        studentId,
-        link.lienKetId,
-      );
+      const result = await createGuardianAccountApi(studentId, link.lienKetId);
 
       if (result.created) {
         setNotice(
@@ -289,9 +275,7 @@ export function StudentDetailPage() {
       await loadDetail();
     } catch (accountError) {
       setError(
-        accountError instanceof Error
-          ? accountError.message
-          : "Không thể tạo tài khoản đăng nhập.",
+        accountError instanceof Error ? accountError.message : "Không thể tạo tài khoản đăng nhập.",
       );
     } finally {
       setCreatingAccountLinkId(null);
@@ -311,11 +295,7 @@ export function StudentDetailPage() {
       setPendingRemove(null);
       await loadDetail();
     } catch (removeError) {
-      setError(
-        removeError instanceof Error
-          ? removeError.message
-          : "Không thể gỡ liên kết.",
-      );
+      setError(removeError instanceof Error ? removeError.message : "Không thể gỡ liên kết.");
     } finally {
       setRemoveBusy(false);
     }
@@ -324,10 +304,7 @@ export function StudentDetailPage() {
   if (loading || !detail || !infoForm) {
     return (
       <div className="page-stack">
-        <PageHeader
-          title="Học sinh"
-          subtitle={error || "Đang tải dữ liệu..."}
-        />
+        <PageHeader title="Học sinh" subtitle={error || "Đang tải dữ liệu..."} />
       </div>
     );
   }
@@ -338,11 +315,7 @@ export function StudentDetailPage() {
         title={detail.hocSinh.hoTen}
         subtitle={`Mã học sinh ${detail.hocSinh.maHocSinh}`}
         action={
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => navigate("/students")}
-          >
+          <button type="button" className="text-button" onClick={() => navigate("/students")}>
             ← Danh sách học sinh
           </button>
         }
@@ -356,16 +329,11 @@ export function StudentDetailPage() {
         subtitle={`Hiện tại: ${TRANG_THAI_LABEL[detail.hocSinh.trangThai]}`}
       >
         {canManage ? (
-          <form
-            className="user-create-form"
-            onSubmit={handleChangeStatus}
-          >
+          <form className="user-create-form" onSubmit={handleChangeStatus}>
             <SelectField
               label="Trạng thái mới"
               value={statusForm.trangThai}
-              options={Object.entries(TRANG_THAI_LABEL).map(
-                ([value, label]) => ({ value, label }),
-              )}
+              options={Object.entries(TRANG_THAI_LABEL).map(([value, label]) => ({ value, label }))}
               onChange={(value) =>
                 setStatusForm({
                   ...statusForm,
@@ -388,9 +356,7 @@ export function StudentDetailPage() {
             <TextField
               label="Lý do (tuỳ chọn)"
               value={statusForm.lyDo}
-              onChange={(value) =>
-                setStatusForm({ ...statusForm, lyDo: value })
-              }
+              onChange={(value) => setStatusForm({ ...statusForm, lyDo: value })}
             />
 
             <button
@@ -408,10 +374,7 @@ export function StudentDetailPage() {
         ) : null}
       </SectionCard>
 
-      <SectionCard
-        title="Lớp học đã tham gia"
-        subtitle={`${detail.lopHoc.length} lượt xếp lớp`}
-      >
+      <SectionCard title="Lớp học đã tham gia" subtitle={`${detail.lopHoc.length} lượt xếp lớp`}>
         <div className="user-table-wrap">
           <table className="user-table">
             <thead>
@@ -432,9 +395,7 @@ export function StudentDetailPage() {
                   </td>
                   <td>{item.ngayVaoLop}</td>
                   <td>{item.ngayRoiLop ?? "—"}</td>
-                  <td>
-                    {TRANG_THAI_ENROLLMENT_LABEL[item.trangThai]}
-                  </td>
+                  <td>{TRANG_THAI_ENROLLMENT_LABEL[item.trangThai]}</td>
                 </tr>
               ))}
 
@@ -470,10 +431,8 @@ export function StudentDetailPage() {
                 <tr key={item.id}>
                   <td>{item.createdAt}</td>
                   <td>
-                    {item.trangThaiCu
-                      ? TRANG_THAI_LABEL[item.trangThaiCu]
-                      : "Tạo mới"}{" "}
-                    → {TRANG_THAI_LABEL[item.trangThaiMoi]}
+                    {item.trangThaiCu ? TRANG_THAI_LABEL[item.trangThaiCu] : "Tạo mới"} →{" "}
+                    {TRANG_THAI_LABEL[item.trangThaiMoi]}
                   </td>
                   <td>{item.ngayHieuLuc}</td>
                   <td>{item.lyDo || "—"}</td>
@@ -492,28 +451,21 @@ export function StudentDetailPage() {
         </div>
       </SectionCard>
 
-      <SectionCard
-        title="Thông tin học sinh"
-        subtitle="Chỉnh sửa hồ sơ cơ bản"
-      >
+      <SectionCard title="Thông tin học sinh" subtitle="Chỉnh sửa hồ sơ cơ bản">
         <form className="user-create-form" onSubmit={handleSaveInfo}>
           <TextField
             label="Họ tên"
             value={infoForm.hoTen}
             required
             disabled={!canManage}
-            onChange={(value) =>
-              setInfoForm({ ...infoForm, hoTen: value })
-            }
+            onChange={(value) => setInfoForm({ ...infoForm, hoTen: value })}
           />
 
           <TextField
             label="Tên thường gọi"
             value={infoForm.tenThuongGoi}
             disabled={!canManage}
-            onChange={(value) =>
-              setInfoForm({ ...infoForm, tenThuongGoi: value })
-            }
+            onChange={(value) => setInfoForm({ ...infoForm, tenThuongGoi: value })}
           />
 
           <DateField
@@ -521,9 +473,7 @@ export function StudentDetailPage() {
             value={infoForm.ngaySinh}
             required
             disabled={!canManage}
-            onChange={(value) =>
-              setInfoForm({ ...infoForm, ngaySinh: value })
-            }
+            onChange={(value) => setInfoForm({ ...infoForm, ngaySinh: value })}
           />
 
           <SelectField
@@ -548,26 +498,18 @@ export function StudentDetailPage() {
             label="Địa chỉ"
             value={infoForm.diaChi}
             disabled={!canManage}
-            onChange={(value) =>
-              setInfoForm({ ...infoForm, diaChi: value })
-            }
+            onChange={(value) => setInfoForm({ ...infoForm, diaChi: value })}
           />
 
           <DateField
             label="Ngày nhập học"
             value={infoForm.ngayNhapHoc}
             disabled={!canManage}
-            onChange={(value) =>
-              setInfoForm({ ...infoForm, ngayNhapHoc: value })
-            }
+            onChange={(value) => setInfoForm({ ...infoForm, ngayNhapHoc: value })}
           />
 
           {canManage ? (
-            <button
-              type="submit"
-              className="primary-button"
-              disabled={savingInfo}
-            >
+            <button type="submit" className="primary-button" disabled={savingInfo}>
               {savingInfo ? "Đang lưu..." : "Lưu thay đổi"}
             </button>
           ) : null}
@@ -587,9 +529,7 @@ export function StudentDetailPage() {
                 <th>Liên hệ chính</th>
                 <th>Được đón trẻ</th>
                 <th>Tài khoản</th>
-                {canManage || canCreateGuardianAccount ? (
-                  <th>Thao tác</th>
-                ) : null}
+                {canManage || canCreateGuardianAccount ? <th>Thao tác</th> : null}
               </tr>
             </thead>
 
@@ -599,8 +539,7 @@ export function StudentDetailPage() {
                   <td>
                     <strong>{link.phuHuynh.hoTen}</strong>
                     <small>
-                      {link.phuHuynh.dienThoai} ·{" "}
-                      {link.phuHuynh.maPhuHuynh}
+                      {link.phuHuynh.dienThoai} · {link.phuHuynh.maPhuHuynh}
                     </small>
                   </td>
 
@@ -608,9 +547,7 @@ export function StudentDetailPage() {
 
                   <td>
                     {link.laLienHeChinh ? (
-                      <span className="status-badge status-badge--hoat_dong">
-                        Liên hệ chính
-                      </span>
+                      <span className="status-badge status-badge--hoat_dong">Liên hệ chính</span>
                     ) : (
                       "—"
                     )}
@@ -620,9 +557,7 @@ export function StudentDetailPage() {
 
                   <td>
                     {link.phuHuynh.nguoiDungId ? (
-                      <span className="status-badge status-badge--hoat_dong">
-                        Đã có tài khoản
-                      </span>
+                      <span className="status-badge status-badge--hoat_dong">Đã có tài khoản</span>
                     ) : (
                       "Chưa có"
                     )}
@@ -635,29 +570,20 @@ export function StudentDetailPage() {
                           <button
                             type="button"
                             className="text-button"
-                            onClick={() =>
-                              void handleSetPrimary(link)
-                            }
+                            onClick={() => void handleSetPrimary(link)}
                           >
                             Đặt liên hệ chính
                           </button>
                         ) : null}
 
-                        {canCreateGuardianAccount &&
-                        !link.phuHuynh.nguoiDungId ? (
+                        {canCreateGuardianAccount && !link.phuHuynh.nguoiDungId ? (
                           <button
                             type="button"
                             className="text-button"
-                            disabled={
-                              creatingAccountLinkId ===
-                              link.lienKetId
-                            }
-                            onClick={() =>
-                              void handleCreateAccount(link)
-                            }
+                            disabled={creatingAccountLinkId === link.lienKetId}
+                            onClick={() => void handleCreateAccount(link)}
                           >
-                            {creatingAccountLinkId ===
-                            link.lienKetId
+                            {creatingAccountLinkId === link.lienKetId
                               ? "Đang tạo..."
                               : "Tạo tài khoản đăng nhập"}
                           </button>
@@ -684,9 +610,7 @@ export function StudentDetailPage() {
               {detail.phuHuynh.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={
-                      canManage || canCreateGuardianAccount ? 6 : 5
-                    }
+                    colSpan={canManage || canCreateGuardianAccount ? 6 : 5}
                     className="empty-cell"
                   >
                     Chưa có phụ huynh liên kết.
@@ -701,12 +625,9 @@ export function StudentDetailPage() {
       {canManage ? (
         <SectionCard
           title="Thêm phụ huynh"
-          subtitle="Nhập số điện thoại trước — nếu đã có phụ huynh với số này trong đơn vị, hệ thống sẽ tái sử dụng hồ sơ cũ."
+          subtitle="Nhập số điện thoại trước — nếu đã có phụ huynh với số này trong hệ thống, hệ thống sẽ tái sử dụng hồ sơ cũ."
         >
-          <form
-            className="user-create-form"
-            onSubmit={handleAddGuardian}
-          >
+          <form className="user-create-form" onSubmit={handleAddGuardian}>
             <TextField
               label="Số điện thoại"
               type="tel"
@@ -736,14 +657,14 @@ export function StudentDetailPage() {
               value={guardianForm.moiQuanHe}
               required
               placeholder="Chọn mối quan hệ"
-              options={Object.entries(MOI_QUAN_HE_LABEL).map(
-                ([value, label]) => ({ value, label }),
-              )}
+              options={Object.entries(MOI_QUAN_HE_LABEL).map(([value, label]) => ({
+                value,
+                label,
+              }))}
               onChange={(value) =>
                 setGuardianForm({
                   ...guardianForm,
-                  moiQuanHe:
-                    value as GuardianFormInput["moiQuanHe"],
+                  moiQuanHe: value as GuardianFormInput["moiQuanHe"],
                 })
               }
             />
@@ -838,11 +759,7 @@ export function StudentDetailPage() {
               Nhận thông tin học phí
             </label>
 
-            <button
-              type="submit"
-              className="primary-button"
-              disabled={savingGuardian}
-            >
+            <button type="submit" className="primary-button" disabled={savingGuardian}>
               {savingGuardian ? "Đang lưu..." : "Thêm phụ huynh"}
             </button>
           </form>
@@ -859,6 +776,17 @@ export function StudentDetailPage() {
         error={pendingRemove ? error : ""}
         onConfirm={() => void executeRemoveGuardian()}
         onCancel={() => setPendingRemove(null)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingCrossOrgGuardian)}
+        title="Phụ huynh đã có ở đơn vị khác"
+        message={`Số điện thoại này đã là phụ huynh ${pendingCrossOrgGuardian?.hoTen ?? ""} (${pendingCrossOrgGuardian?.maPhuHuynh ?? ""}) tại đơn vị ${pendingCrossOrgGuardian?.donVi.tenDonVi ?? ""}. Xác nhận đây đúng là cùng một phụ huynh (có con học nhiều đơn vị) để dùng chung hồ sơ?`}
+        confirmLabel="Xác nhận dùng chung hồ sơ"
+        busy={confirmCrossOrgBusy}
+        error={pendingCrossOrgGuardian ? error : ""}
+        onConfirm={() => void executeConfirmCrossOrgGuardian()}
+        onCancel={() => setPendingCrossOrgGuardian(null)}
       />
     </div>
   );

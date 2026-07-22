@@ -5,10 +5,7 @@ import cors from "cors";
 import express from "express";
 
 import { env } from "./config/env.js";
-import {
-  checkDbConnection,
-  closeDbConnection,
-} from "./db/connection.js";
+import { checkDbConnection, closeDbConnection } from "./db/connection.js";
 import { auditLogRouter } from "./routers/audit-log.router.js";
 import { authRouter } from "./routers/auth.router.js";
 import { baoGiangRouter } from "./routers/baoGiang.router.js";
@@ -19,14 +16,14 @@ import { giaoVienRouter } from "./routers/giaoVien.router.js";
 import { healthRouter } from "./routers/health.router.js";
 import { hocSinhRouter } from "./routers/hocSinh.router.js";
 import { leadRouter } from "./routers/lead.router.js";
-import {
-  lichHocRouter,
-  thoiKhoaBieuRouter,
-} from "./routers/lichHoc.router.js";
+import { lichHocRouter, thoiKhoaBieuRouter } from "./routers/lichHoc.router.js";
 import { lopHocRouter } from "./routers/lopHoc.router.js";
 import { organizationRouter } from "./routers/organization.router.js";
+import { portalRouter } from "./routers/portal.router.js";
 import { roleRouter } from "./routers/role.router.js";
 import { taiChinhRouter } from "./routers/taiChinh.router.js";
+import { traoDoiRouter } from "./routers/traoDoi.router.js";
+import { thongBaoRouter } from "./routers/thongBao.router.js";
 import { userAssignmentRouter } from "./routers/user-assignment.router.js";
 import { userRouter } from "./routers/user.router.js";
 
@@ -70,56 +67,35 @@ app.use("/api/users", userAssignmentRouter);
 app.use("/api/roles", roleRouter);
 app.use("/api/audit-logs", auditLogRouter);
 app.use("/api/tai-chinh", taiChinhRouter);
+app.use("/api/trao-doi", traoDoiRouter);
+app.use("/api/thong-bao", thongBaoRouter);
+app.use("/api/portal", portalRouter);
 
 if (env.nodeEnv === "production") {
-  const clientDirectory = path.resolve(
-    process.cwd(),
-    "dist-client",
-  );
+  const clientDirectory = path.resolve(process.cwd(), "dist-client");
 
-  app.use(
-    express.static(clientDirectory),
-  );
+  app.use(express.static(clientDirectory));
 
   app.use((req, res, next) => {
-    if (
-      req.method !== "GET" ||
-      req.path === "/api" ||
-      req.path.startsWith("/api/")
-    ) {
+    if (req.method !== "GET" || req.path === "/api" || req.path.startsWith("/api/")) {
       next();
       return;
     }
 
-    res.sendFile(
-      path.join(
-        clientDirectory,
-        "index.html",
-      ),
-    );
+    res.sendFile(path.join(clientDirectory, "index.html"));
   });
 }
 
 async function startServer(): Promise<void> {
   await checkDbConnection();
 
-  app.listen(
-    env.port,
-    "0.0.0.0",
-    () => {
-      console.log(
-        `QLTruongHoc đang chạy tại http://0.0.0.0:${env.port}`,
-      );
-    },
-  );
+  app.listen(env.port, "0.0.0.0", () => {
+    console.log(`QLTruongHoc đang chạy tại http://0.0.0.0:${env.port}`);
+  });
 }
 
-async function shutdown(
-  signal: string,
-): Promise<void> {
-  console.log(
-    `Nhận ${signal}, đang đóng ứng dụng...`,
-  );
+async function shutdown(signal: string): Promise<void> {
+  console.log(`Nhận ${signal}, đang đóng ứng dụng...`);
   await closeDbConnection();
   process.exit(0);
 }
@@ -133,9 +109,6 @@ process.on("SIGTERM", () => {
 });
 
 startServer().catch((error) => {
-  console.error(
-    "Không thể khởi động ứng dụng:",
-    error,
-  );
+  console.error("Không thể khởi động ứng dụng:", error);
   process.exit(1);
 });
