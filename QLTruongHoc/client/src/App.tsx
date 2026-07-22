@@ -29,6 +29,9 @@ import {
   FinancePage,
 } from "./pages/FinancePage";
 import {
+  FinanceReportPage,
+} from "./pages/FinanceReportPage";
+import {
   KyThuDetailPage,
 } from "./pages/KyThuDetailPage";
 import {
@@ -215,6 +218,11 @@ function ProtectedApp() {
         <Route
           path="/finance/ky-thu/:id"
           element={<KyThuDetailPage />}
+        />
+
+        <Route
+          path="/finance/bao-cao"
+          element={<FinanceReportPage />}
         />
 
         <Route

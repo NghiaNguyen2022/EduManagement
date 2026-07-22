@@ -188,6 +188,11 @@ export function FinancePage() {
             ? "Xem gộp khoản thu và kỳ thu của tất cả đơn vị (chỉ xem — đơn vị hệ thống không thu tiền)"
             : "Quản lý danh mục khoản thu và kỳ thu học phí trong đơn vị đang làm việc"
         }
+        action={
+          <Link to="/finance/bao-cao" className="text-button">
+            Báo cáo tài chính
+          </Link>
+        }
       />
 
       {error ? <div className="form-error">{error}</div> : null}

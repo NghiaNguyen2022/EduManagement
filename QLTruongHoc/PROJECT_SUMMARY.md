@@ -931,3 +931,35 @@ biểu đồ) — để lại làm bước sau.
     verify qua `SELECT` khớp đúng thời gian vừa tạo — xác nhận trang `/finance` về lại trạng
     thái rỗng ban đầu.
 - Checklist: `docs/00_MASTER_CHECKLIST.md` mục H03, H04, H05, H06, H07 đã tick.
+
+---
+
+## H09 — Báo cáo tài chính (2026-07-22)
+
+Tiếp H03-H07, đúng 4 bước. Phạm vi: tổng thu trong khoảng ngày, tổng công nợ hiện tại, bảng
+thu theo từng kỳ thu. Chỉ còn **H08** (hoàn phí/chuyển phí/bảo lưu) chưa làm trong Sprint 5 —
+để lại làm bước riêng vì cần thiết kế nghiệp vụ phức tạp hơn (không đơn thuần CRUD).
+
+- Phân tích chi tiết: `docs/analysis/H09_bao_cao_tai_chinh.md`.
+- Cập nhật BPD: mục 18.15 — chốt quyết định quan trọng nhất: "tổng thu" lọc theo ngày
+  (`PhieuThu.ngayThu` trong khoảng chọn), còn "công nợ" và "bảng theo kỳ thu" **không** lọc
+  theo ngày (luôn là số dư/luỹ kế hiện tại) — tránh trộn hai trục thời gian gây khó hiểu.
+- Database: không đổi — chỉ thêm truy vấn tổng hợp (SUM/COUNT/GROUP BY) trên các bảng đã có.
+- Backend: thêm `sumPhieuThuTrongKhoang`, `sumCongNoByDonVi`, `listKyThuBaoCaoByDonVi`,
+  `listKyThuBaoCaoAllDonVi` (`server/db/taiChinh.repository.ts`), `getBaoCaoTaiChinh`
+  (`server/services/taiChinh.service.ts`), route `GET /api/tai-chinh/bao-cao` (mặc định đầu
+  tháng hiện tại → hôm nay nếu không truyền tham số).
+- Frontend: `client/src/pages/FinanceReportPage.tsx` (`/finance/bao-cao`) — bộ lọc khoảng
+  ngày, 2 `StatCard` (tổng thu, tổng công nợ), bảng theo kỳ thu (thêm cột "Đơn vị" khi đứng ở
+  đơn vị hệ thống, cùng nguyên tắc "xem gộp" đã dùng ở các module khác). Thêm nút "Báo cáo tài
+  chính" vào header trang `/finance`.
+- Test tay qua UI thật (dùng chung server đang chạy, xác nhận đúng ID trước khi xoá):
+  - Tạo khoản thu + kỳ thu + mở kỳ + sinh khoản phải thu cho 2 học sinh (2.000.000đ) + thu đủ
+    1.000.000đ cho 1 học sinh — báo cáo hiện đúng: tổng thu 1.000.000đ/1 phiếu, tổng công nợ
+    1.000.000đ, bảng kỳ thu phải thu 2.000.000đ/đã thu 1.000.000đ/còn lại 1.000.000đ — PASS.
+  - Đổi "Từ ngày" sang sau thời điểm thu tiền → tổng thu về 0, nhưng công nợ và bảng theo kỳ
+    thu giữ nguyên đúng như thiết kế (không lọc theo ngày) — PASS.
+  - `pnpm typecheck`, `pnpm build` — PASS.
+  - Dọn dẹp: xoá đúng ID vừa tạo theo thứ tự khoá ngoại, xác nhận `/finance` và `/finance/bao-cao`
+    về lại trạng thái rỗng ban đầu.
+- Checklist: `docs/00_MASTER_CHECKLIST.md` mục H09 đã tick. Sprint 5 còn lại đúng một mục H08.

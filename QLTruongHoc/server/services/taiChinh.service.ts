@@ -19,12 +19,16 @@ import {
   listHocSinhDangHocTrongLop,
   listKhoanPhaiThuByKyThu,
   listKyThuAllDonVi,
+  listKyThuBaoCaoAllDonVi,
+  listKyThuBaoCaoByDonVi,
   listKyThuByDonVi,
   listKyThuKhoanThu,
   listPhieuThuByKhoanPhaiThu,
   replaceKyThuKhoanThu,
   setDanhMucKhoanThuTrangThai,
   setKyThuTrangThai,
+  sumCongNoByDonVi,
+  sumPhieuThuTrongKhoang,
   updateDanhMucKhoanThu,
   updateKhoanPhaiThuDaThu,
   updateKhoanPhaiThuGiamTru,
@@ -869,4 +873,50 @@ export async function listCongNoToanDonVi(donViId: number) {
       tenKyThu: row.kyThu.tenKyThu,
     },
   }));
+}
+
+// ---------------------------------------------------------------
+// Báo cáo tài chính
+// ---------------------------------------------------------------
+
+export async function getBaoCaoTaiChinh(input: {
+  donViId: number;
+  loaiDonVi?: string;
+  tuNgay: string;
+  denNgay: string;
+}) {
+  validateKhoangNgay(input.tuNgay, input.denNgay);
+
+  const [tongThu, tongCongNo, theoKyThuRaw] = await Promise.all([
+    sumPhieuThuTrongKhoang(input.donViId, input.tuNgay, input.denNgay),
+    sumCongNoByDonVi(input.donViId),
+    input.loaiDonVi === "he_thong"
+      ? listKyThuBaoCaoAllDonVi()
+      : listKyThuBaoCaoByDonVi(input.donViId),
+  ]);
+
+  const theoKyThu = theoKyThuRaw.map((row) => {
+    const phaiThu = Number(row.phaiThu);
+    const daThu = Number(row.daThu);
+
+    return {
+      kyThu: {
+        id: row.kyThu.id,
+        maKyThu: row.kyThu.maKyThu,
+        tenKyThu: row.kyThu.tenKyThu,
+        trangThai: row.kyThu.trangThai,
+      },
+      donVi: "donVi" in row ? row.donVi : undefined,
+      phaiThu: phaiThu.toFixed(2),
+      daThu: daThu.toFixed(2),
+      conLai: (phaiThu - daThu).toFixed(2),
+    };
+  });
+
+  return {
+    tongThu: tongThu.tongThu,
+    soPhieuThu: tongThu.soPhieuThu,
+    tongCongNo: tongCongNo.tongCongNo,
+    theoKyThu,
+  };
 }

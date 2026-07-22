@@ -1,4 +1,5 @@
 import type {
+  BaoCaoTaiChinh,
   DanhMucKhoanThuFormInput,
   DanhMucKhoanThuItem,
   KhoanPhaiThuItem,
@@ -206,4 +207,9 @@ export function listPhieuThuApi(khoanPhaiThuId: number) {
 
 export function listCongNoApi() {
   return request<KhoanPhaiThuItem[]>("/api/tai-chinh/cong-no");
+}
+
+export function getBaoCaoTaiChinhApi(tuNgay: string, denNgay: string) {
+  const params = new URLSearchParams({ tuNgay, denNgay });
+  return request<BaoCaoTaiChinh>(`/api/tai-chinh/bao-cao?${params}`);
 }

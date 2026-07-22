@@ -1,4 +1,4 @@
-import { and, count, eq, gt, like, sql } from "drizzle-orm";
+import { and, count, eq, gt, gte, like, lte, sql } from "drizzle-orm";
 
 import {
   danhMucKhoanThu,
@@ -615,4 +615,84 @@ export async function listPhieuThuByKhoanPhaiThu(khoanPhaiThuId: number) {
     .from(phieuThu)
     .where(eq(phieuThu.khoanPhaiThuId, khoanPhaiThuId))
     .orderBy(phieuThu.ngayThu);
+}
+
+// ---------------------------------------------------------------
+// Báo cáo tài chính
+// ---------------------------------------------------------------
+
+export async function sumPhieuThuTrongKhoang(
+  donViId: number,
+  tuNgay: string,
+  denNgay: string,
+) {
+  const db = getDb();
+
+  const rows = await db
+    .select({
+      tongThu: sql<string>`COALESCE(SUM(${phieuThu.soTien}), 0)`,
+      soPhieuThu: count(),
+    })
+    .from(phieuThu)
+    .where(
+      and(
+        eq(phieuThu.donViId, donViId),
+        gte(phieuThu.ngayThu, `${tuNgay} 00:00:00`),
+        lte(phieuThu.ngayThu, `${denNgay} 23:59:59`),
+      ),
+    );
+
+  return rows[0] ?? { tongThu: "0.00", soPhieuThu: 0 };
+}
+
+export async function sumCongNoByDonVi(donViId: number) {
+  const db = getDb();
+
+  const rows = await db
+    .select({
+      tongCongNo: sql<string>`COALESCE(SUM(${khoanPhaiThu.tongTien} - ${khoanPhaiThu.giamTru} - ${khoanPhaiThu.daThu}), 0)`,
+    })
+    .from(khoanPhaiThu)
+    .where(eq(khoanPhaiThu.donViId, donViId));
+
+  return rows[0] ?? { tongCongNo: "0.00" };
+}
+
+export async function listKyThuBaoCaoByDonVi(donViId: number) {
+  const db = getDb();
+
+  return db
+    .select({
+      kyThu,
+      phaiThu: sql<string>`COALESCE(SUM(${khoanPhaiThu.tongTien} - ${khoanPhaiThu.giamTru}), 0)`,
+      daThu: sql<string>`COALESCE(SUM(${khoanPhaiThu.daThu}), 0)`,
+    })
+    .from(kyThu)
+    .leftJoin(khoanPhaiThu, eq(khoanPhaiThu.kyThuId, kyThu.id))
+    .where(eq(kyThu.donViId, donViId))
+    .groupBy(kyThu.id)
+    .orderBy(kyThu.tuNgay);
+}
+
+/** Dùng cho đơn vị hệ thống — xem gộp toàn bộ đơn vị đang hoạt động. */
+export async function listKyThuBaoCaoAllDonVi() {
+  const db = getDb();
+
+  return db
+    .select({
+      kyThu,
+      donVi: {
+        id: donVi.id,
+        maDonVi: donVi.maDonVi,
+        tenDonVi: donVi.tenDonVi,
+      },
+      phaiThu: sql<string>`COALESCE(SUM(${khoanPhaiThu.tongTien} - ${khoanPhaiThu.giamTru}), 0)`,
+      daThu: sql<string>`COALESCE(SUM(${khoanPhaiThu.daThu}), 0)`,
+    })
+    .from(kyThu)
+    .innerJoin(donVi, eq(kyThu.donViId, donVi.id))
+    .leftJoin(khoanPhaiThu, eq(khoanPhaiThu.kyThuId, kyThu.id))
+    .where(eq(donVi.trangThai, "hoat_dong"))
+    .groupBy(kyThu.id, donVi.id)
+    .orderBy(donVi.tenDonVi, kyThu.tuNgay);
 }

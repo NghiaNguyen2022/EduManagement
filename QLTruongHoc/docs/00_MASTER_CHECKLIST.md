@@ -54,10 +54,11 @@
 > nhóm, gạch dưới cho chức năng chưa hoàn thiện) — thuộc K06, không phát sinh mục checklist
 > mới. Mở Sprint 5 (Tài chính), hoàn tất H01/H02 (danh mục khoản thu, kỳ thu + gán khoản thu
 > áp dụng cho kỳ, mở/đóng kỳ), sau đó tiếp H03-H07 (sinh khoản phải thu theo lớp, miễn giảm,
-> thu tiền từng phần, công nợ toàn đơn vị, lịch sử phiếu thu). H08/H09 (hoàn phí/chuyển
-> phí/bảo lưu, báo cáo doanh thu tổng hợp) để lại làm bước sau. Xem `PROJECT_SUMMARY.md` mục
-> "H01/H02 — Danh mục khoản thu, Kỳ thu" và "H03-H07 — Khoản phải thu, miễn giảm, thu tiền,
-> công nợ, biên nhận".
+> thu tiền từng phần, công nợ toàn đơn vị, lịch sử phiếu thu), rồi H09 (báo cáo tài chính:
+> tổng thu theo khoảng ngày, tổng công nợ, thu theo kỳ thu/đơn vị). Chỉ còn H08 (hoàn
+> phí/chuyển phí/bảo lưu) để lại làm bước sau — cần thiết kế riêng phức tạp hơn. Xem
+> `PROJECT_SUMMARY.md` mục "H01/H02 — Danh mục khoản thu, Kỳ thu", "H03-H07 — Khoản phải thu,
+> miễn giảm, thu tiền, công nợ, biên nhận" và "H09 — Báo cáo tài chính".
 
 ## A. Nền tảng và đa đơn vị
 - [x] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)
@@ -130,7 +131,7 @@
 - [x] H06 Công nợ phụ huynh. (Mục "Công nợ" trong trang `/finance` — toàn bộ khoản phải thu còn nợ trên toàn đơn vị, liên kết sang đúng kỳ thu. Chưa gộp theo phụ huynh, xem theo học sinh.)
 - [x] H07 Biên nhận thu. (Mục "Lịch sử thu" theo từng khoản phải thu — số phiếu tự sinh `PT<năm><5 số>`, ngày/số tiền/phương thức/ghi chú. Chưa có bản in/PDF riêng.)
 - [ ] H08 Hoàn phí/chuyển phí/bảo lưu.
-- [ ] H09 Báo cáo doanh thu, công nợ, thu theo đơn vị.
+- [x] H09 Báo cáo doanh thu, công nợ, thu theo đơn vị. (2026-07-22: trang `/finance/bao-cao` — tổng thu trong khoảng ngày lọc được, tổng công nợ hiện tại, bảng thu theo từng kỳ thu (đơn vị hệ thống xem gộp kèm cột "Đơn vị"). Chưa có biểu đồ.)
 
 ## I. Thông báo và trao đổi
 - [ ] I01 Thông báo toàn trường/theo lớp/cá nhân.

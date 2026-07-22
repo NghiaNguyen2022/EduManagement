@@ -97,3 +97,18 @@ export type SinhKhoanPhaiThuResult = {
   boQua: number;
   tongSoHocSinh: number;
 };
+
+export type BaoCaoKyThuItem = {
+  kyThu: { id: number; maKyThu: string; tenKyThu: string; trangThai: string };
+  donVi?: { id: number; maDonVi: string; tenDonVi: string };
+  phaiThu: string;
+  daThu: string;
+  conLai: string;
+};
+
+export type BaoCaoTaiChinh = {
+  tongThu: string;
+  soPhieuThu: number;
+  tongCongNo: string;
+  theoKyThu: BaoCaoKyThuItem[];
+};

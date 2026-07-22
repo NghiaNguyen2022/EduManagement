@@ -14,6 +14,7 @@ import {
   createKyThuMoi,
   dongKyThu,
   getKyThuDetail,
+  getBaoCaoTaiChinh,
   ghiNhanThuTien,
   listCongNoToanDonVi,
   listDanhMucKhoanThu,
@@ -410,6 +411,30 @@ taiChinhRouter.get(
       res.json({ ok: true, data: rows });
     } catch (error) {
       handleError(res, error, "Không thể tải danh sách công nợ.");
+    }
+  },
+);
+
+taiChinhRouter.get(
+  "/bao-cao",
+  requirePermission("tai_chinh.xem"),
+  async (req, res) => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const firstDayOfMonth = `${today.slice(0, 7)}-01`;
+
+      const data = await getBaoCaoTaiChinh({
+        donViId: req.auth!.currentOrganization!.id,
+        loaiDonVi: req.auth!.currentOrganization!.loaiDonVi,
+        tuNgay: req.query.tuNgay
+          ? String(req.query.tuNgay)
+          : firstDayOfMonth,
+        denNgay: req.query.denNgay ? String(req.query.denNgay) : today,
+      });
+
+      res.json({ ok: true, data });
+    } catch (error) {
+      handleError(res, error, "Không thể tải báo cáo tài chính.");
     }
   },
 );
