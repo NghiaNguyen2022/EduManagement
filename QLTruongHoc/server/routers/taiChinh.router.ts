@@ -1,8 +1,6 @@
 import { Router } from "express";
 
-import {
-  requireAuth,
-} from "../middleware/auth.middleware.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 import {
   requireCurrentOrganization,
   requirePermission,
@@ -13,11 +11,13 @@ import {
   createDanhMucKhoanThuMoi,
   createKyThuMoi,
   dongKyThu,
+  duyetDieuChinh,
   getKyThuDetail,
   getBaoCaoTaiChinh,
   ghiNhanThuTien,
   listCongNoToanDonVi,
   listDanhMucKhoanThu,
+  listDieuChinhTheoKhoanPhaiThu,
   listKhoanPhaiThuTheoKyThu,
   listKyThu,
   listPhieuThuTheoKhoanPhaiThu,
@@ -25,15 +25,12 @@ import {
   getPhieuThuDetail,
   setDanhMucKhoanThuStatus,
   sinhKhoanPhaiThuChoLop,
+  taoYeuCauDieuChinh,
   updateDanhMucKhoanThuThongTin,
   updateKyThuThongTin,
 } from "../services/taiChinh.service.js";
 
-function handleError(
-  res: import("express").Response,
-  error: unknown,
-  fallback: string,
-) {
+function handleError(res: import("express").Response, error: unknown, fallback: string) {
   res.status(400).json({
     ok: false,
     error: error instanceof Error ? error.message : fallback,
@@ -42,87 +39,72 @@ function handleError(
 
 export const taiChinhRouter = Router();
 
-taiChinhRouter.use(
-  requireAuth,
-  requireCurrentOrganization,
-);
+taiChinhRouter.use(requireAuth, requireCurrentOrganization);
 
 // ---------------------------------------------------------------
 // Danh mục khoản thu
 // ---------------------------------------------------------------
 
-taiChinhRouter.get(
-  "/khoan-thu",
-  requirePermission("tai_chinh.xem"),
-  async (req, res) => {
-    try {
-      const rows = await listDanhMucKhoanThu(
-        req.auth!.currentOrganization!.id,
-        req.auth!.currentOrganization!.loaiDonVi,
-      );
+taiChinhRouter.get("/khoan-thu", requirePermission("tai_chinh.xem"), async (req, res) => {
+  try {
+    const rows = await listDanhMucKhoanThu(
+      req.auth!.currentOrganization!.id,
+      req.auth!.currentOrganization!.loaiDonVi,
+    );
 
-      res.json({ ok: true, data: rows });
-    } catch (error) {
-      handleError(res, error, "Không thể tải danh mục khoản thu.");
-    }
-  },
-);
+    res.json({ ok: true, data: rows });
+  } catch (error) {
+    handleError(res, error, "Không thể tải danh mục khoản thu.");
+  }
+});
 
-taiChinhRouter.post(
-  "/khoan-thu",
-  requirePermission("tai_chinh.quan_ly"),
-  async (req, res) => {
-    try {
-      const created = await createDanhMucKhoanThuMoi({
-        donViId: req.auth!.currentOrganization!.id,
-        maKhoanThu: String(req.body?.maKhoanThu ?? ""),
-        tenKhoanThu: String(req.body?.tenKhoanThu ?? ""),
-        loaiKhoanThu: String(req.body?.loaiKhoanThu ?? ""),
-        soTienMacDinh:
-          req.body?.soTienMacDinh === null ||
-          req.body?.soTienMacDinh === undefined ||
-          req.body?.soTienMacDinh === ""
-            ? null
-            : Number(req.body.soTienMacDinh),
-        batBuoc: Boolean(req.body?.batBuoc),
-        actorUserId: req.auth!.user.id,
-        ipAddress: req.ip,
-      });
+taiChinhRouter.post("/khoan-thu", requirePermission("tai_chinh.quan_ly"), async (req, res) => {
+  try {
+    const created = await createDanhMucKhoanThuMoi({
+      donViId: req.auth!.currentOrganization!.id,
+      maKhoanThu: String(req.body?.maKhoanThu ?? ""),
+      tenKhoanThu: String(req.body?.tenKhoanThu ?? ""),
+      loaiKhoanThu: String(req.body?.loaiKhoanThu ?? ""),
+      soTienMacDinh:
+        req.body?.soTienMacDinh === null ||
+        req.body?.soTienMacDinh === undefined ||
+        req.body?.soTienMacDinh === ""
+          ? null
+          : Number(req.body.soTienMacDinh),
+      batBuoc: Boolean(req.body?.batBuoc),
+      actorUserId: req.auth!.user.id,
+      ipAddress: req.ip,
+    });
 
-      res.status(201).json({ ok: true, data: created });
-    } catch (error) {
-      handleError(res, error, "Không thể tạo khoản thu.");
-    }
-  },
-);
+    res.status(201).json({ ok: true, data: created });
+  } catch (error) {
+    handleError(res, error, "Không thể tạo khoản thu.");
+  }
+});
 
-taiChinhRouter.patch(
-  "/khoan-thu/:id",
-  requirePermission("tai_chinh.quan_ly"),
-  async (req, res) => {
-    try {
-      const updated = await updateDanhMucKhoanThuThongTin({
-        donViId: req.auth!.currentOrganization!.id,
-        id: Number(req.params.id),
-        tenKhoanThu: String(req.body?.tenKhoanThu ?? ""),
-        loaiKhoanThu: String(req.body?.loaiKhoanThu ?? ""),
-        soTienMacDinh:
-          req.body?.soTienMacDinh === null ||
-          req.body?.soTienMacDinh === undefined ||
-          req.body?.soTienMacDinh === ""
-            ? null
-            : Number(req.body.soTienMacDinh),
-        batBuoc: Boolean(req.body?.batBuoc),
-        actorUserId: req.auth!.user.id,
-        ipAddress: req.ip,
-      });
+taiChinhRouter.patch("/khoan-thu/:id", requirePermission("tai_chinh.quan_ly"), async (req, res) => {
+  try {
+    const updated = await updateDanhMucKhoanThuThongTin({
+      donViId: req.auth!.currentOrganization!.id,
+      id: Number(req.params.id),
+      tenKhoanThu: String(req.body?.tenKhoanThu ?? ""),
+      loaiKhoanThu: String(req.body?.loaiKhoanThu ?? ""),
+      soTienMacDinh:
+        req.body?.soTienMacDinh === null ||
+        req.body?.soTienMacDinh === undefined ||
+        req.body?.soTienMacDinh === ""
+          ? null
+          : Number(req.body.soTienMacDinh),
+      batBuoc: Boolean(req.body?.batBuoc),
+      actorUserId: req.auth!.user.id,
+      ipAddress: req.ip,
+    });
 
-      res.json({ ok: true, data: updated });
-    } catch (error) {
-      handleError(res, error, "Không thể cập nhật khoản thu.");
-    }
-  },
-);
+    res.json({ ok: true, data: updated });
+  } catch (error) {
+    handleError(res, error, "Không thể cập nhật khoản thu.");
+  }
+});
 
 taiChinhRouter.patch(
   "/khoan-thu/:id/trang-thai",
@@ -148,91 +130,68 @@ taiChinhRouter.patch(
 // Kỳ thu
 // ---------------------------------------------------------------
 
-taiChinhRouter.get(
-  "/ky-thu",
-  requirePermission("tai_chinh.xem"),
-  async (req, res) => {
-    try {
-      const rows = await listKyThu(
-        req.auth!.currentOrganization!.id,
-        req.auth!.currentOrganization!.loaiDonVi,
-      );
+taiChinhRouter.get("/ky-thu", requirePermission("tai_chinh.xem"), async (req, res) => {
+  try {
+    const rows = await listKyThu(
+      req.auth!.currentOrganization!.id,
+      req.auth!.currentOrganization!.loaiDonVi,
+    );
 
-      res.json({ ok: true, data: rows });
-    } catch (error) {
-      handleError(res, error, "Không thể tải danh sách kỳ thu.");
-    }
-  },
-);
+    res.json({ ok: true, data: rows });
+  } catch (error) {
+    handleError(res, error, "Không thể tải danh sách kỳ thu.");
+  }
+});
 
-taiChinhRouter.get(
-  "/ky-thu/:id",
-  requirePermission("tai_chinh.xem"),
-  async (req, res) => {
-    try {
-      const detail = await getKyThuDetail(
-        req.auth!.currentOrganization!.id,
-        Number(req.params.id),
-      );
+taiChinhRouter.get("/ky-thu/:id", requirePermission("tai_chinh.xem"), async (req, res) => {
+  try {
+    const detail = await getKyThuDetail(req.auth!.currentOrganization!.id, Number(req.params.id));
 
-      res.json({ ok: true, data: detail });
-    } catch (error) {
-      handleError(res, error, "Không thể tải chi tiết kỳ thu.");
-    }
-  },
-);
+    res.json({ ok: true, data: detail });
+  } catch (error) {
+    handleError(res, error, "Không thể tải chi tiết kỳ thu.");
+  }
+});
 
-taiChinhRouter.post(
-  "/ky-thu",
-  requirePermission("tai_chinh.quan_ly"),
-  async (req, res) => {
-    try {
-      const created = await createKyThuMoi({
-        donViId: req.auth!.currentOrganization!.id,
-        maKyThu: String(req.body?.maKyThu ?? ""),
-        tenKyThu: String(req.body?.tenKyThu ?? ""),
-        loaiKy: String(req.body?.loaiKy ?? ""),
-        tuNgay: String(req.body?.tuNgay ?? ""),
-        denNgay: String(req.body?.denNgay ?? ""),
-        hanThanhToan: req.body?.hanThanhToan
-          ? String(req.body.hanThanhToan)
-          : null,
-        actorUserId: req.auth!.user.id,
-        ipAddress: req.ip,
-      });
+taiChinhRouter.post("/ky-thu", requirePermission("tai_chinh.quan_ly"), async (req, res) => {
+  try {
+    const created = await createKyThuMoi({
+      donViId: req.auth!.currentOrganization!.id,
+      maKyThu: String(req.body?.maKyThu ?? ""),
+      tenKyThu: String(req.body?.tenKyThu ?? ""),
+      loaiKy: String(req.body?.loaiKy ?? ""),
+      tuNgay: String(req.body?.tuNgay ?? ""),
+      denNgay: String(req.body?.denNgay ?? ""),
+      hanThanhToan: req.body?.hanThanhToan ? String(req.body.hanThanhToan) : null,
+      actorUserId: req.auth!.user.id,
+      ipAddress: req.ip,
+    });
 
-      res.status(201).json({ ok: true, data: created });
-    } catch (error) {
-      handleError(res, error, "Không thể tạo kỳ thu.");
-    }
-  },
-);
+    res.status(201).json({ ok: true, data: created });
+  } catch (error) {
+    handleError(res, error, "Không thể tạo kỳ thu.");
+  }
+});
 
-taiChinhRouter.patch(
-  "/ky-thu/:id",
-  requirePermission("tai_chinh.quan_ly"),
-  async (req, res) => {
-    try {
-      const updated = await updateKyThuThongTin({
-        donViId: req.auth!.currentOrganization!.id,
-        id: Number(req.params.id),
-        tenKyThu: String(req.body?.tenKyThu ?? ""),
-        loaiKy: String(req.body?.loaiKy ?? ""),
-        tuNgay: String(req.body?.tuNgay ?? ""),
-        denNgay: String(req.body?.denNgay ?? ""),
-        hanThanhToan: req.body?.hanThanhToan
-          ? String(req.body.hanThanhToan)
-          : null,
-        actorUserId: req.auth!.user.id,
-        ipAddress: req.ip,
-      });
+taiChinhRouter.patch("/ky-thu/:id", requirePermission("tai_chinh.quan_ly"), async (req, res) => {
+  try {
+    const updated = await updateKyThuThongTin({
+      donViId: req.auth!.currentOrganization!.id,
+      id: Number(req.params.id),
+      tenKyThu: String(req.body?.tenKyThu ?? ""),
+      loaiKy: String(req.body?.loaiKy ?? ""),
+      tuNgay: String(req.body?.tuNgay ?? ""),
+      denNgay: String(req.body?.denNgay ?? ""),
+      hanThanhToan: req.body?.hanThanhToan ? String(req.body.hanThanhToan) : null,
+      actorUserId: req.auth!.user.id,
+      ipAddress: req.ip,
+    });
 
-      res.json({ ok: true, data: updated });
-    } catch (error) {
-      handleError(res, error, "Không thể cập nhật kỳ thu.");
-    }
-  },
-);
+    res.json({ ok: true, data: updated });
+  } catch (error) {
+    handleError(res, error, "Không thể cập nhật kỳ thu.");
+  }
+});
 
 taiChinhRouter.put(
   "/ky-thu/:id/khoan-thu",
@@ -262,24 +221,20 @@ taiChinhRouter.put(
   },
 );
 
-taiChinhRouter.patch(
-  "/ky-thu/:id/mo",
-  requirePermission("tai_chinh.quan_ly"),
-  async (req, res) => {
-    try {
-      const updated = await moKyThu({
-        donViId: req.auth!.currentOrganization!.id,
-        id: Number(req.params.id),
-        actorUserId: req.auth!.user.id,
-        ipAddress: req.ip,
-      });
+taiChinhRouter.patch("/ky-thu/:id/mo", requirePermission("tai_chinh.quan_ly"), async (req, res) => {
+  try {
+    const updated = await moKyThu({
+      donViId: req.auth!.currentOrganization!.id,
+      id: Number(req.params.id),
+      actorUserId: req.auth!.user.id,
+      ipAddress: req.ip,
+    });
 
-      res.json({ ok: true, data: updated });
-    } catch (error) {
-      handleError(res, error, "Không thể mở kỳ thu.");
-    }
-  },
-);
+    res.json({ ok: true, data: updated });
+  } catch (error) {
+    handleError(res, error, "Không thể mở kỳ thu.");
+  }
+});
 
 taiChinhRouter.patch(
   "/ky-thu/:id/dong",
@@ -400,59 +355,111 @@ taiChinhRouter.get(
   },
 );
 
-taiChinhRouter.get(
-  "/cong-no",
-  requirePermission("tai_chinh.xem"),
+taiChinhRouter.post(
+  "/khoan-phai-thu/:id/dieu-chinh",
+  requirePermission("tai_chinh.quan_ly"),
   async (req, res) => {
     try {
-      const rows = await listCongNoToanDonVi(
-        req.auth!.currentOrganization!.id,
-      );
-
-      res.json({ ok: true, data: rows });
-    } catch (error) {
-      handleError(res, error, "Không thể tải danh sách công nợ.");
-    }
-  },
-);
-
-taiChinhRouter.get(
-  "/bao-cao",
-  requirePermission("tai_chinh.xem"),
-  async (req, res) => {
-    try {
-      const today = new Date().toISOString().slice(0, 10);
-      const firstDayOfMonth = `${today.slice(0, 7)}-01`;
-
-      const data = await getBaoCaoTaiChinh({
+      const created = await taoYeuCauDieuChinh({
         donViId: req.auth!.currentOrganization!.id,
-        loaiDonVi: req.auth!.currentOrganization!.loaiDonVi,
-        tuNgay: req.query.tuNgay
-          ? String(req.query.tuNgay)
-          : firstDayOfMonth,
-        denNgay: req.query.denNgay ? String(req.query.denNgay) : today,
+        khoanPhaiThuId: Number(req.params.id),
+        khoanPhaiThuDichId: req.body?.khoanPhaiThuDichId
+          ? Number(req.body.khoanPhaiThuDichId)
+          : null,
+        loaiDieuChinh: String(req.body?.loaiDieuChinh ?? ""),
+        soTien:
+          req.body?.soTien !== undefined && req.body?.soTien !== null
+            ? Number(req.body.soTien)
+            : null,
+        lyDo: String(req.body?.lyDo ?? ""),
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
       });
 
-      res.json({ ok: true, data });
+      res.status(201).json({ ok: true, data: created });
     } catch (error) {
-      handleError(res, error, "Không thể tải báo cáo tài chính.");
+      handleError(res, error, "Không thể tạo yêu cầu điều chỉnh.");
     }
   },
 );
 
 taiChinhRouter.get(
-  "/phieu-thu/:id",
+  "/khoan-phai-thu/:id/dieu-chinh",
   requirePermission("tai_chinh.xem"),
   async (req, res) => {
     try {
-      const detail = await getPhieuThuDetail(
+      const rows = await listDieuChinhTheoKhoanPhaiThu(
         req.auth!.currentOrganization!.id,
         Number(req.params.id),
       );
 
-      res.json({ ok: true, data: detail });
+      res.json({ ok: true, data: rows });
     } catch (error) {
-      handleError(res, error, "Không thể tải chi tiết phiếu thu.");
+      handleError(res, error, "Không thể tải lịch sử điều chỉnh.");
     }
   },
 );
+
+taiChinhRouter.post(
+  "/dieu-chinh/:id/duyet",
+  requirePermission("tai_chinh.duyet"),
+  async (req, res) => {
+    try {
+      const quyetDinh = req.body?.quyetDinh === "tu_choi" ? "tu_choi" : "duyet";
+
+      const updated = await duyetDieuChinh({
+        donViId: req.auth!.currentOrganization!.id,
+        dieuChinhId: Number(req.params.id),
+        quyetDinh,
+        ghiChuDuyet: req.body?.ghiChuDuyet ? String(req.body.ghiChuDuyet) : null,
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.json({ ok: true, data: updated });
+    } catch (error) {
+      handleError(res, error, "Không thể duyệt yêu cầu điều chỉnh.");
+    }
+  },
+);
+
+taiChinhRouter.get("/cong-no", requirePermission("tai_chinh.xem"), async (req, res) => {
+  try {
+    const rows = await listCongNoToanDonVi(req.auth!.currentOrganization!.id);
+
+    res.json({ ok: true, data: rows });
+  } catch (error) {
+    handleError(res, error, "Không thể tải danh sách công nợ.");
+  }
+});
+
+taiChinhRouter.get("/bao-cao", requirePermission("tai_chinh.xem"), async (req, res) => {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const firstDayOfMonth = `${today.slice(0, 7)}-01`;
+
+    const data = await getBaoCaoTaiChinh({
+      donViId: req.auth!.currentOrganization!.id,
+      loaiDonVi: req.auth!.currentOrganization!.loaiDonVi,
+      tuNgay: req.query.tuNgay ? String(req.query.tuNgay) : firstDayOfMonth,
+      denNgay: req.query.denNgay ? String(req.query.denNgay) : today,
+    });
+
+    res.json({ ok: true, data });
+  } catch (error) {
+    handleError(res, error, "Không thể tải báo cáo tài chính.");
+  }
+});
+
+taiChinhRouter.get("/phieu-thu/:id", requirePermission("tai_chinh.xem"), async (req, res) => {
+  try {
+    const detail = await getPhieuThuDetail(
+      req.auth!.currentOrganization!.id,
+      Number(req.params.id),
+    );
+
+    res.json({ ok: true, data: detail });
+  } catch (error) {
+    handleError(res, error, "Không thể tải chi tiết phiếu thu.");
+  }
+});

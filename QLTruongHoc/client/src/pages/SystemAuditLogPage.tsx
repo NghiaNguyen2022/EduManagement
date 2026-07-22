@@ -46,6 +46,10 @@ function actionLabel(action: string) {
     "hoc_sinh.remove_guardian": "Gỡ liên kết phụ huynh",
     "hoc_sinh.guardian_account_create": "Tạo tài khoản phụ huynh",
     "hoc_sinh.guardian_account_existing": "Phụ huynh đã có tài khoản",
+    "phieu_thu.create": "Lập phiếu thu",
+    "dieu_chinh.create": "Tạo yêu cầu điều chỉnh (hoàn/chuyển/bảo lưu)",
+    "dieu_chinh.approve": "Duyệt điều chỉnh tài chính",
+    "dieu_chinh.reject": "Từ chối điều chỉnh tài chính",
   };
 
   return labels[action] ?? action;

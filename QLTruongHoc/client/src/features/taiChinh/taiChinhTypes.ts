@@ -1,9 +1,4 @@
-export type LoaiKhoanThu =
-  | "hoc_phi"
-  | "tien_an"
-  | "dich_vu"
-  | "tai_lieu"
-  | "khac";
+export type LoaiKhoanThu = "hoc_phi" | "tien_an" | "dich_vu" | "tai_lieu" | "khac";
 
 export type DanhMucKhoanThuItem = {
   id: number;
@@ -123,4 +118,32 @@ export type PhieuThuDetail = {
   hocSinh: { id: number; maHocSinh: string; hoTen: string };
   kyThu: { id: number; maKyThu: string; tenKyThu: string };
   khoanPhaiThu: KhoanPhaiThuItem;
+};
+
+export type LoaiDieuChinh = "hoan_phi" | "chuyen_phi" | "bao_luu";
+export type TrangThaiDieuChinh = "cho_duyet" | "da_duyet" | "tu_choi";
+
+export type DieuChinhItem = {
+  id: number;
+  donViId: number;
+  khoanPhaiThuId: number;
+  khoanPhaiThuDichId: number | null;
+  loaiDieuChinh: LoaiDieuChinh;
+  soTien: string;
+  lyDo: string;
+  trangThai: TrangThaiDieuChinh;
+  nguoiTaoId: number;
+  nguoiDuyetId: number | null;
+  ghiChuDuyet: string | null;
+  createdAt: string;
+  duyetAt: string | null;
+  nguoiTao: { id: number; hoTen: string; tenDangNhap: string };
+  nguoiDuyet: { id: number; hoTen: string; tenDangNhap: string } | null;
+};
+
+export type DieuChinhFormInput = {
+  loaiDieuChinh: LoaiDieuChinh;
+  khoanPhaiThuDichId: string;
+  soTien: number | null;
+  lyDo: string;
 };

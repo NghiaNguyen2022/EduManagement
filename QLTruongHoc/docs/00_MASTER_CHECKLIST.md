@@ -97,6 +97,16 @@
 > giữ `traoDoi`, làm rớt mất `hocSinh`/`lopHoc`/`nguoiTao`, khiến trang `/communications` lẽ ra
 > sẽ lỗi runtime khi hiển thị bất kỳ dòng trao đổi nào (chưa ai kịp test qua UI thật trước khi
 > phát hiện). Xem `PROJECT_SUMMARY.md`.
+>
+> Cập nhật 2026-07-23: hoàn tất H08 (hoàn phí/chuyển phí/bảo lưu — bảng mới
+> `DieuChinhKhoanPhaiThu`, có bước duyệt tách vai trò qua quyền mới `tai_chinh.duyet`). Mục H
+> (Tài chính) nay đã đầy đủ H01-H09. Test tay qua UI thật với `demo_ketoan` — PASS cho luồng
+> tạo yêu cầu bảo lưu; chưa test được luồng duyệt (cần tài khoản thứ hai có `tai_chinh.duyet`)
+> và luồng hoàn phí/chuyển phí có số tiền thật (công cụ test không nhập được `CurrencyInput`
+> ổn định). Phát hiện thêm và sửa luôn 1 lỗi có sẵn từ trước (không thuộc H08): trang
+> `KyThuDetailPage` gọi `listLopHocApi` không bọc lỗi — vai trò kế toán không có `lop_hoc.xem`
+> nên cả trang chi tiết kỳ thu vỡ hoàn toàn khi họ mở, dù họ có đủ quyền tài chính. Xem
+> `PROJECT_SUMMARY.md`.
 
 ## A. Nền tảng và đa đơn vị
 - [x] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)
@@ -179,14 +189,20 @@
 - [x] H05 Thu từng phần/nhiều lần. (Form "Thu tiền" tạo `PhieuThu`, cho phép nhiều phiếu thu trên cùng một khoản phải thu tới khi thu đủ; trạng thái tự suy ra chưa_thu/thu_một_phần/đã_thu_đủ.)
 - [x] H06 Công nợ phụ huynh. (Mục "Công nợ" trong trang `/finance` — toàn bộ khoản phải thu còn nợ trên toàn đơn vị, liên kết sang đúng kỳ thu. Chưa gộp theo phụ huynh, xem theo học sinh.)
 - [x] H07 Biên nhận thu. (Mục "Lịch sử thu" theo từng khoản phải thu — số phiếu tự sinh `PT<năm><5 số>`, ngày/số tiền/phương thức/ghi chú. Chưa có bản in/PDF riêng.)
-- [ ] H08 Hoàn phí/chuyển phí/bảo lưu. (**Ưu tiên cao nhất còn lại của mục H** — cả 4 sản phẩm
-      tham khảo đều coi đây là tính năng lõi, không phải cạnh biên. **Phân bổ luồng/layout dự
-      kiến**: luồng — từ một `KhoanPhaiThu` cụ thể, tạo yêu cầu hoàn/chuyển/bảo lưu → cần vai
-      trò khác duyệt trước khi ghi nhận (BPD 7.6: "Hoàn/hủy/điều chỉnh theo quy trình phê
-      duyệt") → sinh bút toán điều chỉnh, giữ nguyên lịch sử `KhoanPhaiThu`/`PhieuThu` gốc,
-      không xoá/sửa đè. Layout — thêm 1 nút "Hoàn/chuyển/bảo lưu" trong chi tiết khoản phải
-      thu (đang nằm trong `KyThuDetailPage`), có thể cần 1 trang duyệt riêng nếu tách vai trò
-      lập/duyệt — chưa quyết, cần làm rõ trước khi code.)
+- [x] H08 Hoàn phí/chuyển phí/bảo lưu. (2026-07-23: bảng mới `DieuChinhKhoanPhaiThu` — yêu cầu
+      hoàn phí/chuyển phí/bảo lưu gắn với một `KhoanPhaiThu`, trạng thái `cho_duyet` khi tạo,
+      chỉ thật sự tác động `daThu`/`trangThai` sau khi được **duyệt** bởi một tài khoản khác
+      người lập, có quyền `tai_chinh.duyet` (quyền mới, tách riêng khỏi `tai_chinh.quan_ly` —
+      đúng BPD 7.6 "quy trình phê duyệt"). UI gộp trong `KyThuDetailPage` (nút "Điều chỉnh"
+      cạnh Thu tiền/Miễn giảm/Lịch sử thu, không tách trang duyệt riêng). Hoàn phí/chuyển phí
+      giới hạn theo `daThu` hiện tại (không hoàn/chuyển vượt số đã thu); chuyển phí thêm giới
+      hạn theo "còn phải thu" của khoản đích. Bảo lưu chỉ là quyết định ghi nhận (chưa đổi
+      trạng thái `KhoanPhaiThu` — xem giới hạn trong `docs/analysis`). Test tay qua UI thật với
+      tài khoản `demo_ketoan` (có `tai_chinh.quan_ly`, không có `tai_chinh.duyet`) — PASS: tạo
+      yêu cầu bảo lưu thành công, không thấy cột "Thao tác" duyệt (đúng phân quyền). Phát hiện
+      và sửa luôn 1 lỗi có sẵn từ trước (không thuộc H08): `KyThuDetailPage` gọi `listLopHocApi`
+      không bọc lỗi, vai trò kế toán không có `lop_hoc.xem` nên trang vỡ hoàn toàn — đã sửa
+      thành không chặn cả trang.)
 - [x] H09 Báo cáo doanh thu, công nợ, thu theo đơn vị. (2026-07-22: trang `/finance/bao-cao` — tổng thu trong khoảng ngày lọc được, tổng công nợ hiện tại, bảng thu theo từng kỳ thu (đơn vị hệ thống xem gộp kèm cột "Đơn vị"). Chưa có biểu đồ.)
 
 ## I. Thông báo và trao đổi

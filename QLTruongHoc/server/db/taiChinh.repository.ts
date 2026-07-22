@@ -1,7 +1,9 @@
 import { and, count, desc, eq, gt, gte, like, lte, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/mysql-core";
 
 import {
   danhMucKhoanThu,
+  dieuChinhKhoanPhaiThu,
   donVi,
   hocSinh,
   hocSinhLopHoc,
@@ -9,9 +11,13 @@ import {
   khoanPhaiThuChiTiet,
   kyThu,
   kyThuKhoanThu,
+  nguoiDung,
   phieuThu,
 } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
+
+const nguoiTaoAlias = alias(nguoiDung, "dieuChinhNguoiTao");
+const nguoiDuyetAlias = alias(nguoiDung, "dieuChinhNguoiDuyet");
 
 const now = () => new Date().toISOString().slice(0, 19).replace("T", " ");
 
@@ -657,4 +663,131 @@ export async function listKyThuBaoCaoAllDonVi() {
     .where(eq(donVi.trangThai, "hoat_dong"))
     .groupBy(kyThu.id, donVi.id)
     .orderBy(donVi.tenDonVi, kyThu.tuNgay);
+}
+
+// ---------------------------------------------------------------
+// H08 — Hoàn phí / chuyển phí / bảo lưu (yêu cầu điều chỉnh + duyệt)
+// ---------------------------------------------------------------
+
+function mapDieuChinhRow(row: {
+  dieuChinh: typeof dieuChinhKhoanPhaiThu.$inferSelect;
+  nguoiTaoHoTen: string;
+  nguoiTaoTenDangNhap: string;
+  nguoiDuyetHoTen: string | null;
+  nguoiDuyetTenDangNhap: string | null;
+}) {
+  return {
+    ...row.dieuChinh,
+    nguoiTao: {
+      id: row.dieuChinh.nguoiTaoId,
+      hoTen: row.nguoiTaoHoTen,
+      tenDangNhap: row.nguoiTaoTenDangNhap,
+    },
+    nguoiDuyet: row.dieuChinh.nguoiDuyetId
+      ? {
+          id: row.dieuChinh.nguoiDuyetId,
+          hoTen: row.nguoiDuyetHoTen ?? "",
+          tenDangNhap: row.nguoiDuyetTenDangNhap ?? "",
+        }
+      : null,
+  };
+}
+
+export async function createDieuChinh(input: {
+  donViId: number;
+  khoanPhaiThuId: number;
+  khoanPhaiThuDichId?: number | null;
+  loaiDieuChinh: "hoan_phi" | "chuyen_phi" | "bao_luu";
+  soTien: string;
+  lyDo: string;
+  nguoiTaoId: number;
+}) {
+  const db = getDb();
+  const createdAt = now();
+
+  await db.insert(dieuChinhKhoanPhaiThu).values({
+    donViId: input.donViId,
+    khoanPhaiThuId: input.khoanPhaiThuId,
+    khoanPhaiThuDichId: input.khoanPhaiThuDichId ?? null,
+    loaiDieuChinh: input.loaiDieuChinh,
+    soTien: input.soTien,
+    lyDo: input.lyDo,
+    trangThai: "cho_duyet",
+    nguoiTaoId: input.nguoiTaoId,
+    createdAt,
+  });
+
+  const rows = await db
+    .select()
+    .from(dieuChinhKhoanPhaiThu)
+    .where(
+      and(
+        eq(dieuChinhKhoanPhaiThu.khoanPhaiThuId, input.khoanPhaiThuId),
+        eq(dieuChinhKhoanPhaiThu.nguoiTaoId, input.nguoiTaoId),
+        eq(dieuChinhKhoanPhaiThu.createdAt, createdAt),
+      ),
+    )
+    .orderBy(desc(dieuChinhKhoanPhaiThu.id))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function findDieuChinhById(donViId: number, id: number) {
+  const db = getDb();
+
+  const rows = await db
+    .select()
+    .from(dieuChinhKhoanPhaiThu)
+    .where(and(eq(dieuChinhKhoanPhaiThu.id, id), eq(dieuChinhKhoanPhaiThu.donViId, donViId)))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function listDieuChinhByKhoanPhaiThu(khoanPhaiThuId: number) {
+  const db = getDb();
+
+  const rows = await db
+    .select({
+      dieuChinh: dieuChinhKhoanPhaiThu,
+      nguoiTaoHoTen: nguoiTaoAlias.hoTen,
+      nguoiTaoTenDangNhap: nguoiTaoAlias.tenDangNhap,
+      nguoiDuyetHoTen: nguoiDuyetAlias.hoTen,
+      nguoiDuyetTenDangNhap: nguoiDuyetAlias.tenDangNhap,
+    })
+    .from(dieuChinhKhoanPhaiThu)
+    .innerJoin(nguoiTaoAlias, eq(dieuChinhKhoanPhaiThu.nguoiTaoId, nguoiTaoAlias.id))
+    .leftJoin(nguoiDuyetAlias, eq(dieuChinhKhoanPhaiThu.nguoiDuyetId, nguoiDuyetAlias.id))
+    .where(eq(dieuChinhKhoanPhaiThu.khoanPhaiThuId, khoanPhaiThuId))
+    .orderBy(desc(dieuChinhKhoanPhaiThu.createdAt));
+
+  return rows.map(mapDieuChinhRow);
+}
+
+export async function updateDieuChinhQuyetDinh(input: {
+  id: number;
+  trangThai: "da_duyet" | "tu_choi";
+  nguoiDuyetId: number;
+  ghiChuDuyet: string | null;
+}) {
+  const db = getDb();
+
+  await db
+    .update(dieuChinhKhoanPhaiThu)
+    .set({
+      trangThai: input.trangThai,
+      nguoiDuyetId: input.nguoiDuyetId,
+      ghiChuDuyet: input.ghiChuDuyet,
+      duyetAt: now(),
+    })
+    .where(eq(dieuChinhKhoanPhaiThu.id, input.id));
+
+  const rows = await db
+    .select()
+    .from(dieuChinhKhoanPhaiThu)
+    .where(eq(dieuChinhKhoanPhaiThu.id, input.id))
+    .limit(1);
+
+  return rows[0] ?? null;
 }

@@ -1,12 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import {
-  CurrencyInput,
-  DateField,
-  SelectField,
-  TextField,
-} from "../components/form";
+import { CurrencyInput, DateField, SelectField, TextField } from "../components/form";
 import { ConfirmDialog } from "../components/shared/ConfirmDialog";
 import { GuardedLink } from "../components/shared/GuardedLink";
 import { PageHeader } from "../components/shared/PageHeader";
@@ -21,21 +16,26 @@ import {
 import {
   capNhatGiamTruApi,
   dongKyThuApi,
+  duyetDieuChinhApi,
   getKyThuDetailApi,
   listDanhMucKhoanThuApi,
+  listDieuChinhApi,
   listKhoanPhaiThuApi,
   listPhieuThuApi,
   moKyThuApi,
   setKhoanApDungKyThuApi,
   sinhKhoanPhaiThuApi,
+  taoYeuCauDieuChinhApi,
   thuTienApi,
   updateKyThuApi,
 } from "../features/taiChinh/taiChinhApi";
 import type {
   DanhMucKhoanThuItem,
+  DieuChinhItem,
   KhoanPhaiThuItem,
   KyThuDetail,
   KyThuFormInput,
+  LoaiDieuChinh,
   LoaiKy,
   PhieuThuItem,
 } from "../features/taiChinh/taiChinhTypes";
@@ -66,6 +66,18 @@ const PHUONG_THUC_LABEL: Record<string, string> = {
   khac: "Khác",
 };
 
+const LOAI_DIEU_CHINH_LABEL: Record<LoaiDieuChinh, string> = {
+  hoan_phi: "Hoàn phí",
+  chuyen_phi: "Chuyển phí",
+  bao_luu: "Bảo lưu",
+};
+
+const DIEU_CHINH_TRANG_THAI_LABEL: Record<string, string> = {
+  cho_duyet: "Chờ duyệt",
+  da_duyet: "Đã duyệt",
+  tu_choi: "Từ chối",
+};
+
 function formatTien(value: string) {
   return `${Number(value).toLocaleString("vi-VN")} ₫`;
 }
@@ -73,7 +85,8 @@ function formatTien(value: string) {
 type ActivePanel =
   | { type: "thu_tien"; item: KhoanPhaiThuItem }
   | { type: "mien_giam"; item: KhoanPhaiThuItem }
-  | { type: "lich_su"; item: KhoanPhaiThuItem };
+  | { type: "lich_su"; item: KhoanPhaiThuItem }
+  | { type: "dieu_chinh"; item: KhoanPhaiThuItem };
 
 type ChonKhoanThu = {
   danhMucKhoanThuId: number;
@@ -87,27 +100,20 @@ export function KyThuDetailPage() {
   const { auth } = useAuth();
 
   const [detail, setDetail] = useState<KyThuDetail | null>(null);
-  const [khoanThuList, setKhoanThuList] = useState<DanhMucKhoanThuItem[]>(
-    [],
-  );
+  const [khoanThuList, setKhoanThuList] = useState<DanhMucKhoanThuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
   const [infoForm, setInfoForm] = useState<KyThuFormInput | null>(null);
-  const [loadedInfoForm, setLoadedInfoForm] =
-    useState<KyThuFormInput | null>(null);
+  const [loadedInfoForm, setLoadedInfoForm] = useState<KyThuFormInput | null>(null);
   const [savingInfo, setSavingInfo] = useState(false);
 
   const [chonKhoanThu, setChonKhoanThu] = useState<ChonKhoanThu[]>([]);
-  const [loadedChonKhoanThu, setLoadedChonKhoanThu] = useState<
-    ChonKhoanThu[]
-  >([]);
+  const [loadedChonKhoanThu, setLoadedChonKhoanThu] = useState<ChonKhoanThu[]>([]);
   const [savingKhoanThu, setSavingKhoanThu] = useState(false);
 
-  const [confirmAction, setConfirmAction] = useState<
-    "mo" | "dong" | null
-  >(null);
+  const [confirmAction, setConfirmAction] = useState<"mo" | "dong" | null>(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
   const [confirmError, setConfirmError] = useState("");
 
@@ -115,9 +121,7 @@ export function KyThuDetailPage() {
   const [sinhLopHocId, setSinhLopHocId] = useState("");
   const [sinhBusy, setSinhBusy] = useState(false);
 
-  const [khoanPhaiThuList, setKhoanPhaiThuList] = useState<
-    KhoanPhaiThuItem[]
-  >([]);
+  const [khoanPhaiThuList, setKhoanPhaiThuList] = useState<KhoanPhaiThuItem[]>([]);
   const [loadingKhoanPhaiThu, setLoadingKhoanPhaiThu] = useState(false);
 
   const [activePanel, setActivePanel] = useState<ActivePanel | null>(null);
@@ -128,25 +132,38 @@ export function KyThuDetailPage() {
   const [payMethod, setPayMethod] = useState("tien_mat");
   const [payNote, setPayNote] = useState("");
 
-  const [discountAmount, setDiscountAmount] = useState<number | null>(
-    null,
-  );
+  const [discountAmount, setDiscountAmount] = useState<number | null>(null);
 
   const [phieuThuList, setPhieuThuList] = useState<PhieuThuItem[]>([]);
   const [loadingPhieuThu, setLoadingPhieuThu] = useState(false);
 
+  const [dieuChinhList, setDieuChinhList] = useState<DieuChinhItem[]>([]);
+  const [loadingDieuChinh, setLoadingDieuChinh] = useState(false);
+  const [dieuChinhLoai, setDieuChinhLoai] = useState<LoaiDieuChinh>("hoan_phi");
+  const [dieuChinhSoTien, setDieuChinhSoTien] = useState<number | null>(null);
+  const [dieuChinhKhoanDich, setDieuChinhKhoanDich] = useState("");
+  const [dieuChinhLyDo, setDieuChinhLyDo] = useState("");
+
+  const [confirmDuyet, setConfirmDuyet] = useState<{
+    dieuChinh: DieuChinhItem;
+    quyetDinh: "duyet" | "tu_choi";
+  } | null>(null);
+  const [confirmDuyetBusy, setConfirmDuyetBusy] = useState(false);
+  const [confirmDuyetError, setConfirmDuyetError] = useState("");
+
   const canManage = useMemo(() => {
     const permissions = auth?.currentOrganization?.quyen ?? [];
-    return (
-      permissions.includes("he_thong.quan_tri") ||
-      permissions.includes("tai_chinh.quan_ly")
-    );
+    return permissions.includes("he_thong.quan_tri") || permissions.includes("tai_chinh.quan_ly");
+  }, [auth]);
+
+  const canDuyet = useMemo(() => {
+    const permissions = auth?.currentOrganization?.quyen ?? [];
+    return permissions.includes("he_thong.quan_tri") || permissions.includes("tai_chinh.duyet");
   }, [auth]);
 
   useUnsavedChangesGuard(
     activePanel !== null ||
-      (loadedInfoForm !== null &&
-        JSON.stringify(infoForm) !== JSON.stringify(loadedInfoForm)) ||
+      (loadedInfoForm !== null && JSON.stringify(infoForm) !== JSON.stringify(loadedInfoForm)) ||
       JSON.stringify(chonKhoanThu) !== JSON.stringify(loadedChonKhoanThu),
   );
 
@@ -160,9 +177,7 @@ export function KyThuDetailPage() {
       setKhoanPhaiThuList(rows);
     } catch (loadError) {
       setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Không thể tải danh sách khoản phải thu.",
+        loadError instanceof Error ? loadError.message : "Không thể tải danh sách khoản phải thu.",
       );
     } finally {
       setLoadingKhoanPhaiThu(false);
@@ -176,10 +191,13 @@ export function KyThuDetailPage() {
     setError("");
 
     try {
+      // listLopHocApi chỉ phục vụ "Sinh khoản phải thu" (cần lop_hoc.xem) —
+      // không để lỗi ở đây (ví dụ vai trò kế toán không có lop_hoc.xem) chặn
+      // luôn cả phần xem/quản lý tài chính của trang.
       const [detailData, khoanThuRows, lopHocRows] = await Promise.all([
         getKyThuDetailApi(Number(id)),
         listDanhMucKhoanThuApi(),
-        listLopHocApi(),
+        listLopHocApi().catch(() => []),
       ]);
 
       setDetail(detailData);
@@ -198,10 +216,7 @@ export function KyThuDetailPage() {
       setLoadedInfoForm(nextInfoForm);
 
       const apDungMap = new Map(
-        detailData.khoanApDung.map((item) => [
-          item.danhMucKhoanThuId,
-          item,
-        ]),
+        detailData.khoanApDung.map((item) => [item.danhMucKhoanThuId, item]),
       );
 
       const nextChonKhoanThu = khoanThuRows.map((item) => {
@@ -224,11 +239,7 @@ export function KyThuDetailPage() {
         setKhoanPhaiThuList(khoanPhaiThuRows);
       }
     } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Không thể tải dữ liệu.",
-      );
+      setError(loadError instanceof Error ? loadError.message : "Không thể tải dữ liệu.");
     } finally {
       setLoading(false);
     }
@@ -238,9 +249,7 @@ export function KyThuDetailPage() {
     void loadData();
   }, [id, auth?.currentOrganization?.id]);
 
-  async function handleSaveInfo(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
+  async function handleSaveInfo(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!infoForm || !id) return;
 
@@ -253,11 +262,7 @@ export function KyThuDetailPage() {
       setNotice("Đã cập nhật thông tin kỳ thu.");
       await loadData();
     } catch (submitError) {
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Không thể cập nhật kỳ thu.",
-      );
+      setError(submitError instanceof Error ? submitError.message : "Không thể cập nhật kỳ thu.");
     } finally {
       setSavingInfo(false);
     }
@@ -311,9 +316,7 @@ export function KyThuDetailPage() {
       await loadData();
     } catch (actionError) {
       setConfirmError(
-        actionError instanceof Error
-          ? actionError.message
-          : "Không thể thực hiện thao tác.",
+        actionError instanceof Error ? actionError.message : "Không thể thực hiện thao tác.",
       );
     } finally {
       setConfirmBusy(false);
@@ -328,23 +331,32 @@ export function KyThuDetailPage() {
     setSinhBusy(true);
 
     try {
-      const result = await sinhKhoanPhaiThuApi(
-        Number(id),
-        Number(sinhLopHocId),
-      );
+      const result = await sinhKhoanPhaiThuApi(Number(id), Number(sinhLopHocId));
       setNotice(
         `Đã sinh khoản phải thu: ${result.daTao} học sinh mới, bỏ qua ${result.boQua} (đã có sẵn) trên tổng ${result.tongSoHocSinh} học sinh đang học.`,
       );
       await loadKhoanPhaiThu();
     } catch (submitError) {
       setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Không thể sinh khoản phải thu.",
+        submitError instanceof Error ? submitError.message : "Không thể sinh khoản phải thu.",
       );
     } finally {
       setSinhBusy(false);
     }
+  }
+
+  function loadDieuChinhList(khoanPhaiThuId: number) {
+    setDieuChinhList([]);
+    setLoadingDieuChinh(true);
+
+    listDieuChinhApi(khoanPhaiThuId)
+      .then(setDieuChinhList)
+      .catch((loadError) =>
+        setPanelError(
+          loadError instanceof Error ? loadError.message : "Không thể tải lịch sử điều chỉnh.",
+        ),
+      )
+      .finally(() => setLoadingDieuChinh(false));
   }
 
   function openPanel(panel: ActivePanel) {
@@ -357,19 +369,23 @@ export function KyThuDetailPage() {
       setPayNote("");
     } else if (panel.type === "mien_giam") {
       setDiscountAmount(Number(panel.item.giamTru));
-    } else {
+    } else if (panel.type === "lich_su") {
       setPhieuThuList([]);
       setLoadingPhieuThu(true);
       listPhieuThuApi(panel.item.id)
         .then(setPhieuThuList)
         .catch((loadError) =>
           setPanelError(
-            loadError instanceof Error
-              ? loadError.message
-              : "Không thể tải lịch sử thu.",
+            loadError instanceof Error ? loadError.message : "Không thể tải lịch sử thu.",
           ),
         )
         .finally(() => setLoadingPhieuThu(false));
+    } else if (panel.type === "dieu_chinh") {
+      setDieuChinhLoai("hoan_phi");
+      setDieuChinhSoTien(null);
+      setDieuChinhKhoanDich("");
+      setDieuChinhLyDo("");
+      loadDieuChinhList(panel.item.id);
     }
   }
 
@@ -395,9 +411,7 @@ export function KyThuDetailPage() {
       await loadKhoanPhaiThu();
     } catch (submitError) {
       setPanelError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Không thể ghi nhận thu tiền.",
+        submitError instanceof Error ? submitError.message : "Không thể ghi nhận thu tiền.",
       );
     } finally {
       setPanelBusy(false);
@@ -417,22 +431,77 @@ export function KyThuDetailPage() {
       await loadKhoanPhaiThu();
     } catch (submitError) {
       setPanelError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Không thể cập nhật giảm trừ.",
+        submitError instanceof Error ? submitError.message : "Không thể cập nhật giảm trừ.",
       );
     } finally {
       setPanelBusy(false);
     }
   }
 
+  async function handleSubmitDieuChinh() {
+    if (activePanel?.type !== "dieu_chinh" || !dieuChinhLyDo.trim()) return;
+
+    setPanelBusy(true);
+    setPanelError("");
+
+    try {
+      await taoYeuCauDieuChinhApi(activePanel.item.id, {
+        loaiDieuChinh: dieuChinhLoai,
+        khoanPhaiThuDichId: dieuChinhKhoanDich,
+        soTien: dieuChinhSoTien,
+        lyDo: dieuChinhLyDo,
+      });
+      setNotice(
+        `Đã tạo yêu cầu ${LOAI_DIEU_CHINH_LABEL[dieuChinhLoai].toLowerCase()} cho ${activePanel.item.hocSinh.hoTen} — chờ duyệt.`,
+      );
+      setDieuChinhSoTien(null);
+      setDieuChinhKhoanDich("");
+      setDieuChinhLyDo("");
+      loadDieuChinhList(activePanel.item.id);
+    } catch (submitError) {
+      setPanelError(
+        submitError instanceof Error ? submitError.message : "Không thể tạo yêu cầu điều chỉnh.",
+      );
+    } finally {
+      setPanelBusy(false);
+    }
+  }
+
+  async function handleConfirmDuyet() {
+    if (!confirmDuyet) return;
+
+    setConfirmDuyetBusy(true);
+    setConfirmDuyetError("");
+
+    try {
+      await duyetDieuChinhApi(confirmDuyet.dieuChinh.id, {
+        quyetDinh: confirmDuyet.quyetDinh,
+      });
+      setNotice(
+        confirmDuyet.quyetDinh === "duyet"
+          ? "Đã duyệt yêu cầu điều chỉnh."
+          : "Đã từ chối yêu cầu điều chỉnh.",
+      );
+      setConfirmDuyet(null);
+
+      if (activePanel?.type === "dieu_chinh") {
+        loadDieuChinhList(activePanel.item.id);
+      }
+
+      await loadKhoanPhaiThu();
+    } catch (actionError) {
+      setConfirmDuyetError(
+        actionError instanceof Error ? actionError.message : "Không thể duyệt yêu cầu điều chỉnh.",
+      );
+    } finally {
+      setConfirmDuyetBusy(false);
+    }
+  }
+
   if (loading || !detail || !infoForm) {
     return (
       <div className="page-stack">
-        <PageHeader
-          title="Kỳ thu"
-          subtitle={error || "Đang tải dữ liệu..."}
-        />
+        <PageHeader title="Kỳ thu" subtitle={error || "Đang tải dữ liệu..."} />
       </div>
     );
   }
@@ -446,11 +515,7 @@ export function KyThuDetailPage() {
         title={detail.kyThu.tenKyThu}
         subtitle={`Mã kỳ thu ${detail.kyThu.maKyThu}`}
         action={
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => navigate("/finance")}
-          >
+          <button type="button" className="text-button" onClick={() => navigate("/finance")}>
             ← Tài chính
           </button>
         }
@@ -499,28 +564,17 @@ export function KyThuDetailPage() {
 
       <SectionCard
         title="Thông tin kỳ thu"
-        subtitle={
-          dangNhap
-            ? undefined
-            : "Kỳ thu đã mở/đóng, không thể sửa thông tin."
-        }
+        subtitle={dangNhap ? undefined : "Kỳ thu đã mở/đóng, không thể sửa thông tin."}
       >
         <form className="user-create-form" onSubmit={handleSaveInfo}>
-          <TextField
-            label="Mã kỳ thu"
-            value={infoForm.maKyThu}
-            disabled
-            onChange={() => {}}
-          />
+          <TextField label="Mã kỳ thu" value={infoForm.maKyThu} disabled onChange={() => {}} />
 
           <TextField
             label="Tên kỳ thu"
             value={infoForm.tenKyThu}
             required
             disabled={!dangNhap || !canManage}
-            onChange={(value) =>
-              setInfoForm({ ...infoForm, tenKyThu: value })
-            }
+            onChange={(value) => setInfoForm({ ...infoForm, tenKyThu: value })}
           />
 
           <SelectField
@@ -528,12 +582,8 @@ export function KyThuDetailPage() {
             value={infoForm.loaiKy}
             required
             disabled={!dangNhap || !canManage}
-            options={Object.entries(LOAI_KY_LABEL).map(
-              ([value, label]) => ({ value, label }),
-            )}
-            onChange={(value) =>
-              setInfoForm({ ...infoForm, loaiKy: value as LoaiKy })
-            }
+            options={Object.entries(LOAI_KY_LABEL).map(([value, label]) => ({ value, label }))}
+            onChange={(value) => setInfoForm({ ...infoForm, loaiKy: value as LoaiKy })}
           />
 
           <DateField
@@ -541,9 +591,7 @@ export function KyThuDetailPage() {
             value={infoForm.tuNgay}
             required
             disabled={!dangNhap || !canManage}
-            onChange={(value) =>
-              setInfoForm({ ...infoForm, tuNgay: value })
-            }
+            onChange={(value) => setInfoForm({ ...infoForm, tuNgay: value })}
           />
 
           <DateField
@@ -551,26 +599,18 @@ export function KyThuDetailPage() {
             value={infoForm.denNgay}
             required
             disabled={!dangNhap || !canManage}
-            onChange={(value) =>
-              setInfoForm({ ...infoForm, denNgay: value })
-            }
+            onChange={(value) => setInfoForm({ ...infoForm, denNgay: value })}
           />
 
           <DateField
             label="Hạn thanh toán"
             value={infoForm.hanThanhToan}
             disabled={!dangNhap || !canManage}
-            onChange={(value) =>
-              setInfoForm({ ...infoForm, hanThanhToan: value })
-            }
+            onChange={(value) => setInfoForm({ ...infoForm, hanThanhToan: value })}
           />
 
           {dangNhap && canManage ? (
-            <button
-              type="submit"
-              className="primary-button"
-              disabled={savingInfo}
-            >
+            <button type="submit" className="primary-button" disabled={savingInfo}>
               {savingInfo ? "Đang lưu..." : "Lưu thông tin"}
             </button>
           ) : null}
@@ -601,9 +641,7 @@ export function KyThuDetailPage() {
                   {khoanThuList
                     .filter((item) => item.trangThai === "hoat_dong")
                     .map((item) => {
-                      const chon = chonKhoanThu.find(
-                        (row) => row.danhMucKhoanThuId === item.id,
-                      );
+                      const chon = chonKhoanThu.find((row) => row.danhMucKhoanThuId === item.id);
 
                       return (
                         <tr key={item.id}>
@@ -675,9 +713,7 @@ export function KyThuDetailPage() {
                       <strong>{item.tenKhoanThu}</strong>
                       <small>{item.maKhoanThu}</small>
                     </td>
-                    <td>
-                      {Number(item.soTien).toLocaleString("vi-VN")} ₫
-                    </td>
+                    <td>{Number(item.soTien).toLocaleString("vi-VN")} ₫</td>
                     <td>{item.ghiChu || "—"}</td>
                   </tr>
                 ))}
@@ -727,9 +763,7 @@ export function KyThuDetailPage() {
         <SectionCard
           title="Khoản phải thu"
           subtitle={
-            loadingKhoanPhaiThu
-              ? "Đang tải dữ liệu..."
-              : `${khoanPhaiThuList.length} học sinh`
+            loadingKhoanPhaiThu ? "Đang tải dữ liệu..." : `${khoanPhaiThuList.length} học sinh`
           }
         >
           <div className="user-table-wrap">
@@ -758,9 +792,7 @@ export function KyThuDetailPage() {
                     <td>{formatTien(item.daThu)}</td>
                     <td>{formatTien(item.conLai)}</td>
                     <td>
-                      <span
-                        className={`status-badge status-badge--${item.trangThai}`}
-                      >
+                      <span className={`status-badge status-badge--${item.trangThai}`}>
                         {KHOAN_PHAI_THU_TRANG_THAI_LABEL[item.trangThai]}
                       </span>
                     </td>
@@ -771,9 +803,7 @@ export function KyThuDetailPage() {
                             <button
                               type="button"
                               className="text-button"
-                              onClick={() =>
-                                openPanel({ type: "thu_tien", item })
-                              }
+                              onClick={() => openPanel({ type: "thu_tien", item })}
                             >
                               Thu tiền
                             </button>
@@ -782,9 +812,7 @@ export function KyThuDetailPage() {
                           <button
                             type="button"
                             className="text-button"
-                            onClick={() =>
-                              openPanel({ type: "mien_giam", item })
-                            }
+                            onClick={() => openPanel({ type: "mien_giam", item })}
                           >
                             Miễn giảm
                           </button>
@@ -792,11 +820,17 @@ export function KyThuDetailPage() {
                           <button
                             type="button"
                             className="text-button"
-                            onClick={() =>
-                              openPanel({ type: "lich_su", item })
-                            }
+                            onClick={() => openPanel({ type: "lich_su", item })}
                           >
                             Lịch sử thu
+                          </button>
+
+                          <button
+                            type="button"
+                            className="text-button"
+                            onClick={() => openPanel({ type: "dieu_chinh", item })}
+                          >
+                            Điều chỉnh
                           </button>
                         </div>
                       </td>
@@ -824,7 +858,9 @@ export function KyThuDetailPage() {
               ? `Thu tiền — ${activePanel.item.hocSinh.hoTen}`
               : activePanel.type === "mien_giam"
                 ? `Miễn giảm — ${activePanel.item.hocSinh.hoTen}`
-                : `Lịch sử thu — ${activePanel.item.hocSinh.hoTen}`
+                : activePanel.type === "lich_su"
+                  ? `Lịch sử thu — ${activePanel.item.hocSinh.hoTen}`
+                  : `Điều chỉnh — ${activePanel.item.hocSinh.hoTen}`
           }
           actions={
             <button type="button" className="text-button" onClick={closePanel}>
@@ -848,17 +884,14 @@ export function KyThuDetailPage() {
               <SelectField
                 label="Phương thức"
                 value={payMethod}
-                options={Object.entries(PHUONG_THUC_LABEL).map(
-                  ([value, label]) => ({ value, label }),
-                )}
+                options={Object.entries(PHUONG_THUC_LABEL).map(([value, label]) => ({
+                  value,
+                  label,
+                }))}
                 onChange={setPayMethod}
               />
 
-              <TextField
-                label="Ghi chú"
-                value={payNote}
-                onChange={setPayNote}
-              />
+              <TextField label="Ghi chú" value={payNote} onChange={setPayNote} />
 
               <button
                 type="button"
@@ -910,10 +943,7 @@ export function KyThuDetailPage() {
                   {phieuThuList.map((phieu) => (
                     <tr key={phieu.id}>
                       <td>
-                        <GuardedLink
-                          to={`/finance/phieu-thu/${phieu.id}`}
-                          className="text-button"
-                        >
+                        <GuardedLink to={`/finance/phieu-thu/${phieu.id}`} className="text-button">
                           {phieu.soPhieu}
                         </GuardedLink>
                       </td>
@@ -935,14 +965,152 @@ export function KyThuDetailPage() {
               </table>
             </div>
           ) : null}
+
+          {activePanel.type === "dieu_chinh" ? (
+            <>
+              <div className="user-create-form">
+                <p>Đã thu: {formatTien(activePanel.item.daThu)}</p>
+
+                <SelectField
+                  label="Loại điều chỉnh"
+                  value={dieuChinhLoai}
+                  options={Object.entries(LOAI_DIEU_CHINH_LABEL).map(([value, label]) => ({
+                    value,
+                    label,
+                  }))}
+                  onChange={(value) => setDieuChinhLoai(value as LoaiDieuChinh)}
+                />
+
+                {dieuChinhLoai !== "bao_luu" ? (
+                  <CurrencyInput
+                    label={dieuChinhLoai === "hoan_phi" ? "Số tiền hoàn" : "Số tiền chuyển"}
+                    value={dieuChinhSoTien}
+                    max={Number(activePanel.item.daThu)}
+                    onChange={setDieuChinhSoTien}
+                  />
+                ) : null}
+
+                {dieuChinhLoai === "chuyen_phi" ? (
+                  <SelectField
+                    label="Khoản phải thu đích"
+                    value={dieuChinhKhoanDich}
+                    placeholder="Chọn khoản phải thu đích"
+                    options={khoanPhaiThuList
+                      .filter((row) => row.id !== activePanel.item.id)
+                      .map((row) => ({
+                        value: String(row.id),
+                        label: `${row.hocSinh.hoTen} · ${row.hocSinh.maHocSinh} — còn lại ${formatTien(row.conLai)}`,
+                      }))}
+                    onChange={setDieuChinhKhoanDich}
+                  />
+                ) : null}
+
+                <TextField
+                  label="Lý do"
+                  value={dieuChinhLyDo}
+                  required
+                  onChange={setDieuChinhLyDo}
+                />
+
+                <button
+                  type="button"
+                  className="primary-button"
+                  disabled={
+                    panelBusy ||
+                    !dieuChinhLyDo.trim() ||
+                    (dieuChinhLoai !== "bao_luu" && !dieuChinhSoTien) ||
+                    (dieuChinhLoai === "chuyen_phi" && !dieuChinhKhoanDich)
+                  }
+                  onClick={() => void handleSubmitDieuChinh()}
+                >
+                  {panelBusy ? "Đang gửi..." : "Gửi yêu cầu"}
+                </button>
+              </div>
+
+              <div className="user-table-wrap">
+                <table className="user-table">
+                  <thead>
+                    <tr>
+                      <th>Loại</th>
+                      <th>Số tiền</th>
+                      <th>Lý do</th>
+                      <th>Trạng thái</th>
+                      <th>Người tạo</th>
+                      <th>Người duyệt</th>
+                      {canDuyet ? <th>Thao tác</th> : null}
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {dieuChinhList.map((item) => (
+                      <tr key={item.id}>
+                        <td>{LOAI_DIEU_CHINH_LABEL[item.loaiDieuChinh]}</td>
+                        <td>{item.loaiDieuChinh === "bao_luu" ? "—" : formatTien(item.soTien)}</td>
+                        <td>{item.lyDo}</td>
+                        <td>
+                          <span className={`status-badge status-badge--${item.trangThai}`}>
+                            {DIEU_CHINH_TRANG_THAI_LABEL[item.trangThai]}
+                          </span>
+                        </td>
+                        <td>{item.nguoiTao.hoTen}</td>
+                        <td>{item.nguoiDuyet?.hoTen ?? "—"}</td>
+                        {canDuyet ? (
+                          <td>
+                            {item.trangThai === "cho_duyet" ? (
+                              item.nguoiTaoId === auth?.user.id ? (
+                                <small>Không thể tự duyệt yêu cầu của mình</small>
+                              ) : (
+                                <div className="row-actions">
+                                  <button
+                                    type="button"
+                                    className="text-button"
+                                    onClick={() =>
+                                      setConfirmDuyet({
+                                        dieuChinh: item,
+                                        quyetDinh: "duyet",
+                                      })
+                                    }
+                                  >
+                                    Duyệt
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="text-button"
+                                    onClick={() =>
+                                      setConfirmDuyet({
+                                        dieuChinh: item,
+                                        quyetDinh: "tu_choi",
+                                      })
+                                    }
+                                  >
+                                    Từ chối
+                                  </button>
+                                </div>
+                              )
+                            ) : null}
+                          </td>
+                        ) : null}
+                      </tr>
+                    ))}
+
+                    {!loadingDieuChinh && dieuChinhList.length === 0 ? (
+                      <tr>
+                        <td colSpan={canDuyet ? 7 : 6} className="empty-cell">
+                          Chưa có yêu cầu điều chỉnh nào.
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : null}
         </SectionCard>
       ) : null}
 
       <ConfirmDialog
         open={confirmAction !== null}
-        title={
-          confirmAction === "mo" ? "Mở kỳ thu" : "Đóng kỳ thu"
-        }
+        title={confirmAction === "mo" ? "Mở kỳ thu" : "Đóng kỳ thu"}
         message={
           confirmAction === "mo"
             ? "Sau khi mở, không thể sửa thông tin hoặc khoản thu áp dụng của kỳ thu này nữa. Tiếp tục?"
@@ -955,6 +1123,29 @@ export function KyThuDetailPage() {
         onCancel={() => {
           setConfirmAction(null);
           setConfirmError("");
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmDuyet !== null}
+        title={
+          confirmDuyet?.quyetDinh === "duyet"
+            ? "Duyệt yêu cầu điều chỉnh"
+            : "Từ chối yêu cầu điều chỉnh"
+        }
+        message={
+          confirmDuyet
+            ? `${confirmDuyet.quyetDinh === "duyet" ? "Duyệt" : "Từ chối"} yêu cầu ${LOAI_DIEU_CHINH_LABEL[confirmDuyet.dieuChinh.loaiDieuChinh].toLowerCase()} (${confirmDuyet.dieuChinh.lyDo}) do ${confirmDuyet.dieuChinh.nguoiTao.hoTen} tạo?`
+            : ""
+        }
+        confirmLabel={confirmDuyet?.quyetDinh === "duyet" ? "Duyệt" : "Từ chối"}
+        danger={confirmDuyet?.quyetDinh === "tu_choi"}
+        busy={confirmDuyetBusy}
+        error={confirmDuyetError}
+        onConfirm={() => void handleConfirmDuyet()}
+        onCancel={() => {
+          setConfirmDuyet(null);
+          setConfirmDuyetError("");
         }}
       />
     </div>

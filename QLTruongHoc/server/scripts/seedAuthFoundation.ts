@@ -9,13 +9,9 @@ import {
   vaiTro,
   vaiTroQuyen,
 } from "../../drizzle/schema.js";
-import {
-  closeDbConnection,
-  getDb,
-} from "../db/connection.js";
+import { closeDbConnection, getDb } from "../db/connection.js";
 
-const now = () =>
-  new Date().toISOString().slice(0, 19).replace("T", " ");
+const now = () => new Date().toISOString().slice(0, 19).replace("T", " ");
 
 const roleSeeds = [
   {
@@ -80,6 +76,7 @@ const permissionSeeds = [
   ["hoc_tap.ghi_nhan", "Ghi nhận báo giảng", "Học tập"],
   ["tai_chinh.xem", "Xem tài chính", "Tài chính"],
   ["tai_chinh.quan_ly", "Quản lý tài chính", "Tài chính"],
+  ["tai_chinh.duyet", "Duyệt điều chỉnh tài chính", "Tài chính"],
 ];
 
 async function upsertRole(
@@ -89,11 +86,7 @@ async function upsertRole(
 ) {
   const db = getDb();
 
-  const existing = await db
-    .select()
-    .from(vaiTro)
-    .where(eq(vaiTro.maVaiTro, maVaiTro))
-    .limit(1);
+  const existing = await db.select().from(vaiTro).where(eq(vaiTro.maVaiTro, maVaiTro)).limit(1);
 
   if (existing[0]) {
     return existing[0];
@@ -109,27 +102,15 @@ async function upsertRole(
     updatedAt: now(),
   });
 
-  const created = await db
-    .select()
-    .from(vaiTro)
-    .where(eq(vaiTro.maVaiTro, maVaiTro))
-    .limit(1);
+  const created = await db.select().from(vaiTro).where(eq(vaiTro.maVaiTro, maVaiTro)).limit(1);
 
   return created[0];
 }
 
-async function upsertPermission(
-  maQuyen: string,
-  tenQuyen: string,
-  nhomQuyen: string,
-) {
+async function upsertPermission(maQuyen: string, tenQuyen: string, nhomQuyen: string) {
   const db = getDb();
 
-  const existing = await db
-    .select()
-    .from(quyen)
-    .where(eq(quyen.maQuyen, maQuyen))
-    .limit(1);
+  const existing = await db.select().from(quyen).where(eq(quyen.maQuyen, maQuyen)).limit(1);
 
   if (existing[0]) {
     return existing[0];
@@ -144,11 +125,7 @@ async function upsertPermission(
     updatedAt: now(),
   });
 
-  const created = await db
-    .select()
-    .from(quyen)
-    .where(eq(quyen.maQuyen, maQuyen))
-    .limit(1);
+  const created = await db.select().from(quyen).where(eq(quyen.maQuyen, maQuyen)).limit(1);
 
   return created[0];
 }
@@ -159,11 +136,7 @@ async function main() {
   const roleMap = new Map<string, number>();
 
   for (const item of roleSeeds) {
-    const role = await upsertRole(
-      item.maVaiTro,
-      item.tenVaiTro,
-      item.phamVi,
-    );
+    const role = await upsertRole(item.maVaiTro, item.tenVaiTro, item.phamVi);
 
     if (!role) {
       throw new Error(`Không thể tạo vai trò ${item.maVaiTro}`);
@@ -175,11 +148,7 @@ async function main() {
   const permissionMap = new Map<string, number>();
 
   for (const [maQuyen, tenQuyen, nhomQuyen] of permissionSeeds) {
-    const permission = await upsertPermission(
-      maQuyen,
-      tenQuyen,
-      nhomQuyen,
-    );
+    const permission = await upsertPermission(maQuyen, tenQuyen, nhomQuyen);
 
     if (!permission) {
       throw new Error(`Không thể tạo quyền ${maQuyen}`);
@@ -231,11 +200,7 @@ async function main() {
   ];
 
   for (const unit of units) {
-    const existing = await db
-      .select()
-      .from(donVi)
-      .where(eq(donVi.maDonVi, unit.maDonVi))
-      .limit(1);
+    const existing = await db.select().from(donVi).where(eq(donVi.maDonVi, unit.maDonVi)).limit(1);
 
     if (!existing[0]) {
       await db.insert(donVi).values({
@@ -247,11 +212,7 @@ async function main() {
     }
   }
 
-  const systemUnit = await db
-    .select()
-    .from(donVi)
-    .where(eq(donVi.maDonVi, "SYSTEM"))
-    .limit(1);
+  const systemUnit = await db.select().from(donVi).where(eq(donVi.maDonVi, "SYSTEM")).limit(1);
 
   if (!systemUnit[0]) {
     throw new Error("Không tìm thấy đơn vị SYSTEM.");

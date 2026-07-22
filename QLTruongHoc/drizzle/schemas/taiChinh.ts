@@ -22,7 +22,7 @@ export const danhMucKhoanThu = mysqlTable(
       "tien_an",
       "dich_vu",
       "tai_lieu",
-      "khac"
+      "khac",
     ]).notNull(),
     soTienMacDinh: decimal("soTienMacDinh", { precision: 18, scale: 2 }),
     batBuoc: mysqlEnum("batBuoc", ["co", "khong"]).notNull().default("co"),
@@ -30,15 +30,12 @@ export const danhMucKhoanThu = mysqlTable(
       .notNull()
       .default("hoat_dong"),
     createdAt: datetime("createdAt", { mode: "string" }).notNull(),
-    updatedAt: datetime("updatedAt", { mode: "string" }).notNull()
+    updatedAt: datetime("updatedAt", { mode: "string" }).notNull(),
   },
   (table) => ({
-    maTheoDonViUq: uniqueIndex("UQ_DanhMucKhoanThu_donViId_ma").on(
-      table.donViId,
-      table.maKhoanThu
-    ),
-    donViIdx: index("IX_DanhMucKhoanThu_donViId").on(table.donViId)
-  })
+    maTheoDonViUq: uniqueIndex("UQ_DanhMucKhoanThu_donViId_ma").on(table.donViId, table.maKhoanThu),
+    donViIdx: index("IX_DanhMucKhoanThu_donViId").on(table.donViId),
+  }),
 );
 
 export const kyThu = mysqlTable(
@@ -52,19 +49,14 @@ export const kyThu = mysqlTable(
     tuNgay: date("tuNgay", { mode: "string" }).notNull(),
     denNgay: date("denNgay", { mode: "string" }).notNull(),
     hanThanhToan: date("hanThanhToan", { mode: "string" }),
-    trangThai: mysqlEnum("trangThai", ["nhap", "da_mo", "da_dong"])
-      .notNull()
-      .default("nhap"),
+    trangThai: mysqlEnum("trangThai", ["nhap", "da_mo", "da_dong"]).notNull().default("nhap"),
     createdAt: datetime("createdAt", { mode: "string" }).notNull(),
-    updatedAt: datetime("updatedAt", { mode: "string" }).notNull()
+    updatedAt: datetime("updatedAt", { mode: "string" }).notNull(),
   },
   (table) => ({
-    maTheoDonViUq: uniqueIndex("UQ_KyThu_donViId_ma").on(
-      table.donViId,
-      table.maKyThu
-    ),
-    donViIdx: index("IX_KyThu_donViId").on(table.donViId)
-  })
+    maTheoDonViUq: uniqueIndex("UQ_KyThu_donViId_ma").on(table.donViId, table.maKyThu),
+    donViIdx: index("IX_KyThu_donViId").on(table.donViId),
+  }),
 );
 
 export const kyThuKhoanThu = mysqlTable(
@@ -76,15 +68,15 @@ export const kyThuKhoanThu = mysqlTable(
     soTien: decimal("soTien", { precision: 18, scale: 2 }).notNull(),
     ghiChu: varchar("ghiChu", { length: 500 }),
     createdAt: datetime("createdAt", { mode: "string" }).notNull(),
-    updatedAt: datetime("updatedAt", { mode: "string" }).notNull()
+    updatedAt: datetime("updatedAt", { mode: "string" }).notNull(),
   },
   (table) => ({
     kyThuKhoanThuUq: uniqueIndex("UQ_KyThuKhoanThu_kyThuId_danhMucId").on(
       table.kyThuId,
-      table.danhMucKhoanThuId
+      table.danhMucKhoanThuId,
     ),
-    kyThuIdx: index("IX_KyThuKhoanThu_kyThuId").on(table.kyThuId)
-  })
+    kyThuIdx: index("IX_KyThuKhoanThu_kyThuId").on(table.kyThuId),
+  }),
 );
 
 export const khoanPhaiThu = mysqlTable(
@@ -101,19 +93,19 @@ export const khoanPhaiThu = mysqlTable(
       .notNull()
       .default("chua_thu"),
     createdAt: datetime("createdAt", { mode: "string" }).notNull(),
-    updatedAt: datetime("updatedAt", { mode: "string" }).notNull()
+    updatedAt: datetime("updatedAt", { mode: "string" }).notNull(),
   },
   (table) => ({
     kyThuHocSinhUq: uniqueIndex("UQ_KhoanPhaiThu_kyThuId_hocSinhId").on(
       table.kyThuId,
-      table.hocSinhId
+      table.hocSinhId,
     ),
     donViTrangThaiIdx: index("IX_KhoanPhaiThu_donViId_trangThai").on(
       table.donViId,
-      table.trangThai
+      table.trangThai,
     ),
-    hocSinhIdx: index("IX_KhoanPhaiThu_hocSinhId").on(table.hocSinhId)
-  })
+    hocSinhIdx: index("IX_KhoanPhaiThu_hocSinhId").on(table.hocSinhId),
+  }),
 );
 
 export const khoanPhaiThuChiTiet = mysqlTable(
@@ -123,15 +115,15 @@ export const khoanPhaiThuChiTiet = mysqlTable(
     khoanPhaiThuId: bigint("khoanPhaiThuId", { mode: "number", unsigned: true }).notNull(),
     danhMucKhoanThuId: bigint("danhMucKhoanThuId", { mode: "number", unsigned: true }).notNull(),
     soTien: decimal("soTien", { precision: 18, scale: 2 }).notNull(),
-    createdAt: datetime("createdAt", { mode: "string" }).notNull()
+    createdAt: datetime("createdAt", { mode: "string" }).notNull(),
   },
   (table) => ({
     khoanPhaiThuUq: uniqueIndex("UQ_KhoanPhaiThuChiTiet_kpt_danhMuc").on(
       table.khoanPhaiThuId,
-      table.danhMucKhoanThuId
+      table.danhMucKhoanThuId,
     ),
-    khoanPhaiThuIdx: index("IX_KhoanPhaiThuChiTiet_khoanPhaiThuId").on(table.khoanPhaiThuId)
-  })
+    khoanPhaiThuIdx: index("IX_KhoanPhaiThuChiTiet_khoanPhaiThuId").on(table.khoanPhaiThuId),
+  }),
 );
 
 export const phieuThu = mysqlTable(
@@ -147,14 +139,40 @@ export const phieuThu = mysqlTable(
     ghiChu: varchar("ghiChu", { length: 500 }),
     nguoiThuId: bigint("nguoiThuId", { mode: "number", unsigned: true }).notNull(),
     ngayThu: datetime("ngayThu", { mode: "string" }).notNull(),
-    createdAt: datetime("createdAt", { mode: "string" }).notNull()
+    createdAt: datetime("createdAt", { mode: "string" }).notNull(),
   },
   (table) => ({
-    donViSoPhieuUq: uniqueIndex("UQ_PhieuThu_donViId_soPhieu").on(
-      table.donViId,
-      table.soPhieu
-    ),
+    donViSoPhieuUq: uniqueIndex("UQ_PhieuThu_donViId_soPhieu").on(table.donViId, table.soPhieu),
     khoanPhaiThuIdx: index("IX_PhieuThu_khoanPhaiThuId").on(table.khoanPhaiThuId),
-    hocSinhIdx: index("IX_PhieuThu_hocSinhId").on(table.hocSinhId)
-  })
+    hocSinhIdx: index("IX_PhieuThu_hocSinhId").on(table.hocSinhId),
+  }),
+);
+
+/** H08 — Hoàn phí/chuyển phí/bảo lưu. Là YÊU CẦU ĐIỀU CHỈNH, có bước duyệt trước khi tác động lên KhoanPhaiThu. */
+export const dieuChinhKhoanPhaiThu = mysqlTable(
+  "DieuChinhKhoanPhaiThu",
+  {
+    id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
+    donViId: bigint("donViId", { mode: "number", unsigned: true }).notNull(),
+    khoanPhaiThuId: bigint("khoanPhaiThuId", { mode: "number", unsigned: true }).notNull(),
+    khoanPhaiThuDichId: bigint("khoanPhaiThuDichId", { mode: "number", unsigned: true }),
+    loaiDieuChinh: mysqlEnum("loaiDieuChinh", ["hoan_phi", "chuyen_phi", "bao_luu"]).notNull(),
+    soTien: decimal("soTien", { precision: 18, scale: 2 }).notNull().default("0.00"),
+    lyDo: varchar("lyDo", { length: 500 }).notNull(),
+    trangThai: mysqlEnum("trangThai", ["cho_duyet", "da_duyet", "tu_choi"])
+      .notNull()
+      .default("cho_duyet"),
+    nguoiTaoId: bigint("nguoiTaoId", { mode: "number", unsigned: true }).notNull(),
+    nguoiDuyetId: bigint("nguoiDuyetId", { mode: "number", unsigned: true }),
+    ghiChuDuyet: varchar("ghiChuDuyet", { length: 500 }),
+    createdAt: datetime("createdAt", { mode: "string" }).notNull(),
+    duyetAt: datetime("duyetAt", { mode: "string" }),
+  },
+  (table) => ({
+    khoanPhaiThuIdx: index("IX_DieuChinhKhoanPhaiThu_khoanPhaiThuId").on(table.khoanPhaiThuId),
+    donViTrangThaiIdx: index("IX_DieuChinhKhoanPhaiThu_donViId_trangThai").on(
+      table.donViId,
+      table.trangThai,
+    ),
+  }),
 );

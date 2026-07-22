@@ -2,6 +2,8 @@ import type {
   BaoCaoTaiChinh,
   DanhMucKhoanThuFormInput,
   DanhMucKhoanThuItem,
+  DieuChinhFormInput,
+  DieuChinhItem,
   KhoanPhaiThuItem,
   KyThuDetail,
   KyThuFormInput,
@@ -17,10 +19,7 @@ type ApiResponse<T> = {
   error?: string;
 };
 
-async function request<T>(
-  url: string,
-  options?: RequestInit,
-): Promise<T> {
+async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     credentials: "include",
     headers: {
@@ -45,20 +44,13 @@ async function request<T>(
 
 export async function listDanhMucKhoanThuApi() {
   const rows = await request<
-    (
-      | DanhMucKhoanThuItem
-      | { khoanThu: DanhMucKhoanThuItem; donVi: DanhMucKhoanThuItem["donVi"] }
-    )[]
+    (DanhMucKhoanThuItem | { khoanThu: DanhMucKhoanThuItem; donVi: DanhMucKhoanThuItem["donVi"] })[]
   >("/api/tai-chinh/khoan-thu");
 
-  return rows.map((row) =>
-    "khoanThu" in row ? { ...row.khoanThu, donVi: row.donVi } : row,
-  );
+  return rows.map((row) => ("khoanThu" in row ? { ...row.khoanThu, donVi: row.donVi } : row));
 }
 
-export function createDanhMucKhoanThuApi(
-  input: DanhMucKhoanThuFormInput,
-) {
+export function createDanhMucKhoanThuApi(input: DanhMucKhoanThuFormInput) {
   return request<DanhMucKhoanThuItem>("/api/tai-chinh/khoan-thu", {
     method: "POST",
     body: JSON.stringify(input),
@@ -69,26 +61,17 @@ export function updateDanhMucKhoanThuApi(
   id: number,
   input: Omit<DanhMucKhoanThuFormInput, "maKhoanThu">,
 ) {
-  return request<DanhMucKhoanThuItem>(
-    `/api/tai-chinh/khoan-thu/${id}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(input),
-    },
-  );
+  return request<DanhMucKhoanThuItem>(`/api/tai-chinh/khoan-thu/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
-export function setDanhMucKhoanThuStatusApi(
-  id: number,
-  trangThai: "hoat_dong" | "ngung_ap_dung",
-) {
-  return request<DanhMucKhoanThuItem>(
-    `/api/tai-chinh/khoan-thu/${id}/trang-thai`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({ trangThai }),
-    },
-  );
+export function setDanhMucKhoanThuStatusApi(id: number, trangThai: "hoat_dong" | "ngung_ap_dung") {
+  return request<DanhMucKhoanThuItem>(`/api/tai-chinh/khoan-thu/${id}/trang-thai`, {
+    method: "PATCH",
+    body: JSON.stringify({ trangThai }),
+  });
 }
 
 // ---------------------------------------------------------------
@@ -96,13 +79,12 @@ export function setDanhMucKhoanThuStatusApi(
 // ---------------------------------------------------------------
 
 export async function listKyThuApi() {
-  const rows = await request<
-    (KyThuItem | { kyThu: KyThuItem; donVi: KyThuItem["donVi"] })[]
-  >("/api/tai-chinh/ky-thu");
+  const rows =
+    await request<(KyThuItem | { kyThu: KyThuItem; donVi: KyThuItem["donVi"] })[]>(
+      "/api/tai-chinh/ky-thu",
+    );
 
-  return rows.map((row) =>
-    "kyThu" in row ? { ...row.kyThu, donVi: row.donVi } : row,
-  );
+  return rows.map((row) => ("kyThu" in row ? { ...row.kyThu, donVi: row.donVi } : row));
 }
 
 export function getKyThuDetailApi(id: number) {
@@ -119,10 +101,7 @@ export function createKyThuApi(input: KyThuFormInput) {
   });
 }
 
-export function updateKyThuApi(
-  id: number,
-  input: Omit<KyThuFormInput, "maKyThu">,
-) {
+export function updateKyThuApi(id: number, input: Omit<KyThuFormInput, "maKyThu">) {
   return request<KyThuItem>(`/api/tai-chinh/ky-thu/${id}`, {
     method: "PATCH",
     body: JSON.stringify({
@@ -159,32 +138,21 @@ export function dongKyThuApi(id: number) {
 // ---------------------------------------------------------------
 
 export function sinhKhoanPhaiThuApi(kyThuId: number, lopHocId: number) {
-  return request<SinhKhoanPhaiThuResult>(
-    `/api/tai-chinh/ky-thu/${kyThuId}/sinh-khoan-phai-thu`,
-    {
-      method: "POST",
-      body: JSON.stringify({ lopHocId }),
-    },
-  );
+  return request<SinhKhoanPhaiThuResult>(`/api/tai-chinh/ky-thu/${kyThuId}/sinh-khoan-phai-thu`, {
+    method: "POST",
+    body: JSON.stringify({ lopHocId }),
+  });
 }
 
 export function listKhoanPhaiThuApi(kyThuId: number) {
-  return request<KhoanPhaiThuItem[]>(
-    `/api/tai-chinh/ky-thu/${kyThuId}/khoan-phai-thu`,
-  );
+  return request<KhoanPhaiThuItem[]>(`/api/tai-chinh/ky-thu/${kyThuId}/khoan-phai-thu`);
 }
 
-export function capNhatGiamTruApi(
-  khoanPhaiThuId: number,
-  giamTru: number,
-) {
-  return request<KhoanPhaiThuItem>(
-    `/api/tai-chinh/khoan-phai-thu/${khoanPhaiThuId}/giam-tru`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({ giamTru }),
-    },
-  );
+export function capNhatGiamTruApi(khoanPhaiThuId: number, giamTru: number) {
+  return request<KhoanPhaiThuItem>(`/api/tai-chinh/khoan-phai-thu/${khoanPhaiThuId}/giam-tru`, {
+    method: "PATCH",
+    body: JSON.stringify({ giamTru }),
+  });
 }
 
 export function thuTienApi(
@@ -201,9 +169,7 @@ export function thuTienApi(
 }
 
 export function listPhieuThuApi(khoanPhaiThuId: number) {
-  return request<PhieuThuItem[]>(
-    `/api/tai-chinh/khoan-phai-thu/${khoanPhaiThuId}/phieu-thu`,
-  );
+  return request<PhieuThuItem[]>(`/api/tai-chinh/khoan-phai-thu/${khoanPhaiThuId}/phieu-thu`);
 }
 
 export function listCongNoApi() {
@@ -217,4 +183,30 @@ export function getBaoCaoTaiChinhApi(tuNgay: string, denNgay: string) {
 
 export function getPhieuThuDetailApi(id: number) {
   return request<PhieuThuDetail>(`/api/tai-chinh/phieu-thu/${id}`);
+}
+
+export function taoYeuCauDieuChinhApi(khoanPhaiThuId: number, input: DieuChinhFormInput) {
+  return request<DieuChinhItem>(`/api/tai-chinh/khoan-phai-thu/${khoanPhaiThuId}/dieu-chinh`, {
+    method: "POST",
+    body: JSON.stringify({
+      loaiDieuChinh: input.loaiDieuChinh,
+      khoanPhaiThuDichId: input.khoanPhaiThuDichId ? Number(input.khoanPhaiThuDichId) : null,
+      soTien: input.soTien,
+      lyDo: input.lyDo,
+    }),
+  });
+}
+
+export function listDieuChinhApi(khoanPhaiThuId: number) {
+  return request<DieuChinhItem[]>(`/api/tai-chinh/khoan-phai-thu/${khoanPhaiThuId}/dieu-chinh`);
+}
+
+export function duyetDieuChinhApi(
+  dieuChinhId: number,
+  input: { quyetDinh: "duyet" | "tu_choi"; ghiChuDuyet?: string },
+) {
+  return request<DieuChinhItem>(`/api/tai-chinh/dieu-chinh/${dieuChinhId}/duyet`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }

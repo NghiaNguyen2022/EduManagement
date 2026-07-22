@@ -1,14 +1,14 @@
-import {
-  createAuditLog,
-} from "../db/audit.repository.js";
+import { createAuditLog } from "../db/audit.repository.js";
 import {
   createDanhMucKhoanThu,
+  createDieuChinh,
   createKhoanPhaiThu,
   createKyThu,
   createPhieuThu,
   countPhieuThuTheoPrefix,
   findDanhMucKhoanThuById,
   findDanhMucKhoanThuByMa,
+  findDieuChinhById,
   findKhoanPhaiThuByKyThuHocSinh,
   findKhoanPhaiThuById,
   findKyThuById,
@@ -17,6 +17,7 @@ import {
   listCongNoByDonVi,
   listDanhMucKhoanThuAllDonVi,
   listDanhMucKhoanThuByDonVi,
+  listDieuChinhByKhoanPhaiThu,
   listHocSinhDangHocTrongLop,
   listKhoanPhaiThuByKyThu,
   listKyThuAllDonVi,
@@ -31,6 +32,7 @@ import {
   sumCongNoByDonVi,
   sumPhieuThuTrongKhoang,
   updateDanhMucKhoanThu,
+  updateDieuChinhQuyetDinh,
   updateKhoanPhaiThuDaThu,
   updateKhoanPhaiThuGiamTru,
   updateKyThu,
@@ -39,13 +41,7 @@ import { findLopHocById } from "../db/lopHoc.repository.js";
 import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
 
 type LoaiKhoanThu = "hoc_phi" | "tien_an" | "dich_vu" | "tai_lieu" | "khac";
-const LOAI_KHOAN_THU_HOP_LE: LoaiKhoanThu[] = [
-  "hoc_phi",
-  "tien_an",
-  "dich_vu",
-  "tai_lieu",
-  "khac",
-];
+const LOAI_KHOAN_THU_HOP_LE: LoaiKhoanThu[] = ["hoc_phi", "tien_an", "dich_vu", "tai_lieu", "khac"];
 
 type LoaiKy = "thang" | "khoa_hoc" | "hoc_ky" | "dot";
 const LOAI_KY_HOP_LE: LoaiKy[] = ["thang", "khoa_hoc", "hoc_ky", "dot"];
@@ -64,10 +60,7 @@ function chuanHoaSoTien(value: number | null): string | null {
 // Danh mục khoản thu
 // ---------------------------------------------------------------
 
-export async function listDanhMucKhoanThu(
-  donViId: number,
-  loaiDonVi?: string,
-) {
+export async function listDanhMucKhoanThu(donViId: number, loaiDonVi?: string) {
   if (loaiDonVi === "he_thong") {
     return listDanhMucKhoanThuAllDonVi();
   }
@@ -98,16 +91,11 @@ export async function createDanhMucKhoanThuMoi(input: {
     throw new Error("Vui lòng nhập tên khoản thu.");
   }
 
-  if (
-    !LOAI_KHOAN_THU_HOP_LE.includes(input.loaiKhoanThu as LoaiKhoanThu)
-  ) {
+  if (!LOAI_KHOAN_THU_HOP_LE.includes(input.loaiKhoanThu as LoaiKhoanThu)) {
     throw new Error("Loại khoản thu không hợp lệ.");
   }
 
-  const existed = await findDanhMucKhoanThuByMa(
-    input.donViId,
-    maKhoanThu,
-  );
+  const existed = await findDanhMucKhoanThuByMa(input.donViId, maKhoanThu);
 
   if (existed) {
     throw new Error("Mã khoản thu đã tồn tại.");
@@ -161,9 +149,7 @@ export async function updateDanhMucKhoanThuThongTin(input: {
     throw new Error("Vui lòng nhập tên khoản thu.");
   }
 
-  if (
-    !LOAI_KHOAN_THU_HOP_LE.includes(input.loaiKhoanThu as LoaiKhoanThu)
-  ) {
+  if (!LOAI_KHOAN_THU_HOP_LE.includes(input.loaiKhoanThu as LoaiKhoanThu)) {
     throw new Error("Loại khoản thu không hợp lệ.");
   }
 
@@ -205,10 +191,7 @@ export async function setDanhMucKhoanThuStatus(input: {
     throw new Error("Không tìm thấy khoản thu.");
   }
 
-  if (
-    input.trangThai !== "hoat_dong" &&
-    input.trangThai !== "ngung_ap_dung"
-  ) {
+  if (input.trangThai !== "hoat_dong" && input.trangThai !== "ngung_ap_dung") {
     throw new Error("Trạng thái không hợp lệ.");
   }
 
@@ -348,9 +331,7 @@ export async function createKyThuMoi(input: {
 
 function requireKyThuDangNhap(kyThuRow: { trangThai: string; maKyThu: string }) {
   if (kyThuRow.trangThai !== "nhap") {
-    throw new Error(
-      "Kỳ thu đã mở hoặc đã đóng, không thể sửa thông tin/khoản thu áp dụng.",
-    );
+    throw new Error("Kỳ thu đã mở hoặc đã đóng, không thể sửa thông tin/khoản thu áp dụng.");
   }
 }
 
@@ -432,10 +413,7 @@ export async function capNhatKhoanApDungKyThu(input: {
     }
     seen.add(item.danhMucKhoanThuId);
 
-    const khoanThu = await findDanhMucKhoanThuById(
-      input.donViId,
-      item.danhMucKhoanThuId,
-    );
+    const khoanThu = await findDanhMucKhoanThuById(input.donViId, item.danhMucKhoanThuId);
 
     if (!khoanThu) {
       throw new Error("Có khoản thu không thuộc đơn vị hiện tại.");
@@ -484,9 +462,7 @@ export async function moKyThu(input: {
   const khoanApDung = await listKyThuKhoanThu(input.id);
 
   if (khoanApDung.length === 0) {
-    throw new Error(
-      "Kỳ thu chưa có khoản thu áp dụng nào, không thể mở.",
-    );
+    throw new Error("Kỳ thu chưa có khoản thu áp dụng nào, không thể mở.");
   }
 
   const updated = await setKyThuTrangThai({
@@ -605,9 +581,7 @@ export async function sinhKhoanPhaiThuChoLop(input: {
   const kyThuFound = await requireKyThu(input.donViId, input.kyThuId);
 
   if (kyThuFound.trangThai !== "da_mo") {
-    throw new Error(
-      "Chỉ có thể sinh khoản phải thu cho kỳ thu đang mở.",
-    );
+    throw new Error("Chỉ có thể sinh khoản phải thu cho kỳ thu đang mở.");
   }
 
   const lopHoc = await findLopHocById(input.donViId, input.lopHocId);
@@ -637,10 +611,7 @@ export async function sinhKhoanPhaiThuChoLop(input: {
   let boQua = 0;
 
   for (const row of roster) {
-    const existing = await findKhoanPhaiThuByKyThuHocSinh(
-      input.kyThuId,
-      row.hocSinh.id,
-    );
+    const existing = await findKhoanPhaiThuByKyThuHocSinh(input.kyThuId, row.hocSinh.id);
 
     if (existing) {
       boQua += 1;
@@ -671,10 +642,7 @@ export async function sinhKhoanPhaiThuChoLop(input: {
   return { daTao, boQua, tongSoHocSinh: roster.length };
 }
 
-export async function listKhoanPhaiThuTheoKyThu(
-  donViId: number,
-  kyThuId: number,
-) {
+export async function listKhoanPhaiThuTheoKyThu(donViId: number, kyThuId: number) {
   await requireKyThu(donViId, kyThuId);
 
   const rows = await listKhoanPhaiThuByKyThu(kyThuId);
@@ -682,14 +650,8 @@ export async function listKhoanPhaiThuTheoKyThu(
   return rows.map(toKhoanPhaiThuView);
 }
 
-async function requireKhoanPhaiThuTrongKyDangMo(
-  donViId: number,
-  khoanPhaiThuId: number,
-) {
-  const khoanPhaiThuFound = await findKhoanPhaiThuById(
-    donViId,
-    khoanPhaiThuId,
-  );
+async function requireKhoanPhaiThuTrongKyDangMo(donViId: number, khoanPhaiThuId: number) {
+  const khoanPhaiThuFound = await findKhoanPhaiThuById(donViId, khoanPhaiThuId);
 
   if (!khoanPhaiThuFound) {
     throw new Error("Không tìm thấy khoản phải thu.");
@@ -698,9 +660,7 @@ async function requireKhoanPhaiThuTrongKyDangMo(
   const kyThuFound = await requireKyThu(donViId, khoanPhaiThuFound.kyThuId);
 
   if (kyThuFound.trangThai !== "da_mo") {
-    throw new Error(
-      "Kỳ thu không còn mở, không thể miễn giảm hoặc thu tiền.",
-    );
+    throw new Error("Kỳ thu không còn mở, không thể miễn giảm hoặc thu tiền.");
   }
 
   return khoanPhaiThuFound;
@@ -723,16 +683,10 @@ export async function capNhatGiamTru(input: {
   const daThu = Number(khoanPhaiThuFound.daThu);
 
   if (Number(giamTru) + daThu > tongTien) {
-    throw new Error(
-      "Giảm trừ cộng với số đã thu không được vượt quá tổng tiền.",
-    );
+    throw new Error("Giảm trừ cộng với số đã thu không được vượt quá tổng tiền.");
   }
 
-  const trangThai = tinhTrangThaiKhoanPhaiThu(
-    tongTien,
-    Number(giamTru),
-    daThu,
-  );
+  const trangThai = tinhTrangThaiKhoanPhaiThu(tongTien, Number(giamTru), daThu);
 
   const updated = await updateKhoanPhaiThuGiamTru({
     id: input.khoanPhaiThuId,
@@ -758,12 +712,7 @@ export async function capNhatGiamTru(input: {
 }
 
 type PhuongThucThu = "tien_mat" | "chuyen_khoan" | "the" | "khac";
-const PHUONG_THUC_HOP_LE: PhuongThucThu[] = [
-  "tien_mat",
-  "chuyen_khoan",
-  "the",
-  "khac",
-];
+const PHUONG_THUC_HOP_LE: PhuongThucThu[] = ["tien_mat", "chuyen_khoan", "the", "khac"];
 
 async function sinhSoPhieuThu(donViId: number) {
   const nam = new Date().getFullYear();
@@ -805,11 +754,7 @@ export async function ghiNhanThuTien(input: {
   }
 
   const daThuMoi = (daThuHienTai + input.soTien).toFixed(2);
-  const trangThai = tinhTrangThaiKhoanPhaiThu(
-    tongTien,
-    giamTru,
-    Number(daThuMoi),
-  );
+  const trangThai = tinhTrangThaiKhoanPhaiThu(tongTien, giamTru, Number(daThuMoi));
 
   const soPhieu = await sinhSoPhieuThu(input.donViId);
 
@@ -847,14 +792,8 @@ export async function ghiNhanThuTien(input: {
   return { phieuThu: phieu, khoanPhaiThu: updatedKhoanPhaiThu };
 }
 
-export async function listPhieuThuTheoKhoanPhaiThu(
-  donViId: number,
-  khoanPhaiThuId: number,
-) {
-  const khoanPhaiThuFound = await findKhoanPhaiThuById(
-    donViId,
-    khoanPhaiThuId,
-  );
+export async function listPhieuThuTheoKhoanPhaiThu(donViId: number, khoanPhaiThuId: number) {
+  const khoanPhaiThuFound = await findKhoanPhaiThuById(donViId, khoanPhaiThuId);
 
   if (!khoanPhaiThuFound) {
     throw new Error("Không tìm thấy khoản phải thu.");
@@ -951,4 +890,256 @@ export async function getPhieuThuDetail(donViId: number, id: number) {
       hocSinh: found.hocSinh,
     }),
   };
+}
+
+// ---------------------------------------------------------------
+// H08 — Hoàn phí / chuyển phí / bảo lưu
+// ---------------------------------------------------------------
+
+type LoaiDieuChinh = "hoan_phi" | "chuyen_phi" | "bao_luu";
+const LOAI_DIEU_CHINH_HOP_LE: LoaiDieuChinh[] = ["hoan_phi", "chuyen_phi", "bao_luu"];
+
+/**
+ * Tạo YÊU CẦU điều chỉnh — chưa tác động tới KhoanPhaiThu. Phải chờ
+ * `duyetDieuChinh` (một actor KHÁC, có quyền `tai_chinh.duyet`) mới thật sự
+ * có hiệu lực — đúng yêu cầu BPD 7.6 "Hoàn/hủy/điều chỉnh theo quy trình phê
+ * duyệt".
+ */
+export async function taoYeuCauDieuChinh(input: {
+  donViId: number;
+  khoanPhaiThuId: number;
+  khoanPhaiThuDichId?: number | null;
+  loaiDieuChinh: string;
+  soTien?: number | null;
+  lyDo: string;
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  const loaiDieuChinh = input.loaiDieuChinh as LoaiDieuChinh;
+
+  if (!LOAI_DIEU_CHINH_HOP_LE.includes(loaiDieuChinh)) {
+    throw new Error("Loại điều chỉnh không hợp lệ.");
+  }
+
+  const lyDo = input.lyDo.trim();
+
+  if (!lyDo) {
+    throw new Error("Vui lòng nhập lý do điều chỉnh.");
+  }
+
+  const khoanPhaiThuFound = await requireKhoanPhaiThuTrongKyDangMo(
+    input.donViId,
+    input.khoanPhaiThuId,
+  );
+
+  const daThuHienTai = Number(khoanPhaiThuFound.daThu);
+
+  let soTien = 0;
+  let khoanPhaiThuDichId: number | null = null;
+
+  if (loaiDieuChinh === "hoan_phi") {
+    soTien = Number(input.soTien);
+
+    if (!Number.isFinite(soTien) || soTien <= 0) {
+      throw new Error("Số tiền hoàn phải lớn hơn 0.");
+    }
+
+    if (soTien > daThuHienTai) {
+      throw new Error("Số tiền hoàn vượt quá số tiền đã thu.");
+    }
+  } else if (loaiDieuChinh === "chuyen_phi") {
+    if (!input.khoanPhaiThuDichId) {
+      throw new Error("Vui lòng chọn khoản phải thu đích.");
+    }
+
+    if (input.khoanPhaiThuDichId === input.khoanPhaiThuId) {
+      throw new Error("Khoản đích phải khác khoản nguồn.");
+    }
+
+    const dich = await findKhoanPhaiThuById(input.donViId, input.khoanPhaiThuDichId);
+
+    if (!dich) {
+      throw new Error("Không tìm thấy khoản phải thu đích trong đơn vị hiện tại.");
+    }
+
+    soTien = Number(input.soTien);
+
+    if (!Number.isFinite(soTien) || soTien <= 0) {
+      throw new Error("Số tiền chuyển phải lớn hơn 0.");
+    }
+
+    if (soTien > daThuHienTai) {
+      throw new Error("Số tiền chuyển vượt quá số tiền đã thu ở khoản nguồn.");
+    }
+
+    khoanPhaiThuDichId = input.khoanPhaiThuDichId;
+  }
+
+  const created = await createDieuChinh({
+    donViId: input.donViId,
+    khoanPhaiThuId: input.khoanPhaiThuId,
+    khoanPhaiThuDichId,
+    loaiDieuChinh,
+    soTien: soTien.toFixed(2),
+    lyDo,
+    nguoiTaoId: input.actorUserId,
+  });
+
+  if (!created) {
+    throw new Error("Không thể tạo yêu cầu điều chỉnh.");
+  }
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "dieu_chinh.create",
+    objectType: "DieuChinhKhoanPhaiThu",
+    objectId: String(created.id),
+    content: `Tạo yêu cầu ${loaiDieuChinh} cho khoản phải thu #${input.khoanPhaiThuId}${
+      khoanPhaiThuDichId ? ` → #${khoanPhaiThuDichId}` : ""
+    } — ${lyDo}.`,
+    ipAddress: input.ipAddress,
+  });
+
+  return created;
+}
+
+export async function listDieuChinhTheoKhoanPhaiThu(donViId: number, khoanPhaiThuId: number) {
+  const khoanPhaiThuFound = await findKhoanPhaiThuById(donViId, khoanPhaiThuId);
+
+  if (!khoanPhaiThuFound) {
+    throw new Error("Không tìm thấy khoản phải thu.");
+  }
+
+  return listDieuChinhByKhoanPhaiThu(khoanPhaiThuId);
+}
+
+/**
+ * Duyệt/từ chối một yêu cầu điều chỉnh. Người duyệt bắt buộc khác người lập
+ * (tách vai trò lập/duyệt thật sự, không chỉ dựa vào mã quyền — một tài
+ * khoản có thể có cả hai quyền cùng lúc do được gán tuỳ ý).
+ */
+export async function duyetDieuChinh(input: {
+  donViId: number;
+  dieuChinhId: number;
+  quyetDinh: "duyet" | "tu_choi";
+  ghiChuDuyet?: string | null;
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  const found = await findDieuChinhById(input.donViId, input.dieuChinhId);
+
+  if (!found) {
+    throw new Error("Không tìm thấy yêu cầu điều chỉnh.");
+  }
+
+  if (found.trangThai !== "cho_duyet") {
+    throw new Error("Yêu cầu này đã được xử lý.");
+  }
+
+  if (found.nguoiTaoId === input.actorUserId) {
+    throw new Error("Người duyệt phải khác người lập yêu cầu.");
+  }
+
+  if (input.quyetDinh === "duyet") {
+    if (found.loaiDieuChinh === "hoan_phi") {
+      const khoanPhaiThuFound = await findKhoanPhaiThuById(input.donViId, found.khoanPhaiThuId);
+
+      if (!khoanPhaiThuFound) {
+        throw new Error("Không tìm thấy khoản phải thu.");
+      }
+
+      const daThuHienTai = Number(khoanPhaiThuFound.daThu);
+      const soTien = Number(found.soTien);
+
+      if (soTien > daThuHienTai) {
+        throw new Error(
+          "Số tiền hoàn vượt quá số tiền hiện đã thu — dữ liệu có thể đã đổi từ lúc tạo yêu cầu.",
+        );
+      }
+
+      const daThuMoi = (daThuHienTai - soTien).toFixed(2);
+
+      await updateKhoanPhaiThuDaThu({
+        id: found.khoanPhaiThuId,
+        daThu: daThuMoi,
+        trangThai: tinhTrangThaiKhoanPhaiThu(
+          Number(khoanPhaiThuFound.tongTien),
+          Number(khoanPhaiThuFound.giamTru),
+          Number(daThuMoi),
+        ),
+      });
+    } else if (found.loaiDieuChinh === "chuyen_phi") {
+      if (!found.khoanPhaiThuDichId) {
+        throw new Error("Yêu cầu chuyển phí thiếu khoản đích.");
+      }
+
+      const nguon = await findKhoanPhaiThuById(input.donViId, found.khoanPhaiThuId);
+      const dich = await findKhoanPhaiThuById(input.donViId, found.khoanPhaiThuDichId);
+
+      if (!nguon || !dich) {
+        throw new Error("Không tìm thấy khoản phải thu nguồn/đích.");
+      }
+
+      const soTien = Number(found.soTien);
+      const daThuNguonHienTai = Number(nguon.daThu);
+
+      if (soTien > daThuNguonHienTai) {
+        throw new Error("Số tiền chuyển vượt quá số tiền hiện đã thu ở khoản nguồn.");
+      }
+
+      const conLaiDich = Number(dich.tongTien) - Number(dich.giamTru) - Number(dich.daThu);
+
+      if (soTien > conLaiDich) {
+        throw new Error("Số tiền chuyển vượt quá số còn phải thu ở khoản đích.");
+      }
+
+      const daThuNguonMoi = (daThuNguonHienTai - soTien).toFixed(2);
+      const daThuDichMoi = (Number(dich.daThu) + soTien).toFixed(2);
+
+      await updateKhoanPhaiThuDaThu({
+        id: nguon.id,
+        daThu: daThuNguonMoi,
+        trangThai: tinhTrangThaiKhoanPhaiThu(
+          Number(nguon.tongTien),
+          Number(nguon.giamTru),
+          Number(daThuNguonMoi),
+        ),
+      });
+
+      await updateKhoanPhaiThuDaThu({
+        id: dich.id,
+        daThu: daThuDichMoi,
+        trangThai: tinhTrangThaiKhoanPhaiThu(
+          Number(dich.tongTien),
+          Number(dich.giamTru),
+          Number(daThuDichMoi),
+        ),
+      });
+    }
+    // bao_luu: không tác động KhoanPhaiThu — chỉ là quyết định được ghi nhận.
+  }
+
+  const updated = await updateDieuChinhQuyetDinh({
+    id: input.dieuChinhId,
+    trangThai: input.quyetDinh === "duyet" ? "da_duyet" : "tu_choi",
+    nguoiDuyetId: input.actorUserId,
+    ghiChuDuyet: input.ghiChuDuyet?.trim() || null,
+  });
+
+  if (!updated) {
+    throw new Error("Không thể cập nhật yêu cầu điều chỉnh.");
+  }
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: input.quyetDinh === "duyet" ? "dieu_chinh.approve" : "dieu_chinh.reject",
+    objectType: "DieuChinhKhoanPhaiThu",
+    objectId: String(input.dieuChinhId),
+    content: `${input.quyetDinh === "duyet" ? "Duyệt" : "Từ chối"} yêu cầu ${found.loaiDieuChinh} cho khoản phải thu #${found.khoanPhaiThuId}.`,
+    ipAddress: input.ipAddress,
+  });
+
+  return updated;
 }
