@@ -82,3 +82,70 @@ export function normalizeDateTyping(
 
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
+
+function pad2(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
+/**
+ * Nhập tắt cho ngày: "t"/"d" = hôm nay; 1-2 số = ngày (tháng/năm lấy hiện
+ * tại); 3-4 số = ngày+tháng (năm lấy hiện tại); 5 số = vẫn lấy năm hiện tại
+ * (số thứ 5 là chữ số năm chưa gõ xong, chưa đủ để suy ra năm); 6 số = 2 số
+ * cuối là 2 số cuối năm, tự thêm "20" phía trước; 7-8 số = năm đầy đủ như
+ * gõ tay bình thường. Trả về `null` nếu không suy ra được ngày hợp lệ.
+ */
+export function resolveShorthandDate(
+  raw: string,
+  referenceDate: Date = new Date(),
+): string | null {
+  const trimmedLower = raw.trim().toLowerCase();
+
+  if (trimmedLower === "t" || trimmedLower === "d") {
+    const iso = [
+      referenceDate.getFullYear(),
+      pad2(referenceDate.getMonth() + 1),
+      pad2(referenceDate.getDate()),
+    ].join("-");
+
+    return isValidIsoDate(iso) ? iso : null;
+  }
+
+  const digits = raw.replace(/\D/g, "");
+
+  if (!digits) {
+    return null;
+  }
+
+  const currentYear = referenceDate.getFullYear();
+  const currentMonth = referenceDate.getMonth() + 1;
+
+  let day: number;
+  let month: number;
+  let year: number;
+
+  if (digits.length <= 2) {
+    day = Number(digits);
+    month = currentMonth;
+    year = currentYear;
+  } else if (digits.length <= 5) {
+    day = Number(digits.slice(0, 2));
+    month = Number(digits.slice(2, 4));
+    year = currentYear;
+  } else if (digits.length === 6) {
+    day = Number(digits.slice(0, 2));
+    month = Number(digits.slice(2, 4));
+    year = 2000 + Number(digits.slice(4, 6));
+  } else {
+    day = Number(digits.slice(0, 2));
+    month = Number(digits.slice(2, 4));
+    year = Number(digits.slice(4, 8));
+  }
+
+  if (!day || !month || !year) {
+    return null;
+  }
+
+  const iso = `${String(year).padStart(4, "0")}-${pad2(month)}-${pad2(day)}`;
+
+  return isValidIsoDate(iso) ? iso : null;
+}

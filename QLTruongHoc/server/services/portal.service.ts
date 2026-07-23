@@ -1,7 +1,9 @@
+import { listDiemDanhGanDayByHocSinh } from "../db/diemDanh.repository.js";
 import { findDonViById } from "../db/donVi.repository.js";
 import { listEnrollmentsByHocSinh } from "../db/lopHoc.repository.js";
 import { listPhuHuynhByNguoiDungId, listHocSinhByPhuHuynhId } from "../db/phuHuynh.repository.js";
 import { listKhoanPhaiThuByHocSinh } from "../db/taiChinh.repository.js";
+import { listDonXinPhepByHocSinhIds } from "../db/xinPhep.repository.js";
 import { listThoiKhoaBieu } from "./lichHoc.service.js";
 import { listTraoDoi } from "./traoDoi.service.js";
 
@@ -132,6 +134,43 @@ export async function getParentPortalOverview(input: { userId: number }) {
               tenKyThu: item.kyThu.tenKyThu,
             }));
 
+            // F05: cảnh báo vắng học tự động, chỉ gộp đúng dữ liệu điểm danh
+            // của học sinh này (không dùng ThongBao dùng chung — xem
+            // docs/analysis/F03_F05_xin_phep_thong_bao_vang.md).
+            const absenceRows = await listDiemDanhGanDayByHocSinh(
+              row.hocSinh.id,
+              addDaysIso(tuNgay, -30),
+              tuNgay,
+            );
+
+            const absences = absenceRows.map((item) => ({
+              id: item.diemDanh.id,
+              ngayHoc: item.ngayHoc,
+              gioBatDau: item.gioBatDau,
+              tenLop: item.tenLop,
+              trangThai: item.diemDanh.trangThai,
+            }));
+
+            const absenceSummary = {
+              unexcused: absences.filter((item) => item.trangThai === "vang_khong_phep").length,
+            };
+
+            // F03: đơn xin phép đã gửi cho con này — chỉ xem, gửi đơn mới qua
+            // POST /api/xin-phep riêng (xem xinPhep.router.ts).
+            const donXinPhep = (await listDonXinPhepByHocSinhIds([row.hocSinh.id])).map(
+              (item) => ({
+                id: item.donXinPhep.id,
+                lopHocId: item.donXinPhep.lopHocId,
+                tenLop: item.lopHoc.tenLop,
+                tuNgay: item.donXinPhep.tuNgay,
+                denNgay: item.donXinPhep.denNgay,
+                lyDo: item.donXinPhep.lyDo,
+                trangThai: item.donXinPhep.trangThai,
+                ghiChuDuyet: item.donXinPhep.ghiChuDuyet,
+                createdAt: item.donXinPhep.createdAt,
+              }),
+            );
+
             return {
               lienKet: row.lienKet,
               hocSinh: {
@@ -159,6 +198,9 @@ export async function getParentPortalOverview(input: { userId: number }) {
               schedules,
               traoDoi,
               khoanPhaiThu,
+              absences,
+              absenceSummary,
+              donXinPhep,
               scores: {
                 available: false,
                 title: "Điểm số chưa có nguồn dữ liệu",

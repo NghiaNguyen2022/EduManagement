@@ -113,7 +113,7 @@
 }
 
 .danger-button:hover {
-  background: #c44b46;
+  background: var(--edu-color-danger-hover);
 }
 
 .primary-button:disabled,

@@ -14,6 +14,7 @@ import {
   findGuardianLinkById,
   findPhuHuynhById,
   findPhuHuynhByPhoneGlobal,
+  listHocSinhByPhuHuynhId,
   listPhuHuynhByNguoiDungId,
   updateGuardianLink,
   updatePhuHuynhNguoiDungId,
@@ -32,6 +33,27 @@ export async function getGuardianDonViIds(userId: number) {
   const guardians = await listPhuHuynhByNguoiDungId(userId);
 
   return Array.from(new Set(guardians.map((guardian) => guardian.donViId)));
+}
+
+/**
+ * Tìm đúng học sinh (kèm `donViId` thật của học sinh, không phải đơn vị neo
+ * phiên của phụ huynh) trong số các con của tài khoản phụ huynh này — dùng để
+ * xác thực quyền thao tác trước khi cho phụ huynh gửi đơn xin phép (F03) cho
+ * một học sinh cụ thể. Trả `null` nếu học sinh không phải con của phụ huynh.
+ */
+export async function findGuardianChildByHocSinhId(userId: number, hocSinhId: number) {
+  const guardians = await listPhuHuynhByNguoiDungId(userId);
+
+  for (const guardian of guardians) {
+    const children = await listHocSinhByPhuHuynhId(guardian.id);
+    const found = children.find((row) => row.hocSinh.id === hocSinhId);
+
+    if (found) {
+      return found.hocSinh;
+    }
+  }
+
+  return null;
 }
 
 /**

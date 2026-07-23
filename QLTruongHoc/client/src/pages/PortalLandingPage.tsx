@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
+import { DateField, SelectField, TextAreaField } from "../components/form";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
 import { StatCard } from "../components/shared/StatCard";
 import { useAuth } from "../features/auth/AuthContext";
 import { findPortalRole, getDefaultPortalPath } from "../config/portal";
 import { loadParentPortalOverviewApi } from "../features/portal/portalApi";
-import type { ParentPortalOverview } from "../features/portal/portalTypes";
+import type { ParentPortalChild, ParentPortalOverview } from "../features/portal/portalTypes";
+import { createDonXinPhepApi } from "../features/xinPhep/xinPhepApi";
 
 function RoleLink({ label, description, to }: { label: string; description: string; to: string }) {
   return (
@@ -51,6 +53,114 @@ const NGUOI_GUI_LABEL: Record<string, string> = {
   khac: "Khác",
 };
 
+const XIN_PHEP_TRANG_THAI_LABEL: Record<string, string> = {
+  cho_duyet: "Chờ duyệt",
+  da_duyet: "Đã duyệt",
+  tu_choi: "Từ chối",
+};
+
+function ChildLeaveRequestForm({
+  hocSinhId,
+  activeClasses,
+  onCreated,
+}: {
+  hocSinhId: number;
+  activeClasses: ParentPortalChild["activeClasses"];
+  onCreated: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [lopHocId, setLopHocId] = useState("");
+  const [tuNgay, setTuNgay] = useState("");
+  const [denNgay, setDenNgay] = useState("");
+  const [lyDo, setLyDo] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const lopHocOptions = activeClasses.map((item) => ({
+    value: item.lopHoc.id,
+    label: item.lopHoc.tenLop,
+  }));
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setError("");
+
+    try {
+      await createDonXinPhepApi({
+        hocSinhId,
+        lopHocId: Number(lopHocId),
+        tuNgay,
+        denNgay,
+        lyDo,
+      });
+      setLopHocId("");
+      setTuNgay("");
+      setDenNgay("");
+      setLyDo("");
+      setOpen(false);
+      onCreated();
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error ? submitError.message : "Không thể gửi đơn xin phép.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button type="button" className="text-button" onClick={() => setOpen(true)}>
+        + Gửi đơn xin phép mới
+      </button>
+    );
+  }
+
+  return (
+    <div className="portal-leave-form">
+      {error ? <div className="form-error">{error}</div> : null}
+
+      <SelectField
+        label="Lớp"
+        required
+        value={lopHocId}
+        options={lopHocOptions}
+        placeholder="-- Chọn lớp --"
+        onChange={setLopHocId}
+      />
+
+      <DateField label="Từ ngày" value={tuNgay} onChange={setTuNgay} />
+      <DateField
+        label="Đến ngày"
+        value={denNgay}
+        onChange={setDenNgay}
+        min={tuNgay || undefined}
+      />
+
+      <TextAreaField label="Lý do" value={lyDo} onChange={setLyDo} rows={2} />
+
+      <div className="portal-leave-form__actions">
+        <button
+          type="button"
+          className="text-button"
+          disabled={submitting}
+          onClick={() => setOpen(false)}
+        >
+          Huỷ
+        </button>
+        <button
+          type="button"
+          className="primary-button"
+          disabled={submitting || !lopHocId || !tuNgay || !denNgay || !lyDo.trim()}
+          onClick={() => void handleSubmit()}
+        >
+          {submitting ? "Đang gửi..." : "Gửi đơn"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function PortalLandingPage() {
   const { auth } = useAuth();
   const { roleSlug } = useParams();
@@ -60,6 +170,17 @@ export function PortalLandingPage() {
 
   const portalRole = roleSlug ? findPortalRole(roleSlug) : null;
   const isParentPortal = portalRole?.slug === "parent";
+
+  async function refreshOverview() {
+    try {
+      const data = await loadParentPortalOverviewApi();
+      setParentOverview(data);
+    } catch (error) {
+      setParentError(
+        error instanceof Error ? error.message : "Không thể tải portal phụ huynh.",
+      );
+    }
+  }
 
   useEffect(() => {
     if (!isParentPortal) {
@@ -110,28 +231,28 @@ export function PortalLandingPage() {
         title: "Con đang theo dõi",
         value: children.length,
         note: "Số học sinh liên kết với tài khoản này",
-        icon: "♙",
+        icon: "🎒",
         tone: "primary" as const,
       },
       {
         title: "Lớp đang học",
         value: totalClasses,
         note: "Tổng số lớp hiện tại của các con",
-        icon: "▣",
+        icon: "🏫",
         tone: "success" as const,
       },
       {
         title: "Buổi sắp tới",
         value: parentOverview?.upcomingSessions.length ?? 0,
         note: "Các buổi học trong 2 tuần tới",
-        icon: "◫",
+        icon: "📅",
         tone: "warning" as const,
       },
       {
         title: "Điểm số",
         value: "Chưa có",
         note: "Hệ thống hiện chưa có nguồn dữ liệu điểm số",
-        icon: "◈",
+        icon: "📊",
         tone: "info" as const,
       },
     ];
@@ -265,6 +386,27 @@ export function PortalLandingPage() {
                           <span>Đón trẻ: {child.lienKet.duocDonTre ? "Có" : "Không"}</span>
                         </div>
 
+                        {child.absenceSummary.unexcused > 0 ? (
+                          <div className="notice-banner notice-banner--danger">
+                            <span className="notice-banner__icon" aria-hidden="true">
+                              ⚠️
+                            </span>
+                            <div>
+                              <strong>
+                                Con vắng học {child.absenceSummary.unexcused} buổi chưa rõ lý do
+                                gần đây
+                              </strong>
+                              <p>
+                                {child.absences
+                                  .filter((item) => item.trangThai === "vang_khong_phep")
+                                  .slice(0, 5)
+                                  .map((item) => `${item.ngayHoc} · ${item.tenLop}`)
+                                  .join(" — ")}
+                              </p>
+                            </div>
+                          </div>
+                        ) : null}
+
                         <div className="portal-class-list">
                           {child.activeClasses.length === 0 ? (
                             <div className="empty-cell">Chưa có lớp đang học.</div>
@@ -330,6 +472,28 @@ export function PortalLandingPage() {
                               );
                             })
                           )}
+                        </div>
+
+                        <div className="portal-fee-box">
+                          <strong>Xin phép nghỉ</strong>
+                          {child.donXinPhep.length === 0 ? (
+                            <div className="empty-cell">Chưa gửi đơn xin phép nào.</div>
+                          ) : (
+                            child.donXinPhep.map((item) => (
+                              <div className="portal-fee-row" key={item.id}>
+                                <span>
+                                  {item.tenLop} · {item.tuNgay} - {item.denNgay}
+                                </span>
+                                <strong>{item.lyDo}</strong>
+                                <small>{XIN_PHEP_TRANG_THAI_LABEL[item.trangThai]}</small>
+                              </div>
+                            ))
+                          )}
+                          <ChildLeaveRequestForm
+                            hocSinhId={child.hocSinh.id}
+                            activeClasses={child.activeClasses}
+                            onCreated={() => void refreshOverview()}
+                          />
                         </div>
 
                         <div className="portal-exchange-box">

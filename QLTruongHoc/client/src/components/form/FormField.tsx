@@ -39,15 +39,22 @@ export function FormField({
 
       {children}
 
+      {/*
+        Luôn render slot này (kể cả rỗng) và giữ chiều cao cố định qua CSS
+        (`.form-field__error`/`.form-field__help` có `min-height`) — để khi
+        lỗi validation xuất hiện/biến mất, control không bị đẩy lên/xuống so
+        với các control khác cùng hàng (grid `align-items: end` ở nhiều form
+        dùng chung sẽ lệch hàng nếu chiều cao từng field thay đổi).
+      */}
       {error ? (
         <small className="form-field__error">
           {error}
         </small>
-      ) : helpText ? (
+      ) : (
         <small className="form-field__help">
-          {helpText}
+          {helpText ?? ""}
         </small>
-      ) : null}
+      )}
     </label>
   );
 }

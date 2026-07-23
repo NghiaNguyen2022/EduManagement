@@ -11,6 +11,7 @@ import {
   displayToIsoDate,
   isoToDisplayDate,
   normalizeDateTyping,
+  resolveShorthandDate,
 } from "./dateUtils";
 
 type DateFieldProps = {
@@ -264,13 +265,12 @@ export function DateField({
     }
 
     const isoValue =
-      displayToIsoDate(
-        displayValue,
-      );
+      displayToIsoDate(displayValue) ??
+      resolveShorthandDate(displayValue);
 
     if (!isoValue) {
       setInternalError(
-        "Ngày không hợp lệ. Nhập theo dd/mm/yyyy.",
+        "Ngày không hợp lệ. Nhập dd/mm/yyyy.",
       );
       return;
     }
@@ -362,9 +362,25 @@ export function DateField({
             placeholder="dd/mm/yyyy"
             maxLength={10}
             onChange={(event) => {
+              const raw = event.target.value;
+              const trimmedLower = raw.trim().toLowerCase();
+
+              if (trimmedLower === "t" || trimmedLower === "d") {
+                const shortcutIso = resolveShorthandDate(raw);
+
+                if (shortcutIso && isAllowed(shortcutIso)) {
+                  setInternalError("");
+                  setDisplayValue(
+                    isoToDisplayDate(shortcutIso),
+                  );
+                  onChange(shortcutIso);
+                  return;
+                }
+              }
+
               const formatted =
                 normalizeDateTyping(
-                  event.target.value,
+                  raw,
                 );
 
               setDisplayValue(

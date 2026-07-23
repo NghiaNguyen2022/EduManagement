@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { DateField, SelectField, TextField } from "../components/form";
 import { PageHeader } from "../components/shared/PageHeader";
@@ -448,6 +448,11 @@ export function AttendancePage() {
       <PageHeader
         title="Điểm danh"
         subtitle="Chọn một buổi học để điểm danh học sinh"
+        action={
+          <Link className="text-button" to="/attendance/xin-phep">
+            Đơn xin phép →
+          </Link>
+        }
       />
 
       {error ? <div className="form-error">{error}</div> : null}

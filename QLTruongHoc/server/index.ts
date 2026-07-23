@@ -27,6 +27,7 @@ import { traoDoiRouter } from "./routers/traoDoi.router.js";
 import { thongBaoRouter } from "./routers/thongBao.router.js";
 import { userAssignmentRouter } from "./routers/user-assignment.router.js";
 import { userRouter } from "./routers/user.router.js";
+import { xinPhepRouter } from "./routers/xinPhep.router.js";
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use("/api/lop-hoc", lopHocRouter);
 app.use("/api/lop-hoc", lichHocRouter);
 app.use("/api/thoi-khoa-bieu", thoiKhoaBieuRouter);
 app.use("/api/diem-danh", diemDanhRouter);
+app.use("/api/xin-phep", xinPhepRouter);
 app.use("/api/bao-giang", baoGiangRouter);
 app.use("/api/users", userRouter);
 app.use("/api/users", userAssignmentRouter);

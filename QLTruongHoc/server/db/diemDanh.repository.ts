@@ -1,16 +1,20 @@
 import {
   and,
+  desc,
   eq,
   gte,
+  inArray,
   isNull,
   lte,
   or,
 } from "drizzle-orm";
 
 import {
+  buoiHoc,
   diemDanh,
   hocSinh,
   hocSinhLopHoc,
+  lopHoc,
 } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
@@ -50,6 +54,40 @@ export async function listDiemDanhByBuoiHoc(buoiHocId: number) {
     .select()
     .from(diemDanh)
     .where(eq(diemDanh.buoiHocId, buoiHocId));
+}
+
+/**
+ * Vắng học gần đây của một học sinh (có phép + không phép), dùng cho cảnh báo
+ * tự động trong Portal phụ huynh (F05) — chỉ xem, gộp theo đúng một học sinh
+ * nên không rủi ro lộ dữ liệu chéo sang phụ huynh khác (khác với `ThongBao`
+ * dùng chung, chưa lọc theo học sinh — xem `docs/analysis/F03_F05_...md`).
+ */
+export async function listDiemDanhGanDayByHocSinh(
+  hocSinhId: number,
+  tuNgay: string,
+  denNgay: string,
+) {
+  const db = getDb();
+
+  return db
+    .select({
+      diemDanh,
+      ngayHoc: buoiHoc.ngayHoc,
+      gioBatDau: buoiHoc.gioBatDau,
+      tenLop: lopHoc.tenLop,
+    })
+    .from(diemDanh)
+    .innerJoin(buoiHoc, eq(diemDanh.buoiHocId, buoiHoc.id))
+    .innerJoin(lopHoc, eq(buoiHoc.lopHocId, lopHoc.id))
+    .where(
+      and(
+        eq(diemDanh.hocSinhId, hocSinhId),
+        inArray(diemDanh.trangThai, ["vang_khong_phep", "vang_co_phep"]),
+        gte(buoiHoc.ngayHoc, tuNgay),
+        lte(buoiHoc.ngayHoc, denNgay),
+      ),
+    )
+    .orderBy(desc(buoiHoc.ngayHoc), desc(buoiHoc.gioBatDau));
 }
 
 export async function findDiemDanh(

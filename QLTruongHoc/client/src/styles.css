@@ -1158,3 +1158,70 @@ button {
     padding: var(--edu-content-padding-mobile);
   }
 }
+
+/*
+ * Banner cảnh báo dùng chung — mọi nơi cần một thông báo nổi bật trong nội
+ * dung trang (ví dụ cảnh báo vắng học F05) nên dùng lại đúng các class này
+ * thay vì tự viết style riêng, để đổi tông màu một lần là áp dụng toàn hệ
+ * thống (xem docs/DESIGN_SYSTEM_RULES.md).
+ */
+.notice-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--edu-radius-medium);
+  border: 1px solid transparent;
+  font-size: var(--edu-body-size);
+}
+
+.notice-banner strong {
+  display: block;
+}
+
+.notice-banner__icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.notice-banner--danger {
+  background: var(--edu-color-danger-soft);
+  border-color: var(--edu-color-danger);
+  color: var(--edu-color-danger);
+}
+
+.notice-banner--warning {
+  background: var(--edu-color-warning-soft);
+  border-color: var(--edu-color-warning);
+  color: var(--edu-color-warning);
+}
+
+.notice-banner--info {
+  background: var(--edu-color-info-soft);
+  border-color: var(--edu-color-info);
+  color: var(--edu-color-info);
+}
+
+/*
+ * Phiếu gọn dùng trong thẻ hẹp (ví dụ thẻ con trong Portal phụ huynh) —
+ * KHÔNG dùng `.user-create-form` ở đây: class đó là grid 5-6 cột cố định
+ * cho form toàn trang rộng (dùng breakpoint theo viewport, không theo bề
+ * rộng khung cha), nhét vào thẻ hẹp ~380-430px sẽ ép mỗi ô còn vài chục
+ * pixel và vỡ layout. Class này luôn xếp dọc từng trường một, an toàn với
+ * mọi khung cha hẹp bất kể kích thước màn hình — cũng đủ rộng để popover
+ * lịch chọn ngày (328px, neo trái) không tràn ra ngoài thẻ.
+ */
+.portal-leave-form {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--edu-color-border);
+  border-radius: var(--edu-radius-medium);
+  background: var(--edu-color-surface);
+}
+
+.portal-leave-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

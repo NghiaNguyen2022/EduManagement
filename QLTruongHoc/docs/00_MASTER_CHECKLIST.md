@@ -107,6 +107,18 @@
 > `KyThuDetailPage` gọi `listLopHocApi` không bọc lỗi — vai trò kế toán không có `lop_hoc.xem`
 > nên cả trang chi tiết kỳ thu vỡ hoàn toàn khi họ mở, dù họ có đủ quyền tài chính. Xem
 > `PROJECT_SUMMARY.md`.
+>
+> Cập nhật 2026-07-23 (tiếp): hoàn tất F03 (phụ huynh gửi đơn xin phép — bảng mới
+> `DonXinPhep`, gửi/xem ngay trong Portal phụ huynh, duyệt/từ chối tại trang mới
+> `/attendance/xin-phep`) và F05 (thông báo vắng học cho phụ huynh — không dùng bảng `ThongBao`
+> dùng chung vì chưa lọc theo học sinh, thay vào đó tự động hiện banner cảnh báo trong Portal
+> dựa trên `DiemDanh` sẵn có, gộp đúng theo từng học sinh nên không lộ dữ liệu chéo). Duyệt đơn
+> xin phép tự động ghi `vang_co_phep` vào các buổi học chưa điểm danh trong khoảng ngày xin
+> phép, giữ nguyên buổi đã điểm danh tay. Tái dùng đúng quyền `diem_danh.xem`/`diem_danh.thuc_hien`
+> đã seed, không seed quyền mới. Nhân tiện tinh chỉnh giao diện: đổi icon Unicode trong Portal
+> sang emoji thân thiện hơn, thêm token `--edu-color-danger-hover` + class `.notice-banner*`
+> dùng chung cho mọi cảnh báo sau này, sửa 1 chỗ màu hex cứng có sẵn ở `dialog.css`. Xem
+> `docs/analysis/F03_F05_xin_phep_thong_bao_vang.md`.
 
 ## A. Nền tảng và đa đơn vị
 - [x] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)
@@ -157,9 +169,18 @@
 ## F. Điểm danh và xin phép
 - [x] F01 Điểm danh theo buổi học. (2026-07-21: trang `/attendance` + nút "Điểm danh" ngay trong `ClassDetailPage`. Xem `docs/analysis/F01_F02_F04_diem_danh.md`.)
 - [x] F02 Có mặt/vắng có phép/vắng không phép/đi trễ/về sớm. (Bảng `DiemDanh`, 5 trạng thái, mặc định "Có mặt" cho buổi chưa điểm danh.)
-- [ ] F03 Phụ huynh gửi đơn xin phép. (Cần Portal phụ huynh — module J, chưa làm.)
+- [x] F03 Phụ huynh gửi đơn xin phép. (2026-07-23: bảng mới `DonXinPhep`, gửi/xem ngay trong
+      Portal phụ huynh (`PortalLandingPage.tsx`), duyệt/từ chối tại trang mới
+      `/attendance/xin-phep` (`LeaveRequestsPage.tsx`) — chỉ ai có `diem_danh.thuc_hien` mới
+      duyệt được, giữ đúng ma trận quyền F04. Duyệt đơn tự động ghi `vang_co_phep` vào các
+      buổi học chưa điểm danh trong khoảng ngày xin phép. Xem
+      `docs/analysis/F03_F05_xin_phep_thong_bao_vang.md`.)
 - [x] F04 Giáo viên/học vụ duyệt hoặc ghi nhận. (Giáo viên ghi nhận qua `diem_danh.thuc_hien` đã seed sẵn từ Sprint 0; học vụ xem qua `diem_danh.xem` — đúng ma trận quyền có sẵn, không đổi.)
-- [ ] F05 Thông báo vắng học cho phụ huynh. (Cần module Thông báo — M11, chưa làm.)
+- [x] F05 Thông báo vắng học cho phụ huynh. (2026-07-23: không dùng bảng `ThongBao` dùng
+      chung — chưa lọc theo học sinh (I05), rủi ro lộ dữ liệu chéo. Thay vào đó tự động hiện
+      banner cảnh báo trong Portal phụ huynh dựa trên `DiemDanh` sẵn có
+      (`listDiemDanhGanDayByHocSinh`), gộp đúng theo từng học sinh. Xem
+      `docs/analysis/F03_F05_xin_phep_thong_bao_vang.md`.)
 - [ ] F06 Mầm non: giờ đón/trả và người đón. (Để bước riêng, chưa cấp thiết cho MVP điểm danh
       chung. **"Nhật ký ngày mầm non" — phân bổ luồng/layout dự kiến (gộp D02+F06+G07 thành 1
       tính năng nhỏ, theo tinh thần KidsOnline/OneKids nhưng bỏ phần AI/camera/dinh dưỡng

@@ -19,6 +19,7 @@ import { KyThuDetailPage } from "./pages/KyThuDetailPage";
 import { PhieuThuDetailPage } from "./pages/PhieuThuDetailPage";
 import { LeadDetailPage } from "./pages/LeadDetailPage";
 import { LeadsPage } from "./pages/LeadsPage";
+import { LeaveRequestsPage } from "./pages/LeaveRequestsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OpenInOrganizationPage } from "./pages/OpenInOrganizationPage";
 import { OrganizationTreePage } from "./pages/OrganizationTreePage";
@@ -95,6 +96,8 @@ function ProtectedApp() {
         <Route path="/schedule" element={<SchedulePage />} />
 
         <Route path="/attendance" element={<AttendancePage />} />
+
+        <Route path="/attendance/xin-phep" element={<LeaveRequestsPage />} />
 
         <Route path="/finance" element={<FinancePage />} />
 

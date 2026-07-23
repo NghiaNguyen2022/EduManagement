@@ -64,6 +64,7 @@ export type EducationThemeConfig = {
     warning: string;
     warningSoft: string;
     danger: string;
+    dangerHover: string;
     dangerSoft: string;
     info: string;
     infoSoft: string;
@@ -163,6 +164,7 @@ export const educationAppearance: EducationThemeConfig = {
     warning: "#e2a23a",
     warningSoft: "#fff6e2",
     danger: "#d95d58",
+    dangerHover: "#c44b46",
     dangerSoft: "#fdeeed",
     info: "#4f8fe7",
     infoSoft: "#edf4fe",

@@ -21,6 +21,26 @@ export type ParentPortalKhoanPhaiThu = {
   tenKyThu: string;
 };
 
+export type ParentPortalAbsence = {
+  id: number;
+  ngayHoc: string;
+  gioBatDau: string;
+  tenLop: string;
+  trangThai: "vang_khong_phep" | "vang_co_phep";
+};
+
+export type ParentPortalLeaveRequest = {
+  id: number;
+  lopHocId: number;
+  tenLop: string;
+  tuNgay: string;
+  denNgay: string;
+  lyDo: string;
+  trangThai: "cho_duyet" | "da_duyet" | "tu_choi";
+  ghiChuDuyet: string | null;
+  createdAt: string;
+};
+
 export type ParentPortalChild = {
   lienKet: GuardianLinkItem;
   hocSinh: HocSinhItem & {
@@ -50,6 +70,9 @@ export type ParentPortalChild = {
   schedules: ThoiKhoaBieuItem[];
   traoDoi: ParentPortalTraoDoi[];
   khoanPhaiThu: ParentPortalKhoanPhaiThu[];
+  absences: ParentPortalAbsence[];
+  absenceSummary: { unexcused: number };
+  donXinPhep: ParentPortalLeaveRequest[];
   scores: {
     available: boolean;
     title: string;
