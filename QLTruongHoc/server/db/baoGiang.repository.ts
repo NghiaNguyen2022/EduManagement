@@ -1,10 +1,37 @@
-import { eq } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte } from "drizzle-orm";
 
-import { baoGiang } from "../../drizzle/schema.js";
+import { baoGiang, buoiHoc } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
 const now = () =>
   new Date().toISOString().slice(0, 19).replace("T", " ");
+
+/** Dùng cho Portal giáo viên (J02) — buổi đã học nhưng chưa ghi báo giảng. */
+export async function listBuoiHocDaHocThieuBaoGiang(input: {
+  lopHocIds: number[];
+  tuNgay: string;
+  denNgay: string;
+}) {
+  const db = getDb();
+
+  if (input.lopHocIds.length === 0) {
+    return [];
+  }
+
+  return db
+    .select({ buoiHoc })
+    .from(buoiHoc)
+    .leftJoin(baoGiang, eq(baoGiang.buoiHocId, buoiHoc.id))
+    .where(
+      and(
+        inArray(buoiHoc.lopHocId, input.lopHocIds),
+        eq(buoiHoc.trangThai, "da_hoc"),
+        gte(buoiHoc.ngayHoc, input.tuNgay),
+        lte(buoiHoc.ngayHoc, input.denNgay),
+        isNull(baoGiang.id),
+      ),
+    );
+}
 
 export async function findBaoGiangByBuoiHoc(buoiHocId: number) {
   const db = getDb();

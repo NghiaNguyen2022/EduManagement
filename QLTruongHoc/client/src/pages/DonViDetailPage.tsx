@@ -40,7 +40,7 @@ const TRANG_THAI_LABEL: Record<string, string> = {
   ngung_hoat_dong: "Ngừng hoạt động",
 };
 
-type EditForm = Omit<DonViFormInput, "donViChaId" | "maDonVi">;
+type EditForm = Omit<DonViFormInput, "maDonVi">;
 
 function toEditForm(item: DonViItem): EditForm {
   return {

@@ -5,6 +5,7 @@ import {
   DateField,
   NumberInput,
   SelectField,
+  TextAreaField,
   TextField,
 } from "../components/form";
 import { PageHeader } from "../components/shared/PageHeader";
@@ -48,6 +49,13 @@ import type {
   TrangThaiLopHoc,
   VaiTroGiaoVienLop,
 } from "../features/lopHoc/lopHocTypes";
+import { createTraoDoiApi, listTraoDoiApi } from "../features/traoDoi/traoDoiApi";
+import type {
+  KenhLienLac,
+  NguoiGuiVaiTro,
+  TraoDoiFormInput,
+  TraoDoiItem,
+} from "../features/traoDoi/traoDoiTypes";
 
 const TRANG_THAI_LOP_LABEL: Record<string, string> = {
   chuan_bi: "Chuẩn bị",
@@ -86,6 +94,30 @@ const TRANG_THAI_BUOI_HOC_LABEL: Record<string, string> = {
   da_hoc: "Đã học",
   nghi: "Nghỉ",
   huy: "Huỷ",
+};
+
+const NGUOI_GUI_LABEL: Record<NguoiGuiVaiTro, string> = {
+  giao_vien: "Giáo viên",
+  phu_huynh: "Phụ huynh",
+  hoc_vu: "Học vụ",
+  khac: "Khác",
+};
+
+const KENH_LABEL: Record<KenhLienLac, string> = {
+  truc_tiep: "Trực tiếp",
+  dien_thoai: "Điện thoại",
+  nhan_tin: "Nhắn tin",
+  email: "Email",
+  khac: "Khác",
+};
+
+const emptyTraoDoiForm: TraoDoiFormInput = {
+  hocSinhId: "",
+  lopHocId: "",
+  nguoiGuiVaiTro: "giao_vien",
+  kenhLienLac: "truc_tiep",
+  noiDung: "",
+  ketQua: "",
 };
 
 const initialLichHocForm: LichHocFormInput = {
@@ -150,6 +182,13 @@ export function ClassDetailPage() {
   } | null>(null);
   const [savingTransfer, setSavingTransfer] = useState(false);
 
+  const [traoDoiItems, setTraoDoiItems] = useState<TraoDoiItem[]>([]);
+  const [loadingTraoDoi, setLoadingTraoDoi] = useState(false);
+  const [traoDoiForm, setTraoDoiForm] = useState<TraoDoiFormInput>(
+    emptyTraoDoiForm,
+  );
+  const [savingTraoDoi, setSavingTraoDoi] = useState(false);
+
   const [lichHocList, setLichHocList] = useState<LichHocItem[]>([]);
   const [lichHocForm, setLichHocForm] = useState<LichHocFormInput>(
     initialLichHocForm,
@@ -194,6 +233,58 @@ export function ClassDetailPage() {
       permissions.includes("diem_danh.thuc_hien")
     );
   }, [auth]);
+
+  // Khớp đúng quyền ghi trao đổi của trang /communications gốc (không dùng
+  // canManage của trang này — canManage chỉ xoay quanh lop_hoc.quan_ly, còn
+  // ghi trao đổi còn mở cho hoc_sinh.quan_ly/tuyen_sinh.quan_ly).
+  const canManageTraoDoi = useMemo(() => {
+    const permissions = auth?.currentOrganization?.quyen ?? [];
+    return (
+      permissions.includes("he_thong.quan_tri") ||
+      permissions.includes("hoc_sinh.quan_ly") ||
+      permissions.includes("lop_hoc.quan_ly") ||
+      permissions.includes("tuyen_sinh.quan_ly")
+    );
+  }, [auth]);
+
+  async function loadTraoDoi() {
+    setLoadingTraoDoi(true);
+
+    try {
+      const rows = await listTraoDoiApi({ lopHocId: classId });
+      setTraoDoiItems(rows);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error ? loadError.message : "Không thể tải trao đổi.",
+      );
+    } finally {
+      setLoadingTraoDoi(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadTraoDoi();
+  }, [classId, auth?.currentOrganization?.id]);
+
+  async function handleCreateTraoDoi(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    setSavingTraoDoi(true);
+
+    try {
+      await createTraoDoiApi({ ...traoDoiForm, lopHocId: String(classId) });
+      setNotice("Đã ghi trao đổi.");
+      setTraoDoiForm(emptyTraoDoiForm);
+      await loadTraoDoi();
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error ? submitError.message : "Không thể ghi trao đổi.",
+      );
+    } finally {
+      setSavingTraoDoi(false);
+    }
+  }
 
   async function loadDetail() {
     setLoading(true);
@@ -1046,6 +1137,138 @@ export function ClassDetailPage() {
             </button>
           </form>
         ) : null}
+      </SectionCard>
+
+      <SectionCard
+        title="Trao đổi phụ huynh"
+        subtitle={
+          loadingTraoDoi
+            ? "Đang tải dữ liệu..."
+            : `${traoDoiItems.length} trao đổi trong lớp này`
+        }
+      >
+        {canManageTraoDoi ? (
+          <form className="user-create-form" onSubmit={handleCreateTraoDoi}>
+            <SelectField
+              label="Học sinh"
+              value={traoDoiForm.hocSinhId}
+              required
+              placeholder="Chọn học sinh trong lớp"
+              options={detail.hocSinh.map((item) => ({
+                value: item.hocSinh.id,
+                label: `${item.hocSinh.hoTen} · ${item.hocSinh.maHocSinh}`,
+              }))}
+              onChange={(value) =>
+                setTraoDoiForm({ ...traoDoiForm, hocSinhId: value })
+              }
+            />
+
+            <SelectField
+              label="Vai trò người ghi"
+              value={traoDoiForm.nguoiGuiVaiTro}
+              required
+              options={Object.entries(NGUOI_GUI_LABEL).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              onChange={(value) =>
+                setTraoDoiForm({
+                  ...traoDoiForm,
+                  nguoiGuiVaiTro: value as NguoiGuiVaiTro,
+                })
+              }
+            />
+
+            <SelectField
+              label="Kênh liên lạc"
+              value={traoDoiForm.kenhLienLac}
+              required
+              options={Object.entries(KENH_LABEL).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              onChange={(value) =>
+                setTraoDoiForm({
+                  ...traoDoiForm,
+                  kenhLienLac: value as KenhLienLac,
+                })
+              }
+            />
+
+            <TextAreaField
+              label="Nội dung trao đổi"
+              value={traoDoiForm.noiDung}
+              required
+              rows={3}
+              onChange={(value) =>
+                setTraoDoiForm({ ...traoDoiForm, noiDung: value })
+              }
+            />
+
+            <TextField
+              label="Kết quả / hướng xử lý"
+              value={traoDoiForm.ketQua}
+              placeholder="Ví dụ: Hẹn gặp phụ huynh vào thứ 6"
+              onChange={(value) =>
+                setTraoDoiForm({ ...traoDoiForm, ketQua: value })
+              }
+            />
+
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={savingTraoDoi}
+            >
+              {savingTraoDoi ? "Đang lưu..." : "Ghi trao đổi"}
+            </button>
+          </form>
+        ) : null}
+
+        <div className="user-table-wrap">
+          <table className="user-table">
+            <thead>
+              <tr>
+                <th>Học sinh</th>
+                <th>Bên ghi</th>
+                <th>Kênh</th>
+                <th>Nội dung</th>
+                <th>Ngày ghi</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {traoDoiItems.map((item) => (
+                <tr key={item.id}>
+                  <td>
+                    <strong>{item.hocSinh.hoTen}</strong>
+                    <small>{item.hocSinh.maHocSinh}</small>
+                  </td>
+                  <td>{NGUOI_GUI_LABEL[item.nguoiGuiVaiTro]}</td>
+                  <td>{KENH_LABEL[item.kenhLienLac]}</td>
+                  <td>
+                    <small>{item.noiDung}</small>
+                    {item.ketQua ? <small>Kết quả: {item.ketQua}</small> : null}
+                  </td>
+                  <td>
+                    {new Intl.DateTimeFormat("vi-VN", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                      timeZone: "Asia/Ho_Chi_Minh",
+                    }).format(new Date(item.createdAt))}
+                  </td>
+                </tr>
+              ))}
+
+              {!loadingTraoDoi && traoDoiItems.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="empty-cell">
+                    Chưa có trao đổi nào trong lớp này.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
       </SectionCard>
 
       <SectionCard

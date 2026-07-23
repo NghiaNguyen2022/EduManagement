@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
@@ -25,9 +25,33 @@ function formatToday() {
   }).format(new Date());
 }
 
+const ADMIN_QUICK_LINKS = [
+  {
+    label: "Cây đơn vị",
+    description: "Quản lý trường, trung tâm, cơ sở theo cấu trúc cha-con.",
+    to: "/organizations",
+  },
+  {
+    label: "Người dùng",
+    description: "Tạo tài khoản nhân sự, khoá/mở, đặt lại mật khẩu.",
+    to: "/users",
+  },
+  {
+    label: "Vai trò · Phân quyền",
+    description: "Xem và chỉnh quyền theo từng vai trò nghiệp vụ.",
+    to: "/roles",
+  },
+  {
+    label: "Nhật ký hệ thống",
+    description: "Tra cứu các thao tác quan trọng trên toàn hệ thống.",
+    to: "/audit-logs",
+  },
+];
+
 export function DashboardPage({ databaseConnected }: DashboardPageProps) {
   const { auth } = useAuth();
   const navigate = useNavigate();
+  const isHeThong = auth?.currentOrganization?.loaiDonVi === "he_thong";
 
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,11 +119,17 @@ export function DashboardPage({ databaseConnected }: DashboardPageProps) {
     <>
       <PageHeader
         title="Bảng điều hành"
-        subtitle="Theo dõi nhanh tình hình tuyển sinh, lớp học, học viên và vận hành trong ngày"
+        subtitle={
+          isHeThong
+            ? "Tổng quan toàn hệ thống — theo dõi đơn vị, người dùng và dữ liệu gộp toàn trường/trung tâm"
+            : "Theo dõi nhanh tình hình tuyển sinh, lớp học, học viên và vận hành trong ngày"
+        }
         action={
-          <button className="primary-button" onClick={() => navigate("/admissions")}>
-            + Tiếp nhận học viên
-          </button>
+          isHeThong ? null : (
+            <button className="primary-button" onClick={() => navigate("/admissions")}>
+              + Tiếp nhận học viên
+            </button>
+          )
         }
       />
 
@@ -117,6 +147,24 @@ export function DashboardPage({ databaseConnected }: DashboardPageProps) {
           />
         ))}
       </section>
+
+      {isHeThong ? (
+        <SectionCard
+          title="Lối vào nhanh cho quản trị"
+          subtitle="Các nghiệp vụ quản trị hệ thống dùng nhiều nhất"
+          className="section-card--wide"
+        >
+          <div className="portal-link-grid">
+            {ADMIN_QUICK_LINKS.map((item) => (
+              <Link className="section-link-card" to={item.to} key={item.label}>
+                <strong>{item.label}</strong>
+                <span>{item.description}</span>
+                <small>Đi tới →</small>
+              </Link>
+            ))}
+          </div>
+        </SectionCard>
+      ) : null}
 
       <section className="dashboard-grid">
         <SectionCard

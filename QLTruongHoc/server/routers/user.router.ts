@@ -46,8 +46,8 @@ userRouter.get(
 userRouter.get(
   "/roles",
   requirePermission("nguoi_dung.quan_ly"),
-  async (_req, res) => {
-    const roles = await getRoles();
+  async (req, res) => {
+    const roles = await getRoles(req.auth?.currentOrganization?.loaiDonVi);
 
     res.json({
       ok: true,

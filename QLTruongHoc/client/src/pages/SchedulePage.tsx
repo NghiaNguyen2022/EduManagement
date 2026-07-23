@@ -28,6 +28,7 @@ function addDaysIso(iso: string, days: number) {
 
 export function SchedulePage() {
   const { auth } = useAuth();
+  const isHeThong = auth?.currentOrganization?.loaiDonVi === "he_thong";
 
   const [items, setItems] = useState<ThoiKhoaBieuItem[]>([]);
   const [teachers, setTeachers] = useState<GiaoVienItem[]>([]);
@@ -89,7 +90,11 @@ export function SchedulePage() {
     <div className="page-stack">
       <PageHeader
         title="Lịch học"
-        subtitle="Thời khóa biểu theo lớp và giáo viên trong đơn vị đang làm việc"
+        subtitle={
+          isHeThong
+            ? "Đơn vị hệ thống không tổ chức lớp/lịch học riêng — vào đúng một trường/trung tâm để xem thời khóa biểu"
+            : "Thời khóa biểu theo lớp và giáo viên trong đơn vị đang làm việc"
+        }
       />
 
       {error ? <div className="form-error">{error}</div> : null}
@@ -131,7 +136,9 @@ export function SchedulePage() {
       >
         {days.length === 0 && !loading ? (
           <div className="empty-cell">
-            Không có buổi học nào trong khoảng ngày này.
+            {isHeThong
+              ? "Đơn vị hệ thống không tổ chức lớp học, nên không có lịch học ở đây. Chuyển sang một trường/trung tâm cụ thể ở Topbar để xem."
+              : "Không có buổi học nào trong khoảng ngày này."}
           </div>
         ) : (
           <div className="class-list">

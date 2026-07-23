@@ -112,8 +112,25 @@ export async function getUsers(
   );
 }
 
-export async function getRoles() {
-  return listAssignableRoles();
+/**
+ * Vai trò cho phép tạo qua màn hình Quản lý người dùng, lọc thêm theo đơn vị
+ * đang đứng — không phải chỉ theo `phamVi` như `listAssignableRoles` gốc:
+ * - Đứng ở đơn vị hệ thống: chỉ tạo được vai trò mang tính quản trị/tổng hợp
+ *   (`quan_ly_don_vi`, `ke_toan` — gán `ke_toan` tại đây tự nhiên có nghĩa
+ *   "kế toán tổng" vì các trang tài chính đã xem gộp toàn hệ thống sẵn).
+ * - Đứng ở đơn vị con: mọi vai trò vận hành, trừ `phu_huynh` (tài khoản phụ
+ *   huynh chỉ tạo được từ hồ sơ học sinh — xem `createUser`).
+ */
+export async function getRoles(loaiDonVi?: string) {
+  const roles = await listAssignableRoles();
+
+  if (loaiDonVi === "he_thong") {
+    return roles.filter(
+      (role) => role.maVaiTro === "quan_ly_don_vi" || role.maVaiTro === "ke_toan",
+    );
+  }
+
+  return roles.filter((role) => role.maVaiTro !== "phu_huynh");
 }
 
 export async function getUserDetail(id: number) {
@@ -184,6 +201,12 @@ export async function createUser(input: {
   if (!role) {
     throw new Error(
       "Vai trò không tồn tại hoặc không được phép gán.",
+    );
+  }
+
+  if (role.maVaiTro === "phu_huynh") {
+    throw new Error(
+      "Tài khoản phụ huynh chỉ tạo được từ hồ sơ học sinh (mục Phụ huynh · Người giám hộ).",
     );
   }
 

@@ -1220,6 +1220,61 @@ button {
   background: var(--edu-color-surface);
 }
 
+/*
+ * Cây đơn vị (org chart dạng thụt lề) — OrganizationTreePage. Đường nối thể
+ * hiện qua `border-left` trên khối con, thụt lề qua `margin-left`, không
+ * dùng canvas/SVG để giữ đúng phong cách các trang khác trong hệ thống.
+ */
+.org-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.org-tree__branch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.org-tree__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--edu-radius-small);
+  background: var(--edu-color-surface-soft);
+  border: 1px solid var(--edu-color-border);
+}
+
+.org-tree__row small {
+  color: var(--edu-color-text-muted);
+}
+
+.org-tree__children {
+  margin-left: 20px;
+  padding-left: 16px;
+  border-left: 2px solid var(--edu-color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.org-tree__tag {
+  padding: 2px 10px;
+  border-radius: var(--edu-radius-pill);
+  background: var(--edu-color-primary-soft);
+  color: var(--edu-color-primary-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.org-tree__tag--soft {
+  background: var(--edu-color-secondary-soft);
+  color: var(--edu-color-text);
+}
+
 .portal-leave-form__actions {
   display: flex;
   justify-content: flex-end;

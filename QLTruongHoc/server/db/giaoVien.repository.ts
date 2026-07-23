@@ -35,6 +35,26 @@ export async function listGiaoVienAllDonVi() {
     .orderBy(donVi.tenDonVi, giaoVien.hoTen);
 }
 
+export async function findGiaoVienByNguoiDungId(
+  donViId: number,
+  nguoiDungId: number,
+) {
+  const db = getDb();
+
+  const rows = await db
+    .select()
+    .from(giaoVien)
+    .where(
+      and(
+        eq(giaoVien.donViId, donViId),
+        eq(giaoVien.nguoiDungId, nguoiDungId),
+      ),
+    )
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
 export async function findGiaoVienById(
   donViId: number,
   id: number,

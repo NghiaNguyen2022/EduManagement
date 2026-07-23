@@ -13,6 +13,23 @@ export type AppRouteDefinition = {
    * nghĩa là dùng chung cho mọi loại hình, kể cả đơn vị hệ thống gốc.
    */
   loaiHinhDaoTao?: LoaiHinhDaoTao[];
+  /**
+   * Ẩn mục menu này khi đứng ở đơn vị hệ thống (`loaiDonVi = 'he_thong'`) —
+   * dùng cho các chức năng chỉ có ý nghĩa tại một trường/trung tâm cụ thể
+   * (đơn vị hệ thống không tổ chức lớp/lịch riêng, đã chốt phạm vi ở A01),
+   * khác với `loaiHinhDaoTao` (lọc theo loại hình, không phải theo cấp đơn
+   * vị). Quản trị hệ thống vẫn bị ẩn như mọi vai trò khác — mục này không có
+   * gì để xem ở đó, không phải vấn đề phân quyền.
+   */
+  hideAtHeThong?: boolean;
+  /**
+   * Chỉ hiện mục menu này khi đứng ở đơn vị hệ thống — dùng cho các nghiệp vụ
+   * quản trị toàn hệ thống (cây đơn vị, vai trò/phân quyền, nhật ký, cấu
+   * hình): nên làm hẳn ở trang quản trị, không rải rác theo từng đơn vị con
+   * đang đứng. Không áp dụng cho "Quản lý người dùng" — trang đó vẫn cần
+   * dùng tại từng đơn vị con để tạo tài khoản nhân sự riêng của đơn vị đó.
+   */
+  onlyAtHeThong?: boolean;
   element?: ReactNode;
   /**
    * Chức năng chưa hoàn thiện (còn là PlaceholderPage). Hiện trong menu với
@@ -63,6 +80,7 @@ export const appRoutes: AppRouteDefinition[] = [
     label: "Lịch học",
     group: "Đào tạo",
     permissions: ["lop_hoc.xem", "lop_hoc.quan_ly"],
+    hideAtHeThong: true,
   },
   {
     id: "attendance",
@@ -70,6 +88,7 @@ export const appRoutes: AppRouteDefinition[] = [
     label: "Điểm danh",
     group: "Đào tạo",
     permissions: ["diem_danh.xem", "diem_danh.thuc_hien"],
+    hideAtHeThong: true,
   },
   {
     id: "finance",
@@ -103,6 +122,7 @@ export const appRoutes: AppRouteDefinition[] = [
       "lop_hoc.quan_ly",
       "tuyen_sinh.quan_ly",
     ],
+    hideAtHeThong: true,
   },
   {
     id: "organizations",
@@ -110,6 +130,7 @@ export const appRoutes: AppRouteDefinition[] = [
     label: "Cây đơn vị",
     group: "Hệ thống",
     permissions: ["don_vi.xem", "don_vi.quan_ly", "he_thong.quan_tri"],
+    onlyAtHeThong: true,
   },
   {
     id: "users",
@@ -124,6 +145,7 @@ export const appRoutes: AppRouteDefinition[] = [
     label: "Vai trò · Phân quyền",
     group: "Hệ thống",
     permissions: ["phan_quyen.xem", "phan_quyen.quan_ly"],
+    onlyAtHeThong: true,
   },
   {
     id: "audit-logs",
@@ -131,6 +153,7 @@ export const appRoutes: AppRouteDefinition[] = [
     label: "Nhật ký hệ thống",
     group: "Hệ thống",
     permissions: ["phan_quyen.xem", "phan_quyen.quan_ly"],
+    onlyAtHeThong: true,
   },
   {
     id: "settings",
@@ -138,6 +161,7 @@ export const appRoutes: AppRouteDefinition[] = [
     label: "Cấu hình hệ thống",
     group: "Hệ thống",
     permissions: ["he_thong.quan_tri", "don_vi.quan_ly"],
+    onlyAtHeThong: true,
     comingSoon: true,
   },
 ];

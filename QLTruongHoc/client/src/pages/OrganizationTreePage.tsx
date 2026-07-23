@@ -38,8 +38,71 @@ const TRANG_THAI_LABEL: Record<string, string> = {
   ngung_hoat_dong: "Ngừng hoạt động",
 };
 
+type DonViTreeNode = DonViItem & { children: DonViTreeNode[] };
+
+/** Dựng cây cha-con từ danh sách phẳng đã có sẵn — không cần API riêng. */
+function buildDonViTree(units: DonViItem[]): DonViTreeNode[] {
+  const nodesById = new Map<number, DonViTreeNode>();
+
+  for (const unit of units) {
+    nodesById.set(unit.id, { ...unit, children: [] });
+  }
+
+  const roots: DonViTreeNode[] = [];
+
+  for (const node of nodesById.values()) {
+    const parent = node.donViChaId ? nodesById.get(node.donViChaId) : undefined;
+
+    if (parent) {
+      parent.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  function sortRecursive(list: DonViTreeNode[]) {
+    list.sort((a, b) => a.tenDonVi.localeCompare(b.tenDonVi));
+    for (const node of list) {
+      sortRecursive(node.children);
+    }
+  }
+
+  sortRecursive(roots);
+
+  return roots;
+}
+
+function OrgTreeNode({ node }: { node: DonViTreeNode }) {
+  return (
+    <div className="org-tree__branch">
+      <div className="org-tree__row">
+        <EntityLink to={`/organizations/${node.id}`}>
+          <strong>{node.tenDonVi}</strong>
+        </EntityLink>
+        <small>{node.maDonVi}</small>
+        <span className="org-tree__tag">{LOAI_DON_VI_LABEL[node.loaiDonVi]}</span>
+        {node.loaiHinhDaoTao ? (
+          <span className="org-tree__tag org-tree__tag--soft">
+            {LOAI_HINH_DAO_TAO_LABEL[node.loaiHinhDaoTao]}
+          </span>
+        ) : null}
+        <span className={`status-badge status-badge--${node.trangThai}`}>
+          {TRANG_THAI_LABEL[node.trangThai]}
+        </span>
+      </div>
+
+      {node.children.length > 0 ? (
+        <div className="org-tree__children">
+          {node.children.map((child) => (
+            <OrgTreeNode key={child.id} node={child} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 const emptyForm: DonViFormInput = {
-  donViChaId: null,
   maDonVi: "",
   tenDonVi: "",
   loaiDonVi: "co_so",
@@ -69,22 +132,7 @@ export function OrganizationTreePage() {
     JSON.stringify(form) !== JSON.stringify(emptyForm),
   );
 
-  const unitsById = useMemo(() => {
-    const map = new Map<number, DonViItem>();
-    for (const unit of units) {
-      map.set(unit.id, unit);
-    }
-    return map;
-  }, [units]);
-
-  const sortedUnits = useMemo(() => {
-    return [...units].sort((a, b) => {
-      const parentA = a.donViChaId ?? 0;
-      const parentB = b.donViChaId ?? 0;
-      if (parentA !== parentB) return parentA - parentB;
-      return a.tenDonVi.localeCompare(b.tenDonVi);
-    });
-  }, [units]);
+  const tree = useMemo(() => buildDonViTree(units), [units]);
 
   async function loadData() {
     setLoading(true);
@@ -117,6 +165,8 @@ export function OrganizationTreePage() {
     setSubmitting(true);
 
     try {
+      // Đơn vị mới luôn nằm trực tiếp dưới Hệ thống — hiện chưa hỗ trợ đơn vị
+      // chứa đơn vị con, nên không cho chọn đơn vị cha ở đây (server tự gán).
       await createDonViApi(form);
       setNotice(`Đã tạo đơn vị ${form.tenDonVi}.`);
       setForm(emptyForm);
@@ -132,13 +182,6 @@ export function OrganizationTreePage() {
       setSubmitting(false);
     }
   }
-
-  const parentOptions = units
-    .filter((unit) => unit.trangThai === "hoat_dong")
-    .map((unit) => ({
-      value: unit.id,
-      label: `${unit.tenDonVi} (${unit.maDonVi})`,
-    }));
 
   return (
     <div className="page-stack">
@@ -164,25 +207,9 @@ export function OrganizationTreePage() {
       {showForm && canManage ? (
         <SectionCard
           title="Thêm đơn vị"
-          subtitle="Đơn vị cấp 1 (không có đơn vị cha) nằm trực tiếp dưới Hệ thống."
+          subtitle="Đơn vị mới luôn nằm trực tiếp dưới Hệ thống."
         >
           <form className="user-create-form" onSubmit={handleSubmit}>
-            <SelectField
-              label="Đơn vị cha"
-              value={form.donViChaId ? String(form.donViChaId) : ""}
-              placeholder="Không có (đơn vị cấp 1)"
-              options={parentOptions.map((option) => ({
-                value: String(option.value),
-                label: option.label,
-              }))}
-              onChange={(value) =>
-                setForm({
-                  ...form,
-                  donViChaId: value ? Number(value) : null,
-                })
-              }
-            />
-
             <TextField
               label="Mã đơn vị"
               value={form.maDonVi}
@@ -284,63 +311,15 @@ export function OrganizationTreePage() {
             : `${units.length} đơn vị`
         }
       >
-        <div className="user-table-wrap">
-          <table className="user-table">
-            <thead>
-              <tr>
-                <th>Đơn vị</th>
-                <th>Đơn vị cha</th>
-                <th>Loại</th>
-                <th>Loại hình đào tạo</th>
-                <th>Trạng thái</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {sortedUnits.map((unit) => (
-                <tr key={unit.id}>
-                  <td>
-                    <EntityLink to={`/organizations/${unit.id}`}>
-                      <strong>{unit.tenDonVi}</strong>
-                    </EntityLink>
-                    <small>{unit.maDonVi}</small>
-                  </td>
-
-                  <td>
-                    {unit.donViChaId
-                      ? (unitsById.get(unit.donViChaId)?.tenDonVi ??
-                        "—")
-                      : "—"}
-                  </td>
-
-                  <td>{LOAI_DON_VI_LABEL[unit.loaiDonVi]}</td>
-
-                  <td>
-                    {unit.loaiHinhDaoTao
-                      ? LOAI_HINH_DAO_TAO_LABEL[unit.loaiHinhDaoTao]
-                      : "—"}
-                  </td>
-
-                  <td>
-                    <span
-                      className={`status-badge status-badge--${unit.trangThai}`}
-                    >
-                      {TRANG_THAI_LABEL[unit.trangThai]}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-
-              {!loading && sortedUnits.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="empty-cell">
-                    Chưa có đơn vị nào.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+        {!loading && tree.length === 0 ? (
+          <div className="empty-cell">Chưa có đơn vị nào.</div>
+        ) : (
+          <div className="org-tree">
+            {tree.map((node) => (
+              <OrgTreeNode key={node.id} node={node} />
+            ))}
+          </div>
+        )}
       </SectionCard>
     </div>
   );

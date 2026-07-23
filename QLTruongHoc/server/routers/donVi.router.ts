@@ -72,9 +72,6 @@ donViRouter.post(
   async (req, res) => {
     try {
       const created = await createDonViUnit({
-        donViChaId: req.body?.donViChaId
-          ? Number(req.body.donViChaId)
-          : null,
         maDonVi: String(req.body?.maDonVi ?? ""),
         tenDonVi: String(req.body?.tenDonVi ?? ""),
         loaiDonVi: String(req.body?.loaiDonVi ?? ""),

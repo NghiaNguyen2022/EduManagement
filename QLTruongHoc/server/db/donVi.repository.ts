@@ -42,6 +42,18 @@ export async function findDonViByCode(maDonVi: string) {
   return rows[0] ?? null;
 }
 
+export async function findHeThongDonVi() {
+  const db = getDb();
+
+  const rows = await db
+    .select()
+    .from(donVi)
+    .where(eq(donVi.loaiDonVi, "he_thong"))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
 export async function countActiveChildren(parentId: number) {
   const db = getDb();
 

@@ -119,6 +119,33 @@
 > sang emoji thân thiện hơn, thêm token `--edu-color-danger-hover` + class `.notice-banner*`
 > dùng chung cho mọi cảnh báo sau này, sửa 1 chỗ màu hex cứng có sẵn ở `dialog.css`. Xem
 > `docs/analysis/F03_F05_xin_phep_thong_bao_vang.md`.
+>
+> Cập nhật 2026-07-23 (rà soát demo, vai trò quản trị hệ thống): bắt đầu rà soát lại từng vai
+> trò để chuẩn bị demo full — bắt đầu với quản trị hệ thống. Sửa 5 điểm: (1) chặn tạo thêm đơn
+> vị `loaiDonVi=he_thong` ở server (`donVi.service.ts`) — trước đây chỉ chặn phía client, gọi
+> API trực tiếp vẫn tạo được; (2) chặn tạo user vai trò `phu_huynh` qua `/users` ở cả server
+> lẫn client (chỉ tạo được từ hồ sơ học sinh, đúng luồng `createGuardianAccount` có sẵn); (3)
+> danh sách vai trò khi tạo user nay lọc theo đơn vị đang đứng — ở hệ thống chỉ
+> `quan_ly_don_vi`/`ke_toan` (không tạo vai trò mới, gán `ke_toan` tại hệ thống tự nhiên có
+> nghĩa "kế toán tổng" nhờ các trang tài chính đã xem gộp sẵn), ở đơn vị con đủ vai trò vận
+> hành; (4) `OrganizationTreePage.tsx` đổi từ bảng phẳng sang cây thụt lề thể hiện đúng cấu
+> trúc cha-con nhiều cấp; (5) `SchedulePage.tsx` thêm thông báo "xem gộp, đơn vị hệ thống
+> không tổ chức lớp" khi đứng ở hệ thống (trang duy nhất trong nhóm Đào tạo còn thiếu kiểu này
+> so với Học sinh/Giáo viên/Lớp học); (6) sidebar ẩn "Lịch học"/"Điểm danh" khi đứng ở hệ thống
+> (đơn vị hệ thống không tổ chức lớp nên 2 mục này luôn trống, không còn ý nghĩa hiện ra); (7)
+> `/dashboard` ở hệ thống thêm khối "Lối vào nhanh cho quản trị" (Cây đơn vị/Người dùng/Vai
+> trò/Nhật ký). Nhân tiện tick lại B04/B05/B07/J04 trong checklist — đã xong từ trước (H, F/G,
+> J01, F03) nhưng bị sót không cập nhật dấu tick khi các mục đó hoàn tất. Xem
+> `docs/analysis/QUAN_TRI_HE_THONG_UX.md`.
+>
+> Cập nhật 2026-07-23 (tiếp, sau khi xem qua UI thật): 5 điểm bổ sung cho vai trò quản trị hệ
+> thống — style lại scrollbar sidebar khớp tông xanh; bỏ "Hệ thống" khỏi dropdown "Đơn vị cha"
+> khi tạo đơn vị mới (chọn "Không có" nay tự gán đúng id đơn vị hệ thống thay vì NULL, khớp dữ
+> liệu thật thay vì tạo gốc rời rạc); ẩn cả nhóm menu "Hệ thống" (Cây đơn vị, Vai trò·Phân
+> quyền, Nhật ký, Cấu hình) khi đứng ở đơn vị con, chỉ giữ "Quản lý người dùng" hiện mọi nơi;
+> ẩn "Trao đổi phụ huynh" khỏi menu ở hệ thống và chuyển hẳn UI ghi/xem vào trong từng lớp
+> (`ClassDetailPage.tsx`), giữ nguyên `/communications` cho nhu cầu xem gộp. Xem
+> `docs/analysis/QUAN_TRI_HE_THONG_UX.md`.
 
 ## A. Nền tảng và đa đơn vị
 - [x] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)
@@ -129,13 +156,24 @@
 - [x] A06 Nhật ký thay đổi đơn vị và thao tác quan trọng. (`NhatKyHeThong` ghi login/logout/select-org/user/role.)
 
 ## B. Người dùng và phân quyền
-- [ ] B01 Quản trị nền tảng. (Vai trò `quan_tri_he_thong` chỉ gán được qua seed, chưa có UI gán vai trò phạm vi hệ thống — có chủ đích để tránh leo thang quyền.)
+- [ ] B01 Quản trị nền tảng. (Vai trò `quan_tri_he_thong` vẫn chỉ gán được qua seed, chưa có UI
+      gán vai trò phạm vi hệ thống — có chủ đích để tránh leo thang quyền, giữ nguyên giới hạn
+      này. 2026-07-23: bổ sung phần còn thiếu của B01 — màn hình Quản lý người dùng nay hạn chế
+      đúng theo ngữ cảnh đơn vị đang đứng: ở đơn vị hệ thống chỉ tạo được vai trò
+      `quan_ly_don_vi`/`ke_toan` (gán `ke_toan` tại đây đóng vai "kế toán tổng" nhờ các trang
+      tài chính đã xem gộp sẵn), ở đơn vị con tạo được mọi vai trò vận hành; không đơn vị nào
+      cho tạo `phu_huynh` qua màn hình này (chặn cả client lẫn server), chỉ xem/reset mật khẩu
+      tài khoản phụ huynh sẵn có. Xem `docs/analysis/QUAN_TRI_HE_THONG_UX.md`.)
 - [x] B02 Quản lý đơn vị. (Vai trò `quan_ly_don_vi` gán được qua Quản lý người dùng.)
 - [x] B03 Tuyển sinh/tư vấn. (Có màn hình Lead/CRM đầy đủ từ 2026-07-21 — xem mục C.)
-- [ ] B04 Kế toán. (Vai trò đã seed; chưa có màn hình nghiệp vụ tài chính — xem mục H.)
-- [ ] B05 Giáo viên. (Có hồ sơ + được phân công lớp từ 2026-07-21, nhưng chưa có màn hình giảng dạy thật (báo giảng/điểm danh) — xem mục F/G.)
+- [x] B04 Kế toán. (Vai trò đã seed; màn hình nghiệp vụ tài chính đầy đủ H01-H09 — xem mục H.
+      Checklist trước để sót, chưa tick lại khi H hoàn tất.)
+- [x] B05 Giáo viên. (Có hồ sơ + phân công lớp từ 2026-07-21; màn hình giảng dạy thật (điểm
+      danh/báo giảng) xong từ F01/F02/F04, G01-G03 — xem mục F/G. Checklist trước để sót, chưa
+      tick lại khi F/G hoàn tất.)
 - [x] B06 Nhân viên học vụ. (Có màn hình chương trình/lớp/xếp lớp đầy đủ từ 2026-07-21 — xem mục E.)
-- [ ] B07 Phụ huynh/người giám hộ. (Vai trò đã seed; chưa có Portal phụ huynh thật — xem mục J.)
+- [x] B07 Phụ huynh/người giám hộ. (Vai trò đã seed; Portal phụ huynh thật xong từ J01 (2026-07-22)
+      — xem mục J. Checklist trước để sót, chưa tick lại khi J01 hoàn tất.)
 - [x] B08 Chính sách khóa/mở tài khoản. (Khóa/mở tay qua Quản lý người dùng; khóa tạm tự động sau 5 lần đăng nhập sai liên tiếp, tự mở sau 15 phút.)
 
 ## C. Tuyển sinh
@@ -145,7 +183,7 @@
 - [x] C04 Hồ sơ đăng ký nhập học. (Qua form "Xác nhận đăng ký" trong trang chi tiết lead.)
 - [ ] C05 Kiểm tra đầu vào/xếp trình độ cho trung tâm ngoại ngữ. (Để Sprint 7. **Phân bổ luồng/layout dự kiến**: luồng — Lead → (tuỳ chọn) tạo bản ghi kiểm tra đầu vào → nhập kết quả/trình độ → dùng kết quả này khi xác nhận đăng ký C04 để gợi ý chương trình/lớp phù hợp. Layout — không cần route riêng, thêm 1 `SectionCard` "Kiểm tra đầu vào" ngay trong `LeadDetailPage`, chỉ hiện khi đơn vị có `loaiHinhDaoTao = ngoai_ngu`.)
 - [x] C06 Xác nhận nhập học và sinh mã học sinh. (Tái sử dụng `createHocSinhMoi`/`addGuardianToStudent`; một lead chỉ chuyển đổi đúng một lần.)
-- [x] C07 Tạo tài khoản phụ huynh. (2026-07-21: API `POST /api/hoc-sinh/:id/phu-huynh/:linkId/tai-khoan`, không tạo trùng theo guardian-person. Test qua API PASS; chưa xác nhận UI thật trên trình duyệt. Xem `docs/analysis/C07_tai_khoan_phu_huynh.md`.)
+- [x] C07 Tạo tài khoản phụ huynh. (2026-07-21: API `POST /api/hoc-sinh/:id/phu-huynh/:linkId/tai-khoan`, không tạo trùng theo guardian-person. 2026-07-23: xác nhận qua UI thật (`StudentDetailPage`) — bấm "Tạo tài khoản đăng nhập" tạo đúng tài khoản, hiện tên đăng nhập/mật khẩu tạm một lần, dòng chuyển "Đã có tài khoản". Xem `docs/analysis/C07_tai_khoan_phu_huynh.md`.)
 
 ## D. Học sinh và phụ huynh
 - [x] D01 Hồ sơ học sinh. (2026-07-21: API `/api/hoc-sinh` + trang `/students`, `/students/:id`. Mã học sinh tự sinh. Xem `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md`.)
@@ -249,7 +287,9 @@
       không có — sẽ vỡ hoặc lộ toàn bộ học sinh/lớp của đơn vị); thay vào đó hiển thị trao đổi
       gần đây của từng con ngay trong J01, chỉ xem. Giới hạn còn lại: thông báo chưa lọc đúng
       theo lớp/con (I05 chưa làm) — phụ huynh tạm thời thấy toàn bộ thông báo của đơn vị con.)
-- [ ] J04 Xin phép nghỉ.
+- [x] J04 Xin phép nghỉ. (Xong qua F03, 2026-07-23 — gửi/xem đơn ngay trong Portal phụ huynh,
+      xem `docs/analysis/F03_F05_xin_phep_thong_bao_vang.md`. Checklist trước để sót, chưa tick
+      lại khi F03 hoàn tất.)
 - [ ] J05 Tiến độ và kết quả học tập. (J01 đã có placeholder "Điểm số chưa có nguồn dữ liệu" —
       đúng thực tế, chưa có mô hình điểm/kết quả — xem G04/G05.)
 - [x] J06 Học phí và biên nhận. (2026-07-22: thêm block "Học phí" chỉ đọc vào mỗi thẻ con

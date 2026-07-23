@@ -16,7 +16,6 @@ export type DonViItem = {
 };
 
 export type DonViFormInput = {
-  donViChaId: number | null;
   maDonVi: string;
   tenDonVi: string;
   loaiDonVi: LoaiDonVi;

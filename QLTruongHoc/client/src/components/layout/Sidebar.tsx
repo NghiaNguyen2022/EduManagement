@@ -40,6 +40,10 @@ export function Sidebar({
     auth?.currentOrganization?.loaiHinhDaoTao ??
     null;
 
+  const isHeThong =
+    auth?.currentOrganization?.loaiDonVi ===
+    "he_thong";
+
   const visibleGroups = useMemo(() => {
     const groupMap = new Map<
       string,
@@ -67,7 +71,12 @@ export function Sidebar({
             "khac") as (typeof route.loaiHinhDaoTao)[number],
         );
 
-      if (!coQuyen || !dungLoaiHinh) {
+      if (
+        !coQuyen ||
+        !dungLoaiHinh ||
+        (route.hideAtHeThong && isHeThong) ||
+        (route.onlyAtHeThong && !isHeThong)
+      ) {
         continue;
       }
 
@@ -83,6 +92,7 @@ export function Sidebar({
     );
   }, [
     isSystemAdmin,
+    isHeThong,
     loaiHinhDaoTaoHienTai,
     permissions,
   ]);

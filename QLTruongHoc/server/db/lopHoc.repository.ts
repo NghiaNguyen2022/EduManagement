@@ -189,6 +189,26 @@ export async function listPhanCongGiaoVien(lopHocId: number) {
     .where(eq(lopHocGiaoVien.lopHocId, lopHocId));
 }
 
+/** Dùng cho Portal giáo viên (J02) — lớp đang phân công (chính/chủ nhiệm/hỗ trợ), chưa hết hạn. */
+export async function listLopHocByGiaoVienId(giaoVienId: number) {
+  const db = getDb();
+
+  return db
+    .select({
+      phanCong: lopHocGiaoVien,
+      lopHoc,
+    })
+    .from(lopHocGiaoVien)
+    .innerJoin(lopHoc, eq(lopHocGiaoVien.lopHocId, lopHoc.id))
+    .where(
+      and(
+        eq(lopHocGiaoVien.giaoVienId, giaoVienId),
+        eq(lopHocGiaoVien.trangThai, "hoat_dong"),
+      ),
+    )
+    .orderBy(lopHoc.tenLop);
+}
+
 export async function findGiaoVienChinhDangHoatDong(
   lopHocId: number,
 ) {

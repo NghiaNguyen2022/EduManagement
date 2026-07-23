@@ -7,6 +7,7 @@ import {
   createDonVi,
   findDonViById,
   findDonViByCode,
+  findHeThongDonVi,
   listAllDonVi,
   updateDonVi,
   updateDonViStatus,
@@ -99,7 +100,6 @@ export async function getDonViDetail(id: number) {
 }
 
 export async function createDonViUnit(input: {
-  donViChaId: number | null;
   maDonVi: string;
   tenDonVi: string;
   loaiDonVi: string;
@@ -124,6 +124,12 @@ export async function createDonViUnit(input: {
   validateLoaiDonVi(input.loaiDonVi);
   validateLoaiHinhDaoTao(input.loaiHinhDaoTao);
 
+  // Chỉ có đúng một đơn vị hệ thống gốc (seed sẵn) — không tạo thêm được qua
+  // API này, kể cả khi gọi thẳng (form phía client vốn đã không cho chọn).
+  if (input.loaiDonVi === "he_thong") {
+    throw new Error("Không thể tạo thêm đơn vị cấp hệ thống.");
+  }
+
   if (
     (input.loaiDonVi === "truong" || input.loaiDonVi === "trung_tam") &&
     !input.loaiHinhDaoTao
@@ -137,22 +143,20 @@ export async function createDonViUnit(input: {
     throw new Error("Mã đơn vị đã tồn tại.");
   }
 
-  let parent = null;
+  // Hiện tại cây đơn vị chỉ có một cấp: mọi trường/trung tâm/cơ sở nằm trực
+  // tiếp dưới đơn vị hệ thống gốc, không đơn vị nào chứa đơn vị con khác.
+  // Vẫn giữ donViChaId (không hard-code cột) để khi nghiệp vụ cần nhiều cấp
+  // (VD: cơ sở thuộc trường) chỉ cần nới điều kiện dưới đây, không phải đổi
+  // schema. Vì vậy bỏ qua đơn vị cha do client gửi lên, luôn gán vào gốc hệ
+  // thống — form phía client cũng đã ẩn trường chọn cha tương ứng.
+  const heThong = await findHeThongDonVi();
 
-  if (input.donViChaId) {
-    parent = await findDonViById(input.donViChaId);
-
-    if (!parent) {
-      throw new Error("Không tìm thấy đơn vị cha.");
-    }
-
-    if (parent.trangThai !== "hoat_dong") {
-      throw new Error("Đơn vị cha đang không hoạt động, không thể tạo đơn vị con.");
-    }
+  if (!heThong) {
+    throw new Error("Không tìm thấy đơn vị hệ thống gốc.");
   }
 
   const created = await createDonVi({
-    donViChaId: input.donViChaId,
+    donViChaId: heThong.id,
     maDonVi,
     tenDonVi,
     loaiDonVi: input.loaiDonVi,

@@ -56,7 +56,7 @@ export function createDonViApi(input: DonViFormInput) {
 
 export function updateDonViApi(
   id: number,
-  input: Omit<DonViFormInput, "donViChaId" | "maDonVi">,
+  input: Omit<DonViFormInput, "maDonVi">,
 ) {
   return request<DonViItem>(`/api/don-vi/${id}`, {
     method: "PATCH",
