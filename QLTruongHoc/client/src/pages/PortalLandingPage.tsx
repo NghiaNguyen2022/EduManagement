@@ -6,9 +6,32 @@ import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
 import { StatCard } from "../components/shared/StatCard";
 import { useAuth } from "../features/auth/AuthContext";
-import { findPortalRole, getDefaultPortalPath } from "../config/portal";
-import { loadParentPortalOverviewApi } from "../features/portal/portalApi";
-import type { ParentPortalChild, ParentPortalOverview } from "../features/portal/portalTypes";
+import { getDashboardSummaryApi } from "../features/dashboard/dashboardApi";
+import type { DashboardSummary } from "../features/dashboard/dashboardTypes";
+import {
+  getBaoCaoTaiChinhApi,
+  listKyThuApi,
+} from "../features/taiChinh/taiChinhApi";
+import type {
+  BaoCaoTaiChinh,
+  KyThuItem,
+} from "../features/taiChinh/taiChinhTypes";
+import {
+  canAccessPortalRole,
+  findPortalRole,
+  getDefaultLandingPath,
+  getDefaultPortalPath,
+  getPortalContext,
+} from "../config/portal";
+import {
+  loadParentPortalOverviewApi,
+  loadTeacherPortalOverviewApi,
+} from "../features/portal/portalApi";
+import type {
+  ParentPortalChild,
+  ParentPortalOverview,
+  TeacherPortalOverview,
+} from "../features/portal/portalTypes";
 import { createDonXinPhepApi } from "../features/xinPhep/xinPhepApi";
 
 function RoleLink({ label, description, to }: { label: string; description: string; to: string }) {
@@ -167,6 +190,14 @@ export function PortalLandingPage() {
   const [parentOverview, setParentOverview] = useState<ParentPortalOverview | null>(null);
   const [parentLoading, setParentLoading] = useState(false);
   const [parentError, setParentError] = useState("");
+  const [workspaceSummary, setWorkspaceSummary] = useState<DashboardSummary | null>(null);
+  const [teacherOverview, setTeacherOverview] = useState<TeacherPortalOverview | null>(null);
+  const [teacherError, setTeacherError] = useState("");
+  const [financeOverview, setFinanceOverview] = useState<{
+    periods: KyThuItem[];
+    report: BaoCaoTaiChinh;
+  } | null>(null);
+  const [financeError, setFinanceError] = useState("");
 
   const portalRole = roleSlug ? findPortalRole(roleSlug) : null;
   const isParentPortal = portalRole?.slug === "parent";
@@ -214,12 +245,90 @@ export function PortalLandingPage() {
     };
   }, [isParentPortal, auth?.currentOrganization?.id]);
 
+  useEffect(() => {
+    if (!portalRole || isParentPortal) {
+      setWorkspaceSummary(null);
+      return;
+    }
+
+    getDashboardSummaryApi()
+      .then(setWorkspaceSummary)
+      .catch(() => setWorkspaceSummary(null));
+  }, [portalRole?.slug, isParentPortal, auth?.currentOrganization?.id]);
+
+  useEffect(() => {
+    if (portalRole?.slug !== "giao-vien") {
+      setTeacherOverview(null);
+      setTeacherError("");
+      return;
+    }
+
+    let active = true;
+
+    loadTeacherPortalOverviewApi()
+      .then((data) => {
+        if (!active) return;
+        setTeacherOverview(data);
+        setTeacherError("");
+      })
+      .catch((error) => {
+        if (!active) return;
+        setTeacherOverview(null);
+        setTeacherError(
+          error instanceof Error ? error.message : "Không thể tải dữ liệu giáo viên.",
+        );
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [portalRole?.slug, auth?.currentOrganization?.id]);
+
+  useEffect(() => {
+    if (portalRole?.slug !== "ke-toan") {
+      setFinanceOverview(null);
+      setFinanceError("");
+      return;
+    }
+
+    let active = true;
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const lastDay = String(new Date(year, now.getMonth() + 1, 0).getDate()).padStart(2, "0");
+
+    Promise.all([
+      listKyThuApi(),
+      getBaoCaoTaiChinhApi(`${year}-${month}-01`, `${year}-${month}-${lastDay}`),
+    ])
+      .then(([periods, report]) => {
+        if (!active) return;
+        setFinanceOverview({ periods, report });
+        setFinanceError("");
+      })
+      .catch((error) => {
+        if (!active) return;
+        setFinanceOverview(null);
+        setFinanceError(
+          error instanceof Error ? error.message : "Không thể tải dữ liệu tài chính.",
+        );
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [portalRole?.slug, auth?.currentOrganization?.id]);
+
   if (!auth?.currentOrganization) {
     return <Navigate to="/" replace />;
   }
 
   if (!portalRole) {
     return <Navigate to={getDefaultPortalPath(auth.currentOrganization.vaiTro)} replace />;
+  }
+
+  if (!canAccessPortalRole(portalRole.slug, auth.currentOrganization.vaiTro)) {
+    return <Navigate to={getDefaultLandingPath(auth.currentOrganization.vaiTro)} replace />;
   }
 
   if (isParentPortal) {
@@ -538,6 +647,51 @@ export function PortalLandingPage() {
     );
   }
 
+  const workspaceStats = portalRole.stats.map((stat, index) => {
+    if (portalRole.slug === "ke-toan" && financeOverview) {
+      if (index === 0) {
+        return {
+          ...stat,
+          value: financeOverview.periods.filter((period) => period.trangThai === "da_mo").length,
+        };
+      }
+      if (index === 1) {
+        return { ...stat, value: formatTien(financeOverview.report.tongCongNo) };
+      }
+      if (index === 2) {
+        return { ...stat, value: financeOverview.report.soPhieuThu };
+      }
+      if (index === 3) {
+        return { ...stat, value: formatTien(financeOverview.report.tongThuRong) };
+      }
+    }
+
+    if (!workspaceSummary) return stat;
+
+    if (portalRole.slug === "tuyen-sinh") {
+      if (index === 0) return { ...stat, value: workspaceSummary.leadMoiThangNay };
+      if (index === 1) return { ...stat, value: workspaceSummary.hocSinhDangHoc };
+    }
+
+    if (portalRole.slug === "hoc-vu") {
+      if (index === 0) return { ...stat, value: workspaceSummary.lopDangHoc };
+      if (index === 1) return { ...stat, value: workspaceSummary.lichHocHomNay.length };
+      if (index === 2) return { ...stat, value: workspaceSummary.hocSinhDangHoc };
+    }
+
+    if (portalRole.slug === "giao-vien" && teacherOverview) {
+      if (index === 0) return { ...stat, value: teacherOverview.classes.length };
+      if (index === 1) return { ...stat, value: teacherOverview.sessions.length };
+    }
+
+    return stat;
+  });
+  const portalContext = getPortalContext({
+    slug: portalRole.slug,
+    organizationLevel: auth.currentOrganization.loaiDonVi,
+    educationType: auth.currentOrganization.loaiHinhDaoTao,
+  });
+
   return (
     <>
       <PageHeader
@@ -547,7 +701,7 @@ export function PortalLandingPage() {
       />
 
       <section className="summary-grid">
-        {portalRole.stats.map((stat) => (
+        {workspaceStats.map((stat) => (
           <StatCard
             key={stat.title}
             title={stat.title}
@@ -558,6 +712,75 @@ export function PortalLandingPage() {
           />
         ))}
       </section>
+
+      {portalContext ? (
+        <SectionCard
+          title={portalContext.title}
+          subtitle={`Phạm vi tại ${auth.currentOrganization.tenDonVi}`}
+        >
+          <div className="portal-note-list">
+            {portalContext.details.map((detail) => (
+              <article className="portal-note" key={detail}>
+                <p>{detail}</p>
+              </article>
+            ))}
+          </div>
+        </SectionCard>
+      ) : null}
+
+      {portalRole.slug === "giao-vien" && teacherError ? (
+        <div className="form-error">{teacherError}</div>
+      ) : null}
+
+      {portalRole.slug === "ke-toan" && financeError ? (
+        <div className="form-error">{financeError}</div>
+      ) : null}
+
+      {portalRole.slug === "giao-vien" && teacherOverview ? (
+        <section className="dashboard-grid">
+          <SectionCard
+            title={`Lớp được phân công · ${teacherOverview.teacher.hoTen}`}
+            subtitle={`${teacherOverview.teacher.maGiaoVien} · ${
+              teacherOverview.teacher.chuyenMon || "Chưa cập nhật chuyên môn"
+            }`}
+          >
+            <div className="portal-action-grid">
+              {teacherOverview.classes.map((item) => (
+                <RoleLink
+                  key={item.assignment.id}
+                  label={item.class.tenLop}
+                  description={`${item.class.maLop} · ${item.assignment.vaiTro}`}
+                  to={`/classes/${item.class.id}`}
+                />
+              ))}
+              {teacherOverview.classes.length === 0 ? (
+                <div className="empty-cell">Chưa có lớp đang được phân công.</div>
+              ) : null}
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Lịch dạy 7 ngày tới"
+            subtitle={`${teacherOverview.sessions.length} buổi được phân công`}
+          >
+            <div className="portal-upcoming-list">
+              {teacherOverview.sessions.slice(0, 8).map((item) => (
+                <div className="portal-schedule-row" key={item.buoiHoc.id}>
+                  <span>{formatDay(item.buoiHoc.ngayHoc)}</span>
+                  <strong>
+                    {item.buoiHoc.gioBatDau.slice(0, 5)} -{" "}
+                    {item.buoiHoc.gioKetThuc.slice(0, 5)} · {item.lopHocTenLop}
+                  </strong>
+                  <small>{item.buoiHoc.phongHoc || "Chưa có phòng"}</small>
+                </div>
+              ))}
+              {teacherOverview.sessions.length === 0 ? (
+                <div className="empty-cell">Không có lịch dạy trong 7 ngày tới.</div>
+              ) : null}
+            </div>
+          </SectionCard>
+        </section>
+      ) : null}
 
       <section className="dashboard-grid">
         <SectionCard

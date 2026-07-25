@@ -42,6 +42,7 @@ export const portalRoleOrder: Array<{
             { role: "giao_vien", slug: "giao-vien" },
             { role: "hoc_vu", slug: "hoc-vu" },
             { role: "ke_toan", slug: "ke-toan" },
+            { role: "tu_van", slug: "tuyen-sinh" },
             { role: "tuyen_sinh", slug: "tuyen-sinh" },
             { role: "quan_tri_he_thong", slug: "he-thong" },
       ];
@@ -257,6 +258,11 @@ export const portalRoles: PortalRoleDefinition[] = [
                         label: "Thông báo nội bộ",
                         description: "Dùng cho cập nhật vận hành và nhắc việc.",
                         to: "/notifications",
+                  },
+                  {
+                        label: "Đơn xin phép",
+                        description: "Xem và xử lý các đơn xin nghỉ của học sinh.",
+                        to: "/attendance/xin-phep",
                   },
             ],
             stats: [
@@ -543,15 +549,113 @@ export function getDefaultPortalPath(roles: string[]) {
       return `/portal/${getDefaultPortalSlug(roles)}`;
 }
 
+export function canAccessPortalRole(slug: PortalRoleSlug, roles: string[]) {
+      return portalRoleOrder.some((item) => item.slug === slug && roles.includes(item.role));
+}
+
+export function getPortalContext(input: {
+      slug: PortalRoleSlug;
+      organizationLevel: string;
+      educationType: string | null;
+}) {
+      const isSystem = input.organizationLevel === "he_thong";
+
+      if (input.slug === "ke-toan") {
+            return isSystem
+                  ? {
+                          title: "Kế toán tổng hợp toàn hệ thống",
+                          details: [
+                                "Xem gộp khoản thu, kỳ thu, công nợ và báo cáo của các đơn vị.",
+                                "Không lập kỳ thu, phiếu thu hoặc điều chỉnh tại đơn vị hệ thống.",
+                                "Muốn thao tác nghiệp vụ phải chuyển sang đúng trường/trung tâm.",
+                          ],
+                    }
+                  : {
+                          title: "Kế toán vận hành tại đơn vị",
+                          details: [
+                                "Lập khoản thu, kỳ thu và khoản phải thu cho học sinh.",
+                                "Thu tiền, theo dõi công nợ, hoàn/chuyển/bảo lưu phí.",
+                                "Báo cáo chỉ trong phạm vi đơn vị đang làm việc.",
+                          ],
+                    };
+      }
+
+      if (input.slug === "giao-vien" && input.educationType === "mam_non") {
+            return {
+                  title: "Giáo viên mầm non",
+                  details: [
+                        "Làm việc theo lớp được phân công: lịch, điểm danh và báo giảng.",
+                        "Theo dõi xin phép/vắng học và ghi nhận nhận xét từng trẻ.",
+                        "Hồ sơ sức khỏe, đón/trả và đánh giá phát triển đang là module chuyên biệt kế tiếp.",
+                  ],
+            };
+      }
+
+      if (input.slug === "giao-vien" && input.educationType === "ngoai_ngu") {
+            return {
+                  title: "Giáo viên trung tâm ngoại ngữ",
+                  details: [
+                        "Làm việc theo lớp được phân công: lịch dạy, điểm danh và báo giảng.",
+                        "Theo dõi bài học, bài tập và trao đổi theo học viên/lớp.",
+                        "Điểm kiểm tra và kỹ năng nghe/nói/đọc/viết đang là module chuyên biệt kế tiếp.",
+                  ],
+            };
+      }
+
+      if (input.slug === "hoc-vu") {
+            return input.educationType === "mam_non"
+                  ? {
+                          title: "Học vụ mầm non",
+                          details: [
+                                "Quản lý lớp, giáo viên, lịch, xếp trẻ và tình trạng học.",
+                                "Theo dõi điểm danh, đơn xin phép và trao đổi phụ huynh.",
+                                "Điều phối hồ sơ sức khỏe và đón/trả sau khi module chuyên biệt hoàn thành.",
+                          ],
+                    }
+                  : {
+                          title: "Học vụ trung tâm",
+                          details: [
+                                "Quản lý chương trình, cấp độ, lớp, giáo viên và lịch phòng.",
+                                "Xếp/chuyển lớp, theo dõi sĩ số, điểm danh và báo giảng.",
+                                "Theo dõi tiến độ chương trình sau khi cấu trúc chương/bài hoàn thành.",
+                          ],
+                    };
+      }
+
+      if (input.slug === "tuyen-sinh") {
+            return input.educationType === "ngoai_ngu"
+                  ? {
+                          title: "Tư vấn · tuyển sinh ngoại ngữ",
+                          details: [
+                                "Tiếp nhận lead, nhu cầu khóa học và lịch sử chăm sóc.",
+                                "Chuyển đổi lead thành học viên/phụ huynh.",
+                                "Kiểm tra đầu vào và gợi ý trình độ là module chuyên biệt kế tiếp.",
+                          ],
+                    }
+                  : {
+                          title: "Tư vấn · tuyển sinh tại đơn vị",
+                          details: [
+                                "Tiếp nhận lead, nhu cầu nhập học và lịch sử chăm sóc.",
+                                "Xác nhận đăng ký, sinh mã học sinh và liên kết phụ huynh.",
+                                "Theo dõi số lead mới và hồ sơ đã chuyển đổi.",
+                          ],
+                    };
+      }
+
+      return null;
+}
+
 /**
- * Trang mặc định sau đăng nhập / khi vào "/". Chỉ vai trò phụ huynh có màn
- * Portal dùng dữ liệu thật (xem `PortalLandingPage`); các vai trò nội bộ
- * khác (học vụ, kế toán, tuyển sinh, giáo viên, quản trị hệ thống) hiện chỉ
- * có khung Portal tĩnh (`portalRoles` bên trên), nên vẫn dùng `DashboardPage`
- * làm mặc định như trước — tránh thay trang chính của toàn bộ nhân viên nội
- * bộ bằng một màn chưa có dữ liệu thật. Portal của các vai trò đó vẫn truy
- * cập được trực tiếp qua `/portal/:roleSlug` khi cần.
+ * Quản trị hệ thống dùng Dashboard tổng hợp làm trang chính. Các portal
+ * nghiệp vụ đã có dữ liệu theo vai trò nên được dùng làm landing tương ứng;
+ * portal hệ thống vẫn có thể mở trực tiếp khi cần xem khung điều hướng.
  */
 export function getDefaultLandingPath(roles: string[]) {
-      return getDefaultPortalSlug(roles) === "parent" ? getDefaultPortalPath(roles) : "/dashboard";
+      if (roles.includes("quan_tri_he_thong")) {
+            return "/dashboard";
+      }
+
+      return portalRoleOrder.some((item) => roles.includes(item.role))
+            ? getDefaultPortalPath(roles)
+            : "/dashboard";
 }

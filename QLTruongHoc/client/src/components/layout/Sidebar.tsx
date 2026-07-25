@@ -33,6 +33,7 @@ export function Sidebar({
 
   const permissions =
     auth?.currentOrganization?.quyen ?? [];
+  const roles = auth?.currentOrganization?.vaiTro ?? [];
 
   const isSystemAdmin =
     permissions.includes(
@@ -99,6 +100,8 @@ export function Sidebar({
               permission,
             ),
         );
+      const dungVaiTro =
+        !route.roles || route.roles.some((role) => roles.includes(role));
 
       // Menu không khai báo loaiHinhDaoTao là menu dùng chung, hiện ở mọi
       // đơn vị. Áp dụng cho tất cả người dùng, kể cả quản trị hệ thống, vì
@@ -112,6 +115,7 @@ export function Sidebar({
 
       if (
         !coQuyen ||
+        !dungVaiTro ||
         !dungLoaiHinh ||
         route.hideFromSidebar ||
         (route.hideAtHeThong && isHeThong) ||
@@ -135,6 +139,7 @@ export function Sidebar({
     isHeThong,
     loaiHinhDaoTaoHienTai,
     permissions,
+    roles,
     isParent,
   ]);
 

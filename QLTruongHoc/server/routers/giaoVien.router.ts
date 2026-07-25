@@ -8,6 +8,7 @@ import {
   requirePermission,
 } from "../middleware/permission.middleware.js";
 import {
+  createGiaoVienAccount,
   createGiaoVienMoi,
   getGiaoVienDetail,
   listGiaoVien,
@@ -53,6 +54,31 @@ giaoVienRouter.get(
           error instanceof Error
             ? error.message
             : "Không thể tải chi tiết giáo viên.",
+      });
+    }
+  },
+);
+
+giaoVienRouter.post(
+  "/:id/tai-khoan",
+  requirePermission("lop_hoc.quan_ly"),
+  async (req, res) => {
+    try {
+      const result = await createGiaoVienAccount({
+        donViId: req.auth!.currentOrganization!.id,
+        id: Number(req.params.id),
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.status(result.created ? 201 : 200).json({ ok: true, data: result });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Không thể tạo tài khoản giáo viên.",
       });
     }
   },

@@ -25,20 +25,59 @@ function homNayIso() {
  * Đơn vị hệ thống xem gộp toàn bộ đơn vị đang hoạt động, giống các trang
  * xem gộp khác (StudentsPage, ClassesPage...).
  */
-export async function getDashboardSummary(donViId: number, loaiDonVi?: string) {
+export async function getDashboardSummary(
+  donViId: number,
+  loaiDonVi: string | undefined,
+  permissions: readonly string[],
+) {
   const isHeThong = loaiDonVi === "he_thong";
   const tuNgay = dauThangHienTai();
   const homNay = homNayIso();
+  const isSystemAdmin = permissions.includes("he_thong.quan_tri");
+  const canViewStudents =
+    isSystemAdmin ||
+    permissions.includes("hoc_sinh.xem") ||
+    permissions.includes("hoc_sinh.quan_ly");
+  const canViewClasses =
+    isSystemAdmin ||
+    permissions.includes("lop_hoc.xem") ||
+    permissions.includes("lop_hoc.quan_ly");
+  const canViewAdmissions =
+    isSystemAdmin ||
+    permissions.includes("tuyen_sinh.xem") ||
+    permissions.includes("tuyen_sinh.quan_ly");
+  const canViewFinance =
+    isSystemAdmin ||
+    permissions.includes("tai_chinh.xem") ||
+    permissions.includes("tai_chinh.quan_ly");
 
   const [hocSinhDangHoc, lopDangHoc, leadMoiThangNay, congNo, lichHocHomNay] = await Promise.all([
-    isHeThong ? countHocSinhDangHocAllDonVi() : countHocSinhDangHoc(donViId),
-    isHeThong ? countLopDangHocAllDonVi() : countLopDangHoc(donViId),
-    isHeThong ? countLeadMoiTuNgayAllDonVi(tuNgay) : countLeadMoiTuNgay(donViId, tuNgay),
-    isHeThong ? sumCongNoAllDonVi() : sumCongNoByDonVi(donViId),
+    canViewStudents
+      ? isHeThong
+        ? countHocSinhDangHocAllDonVi()
+        : countHocSinhDangHoc(donViId)
+      : 0,
+    canViewClasses
+      ? isHeThong
+        ? countLopDangHocAllDonVi()
+        : countLopDangHoc(donViId)
+      : 0,
+    canViewAdmissions
+      ? isHeThong
+        ? countLeadMoiTuNgayAllDonVi(tuNgay)
+        : countLeadMoiTuNgay(donViId, tuNgay)
+      : 0,
+    canViewFinance
+      ? isHeThong
+        ? sumCongNoAllDonVi()
+        : sumCongNoByDonVi(donViId)
+      : { tongCongNo: "0" },
     // Đơn vị hệ thống không tổ chức lớp/lịch học riêng (xem A01_cay_don_vi.md
     // mục 11) nên không có lịch hôm nay để gộp — trả danh sách rỗng, không
     // phải lỗi.
-    isHeThong ? [] : listThoiKhoaBieu({ donViId, tuNgay: homNay, denNgay: homNay }),
+    isHeThong || !canViewClasses
+      ? []
+      : listThoiKhoaBieu({ donViId, tuNgay: homNay, denNgay: homNay }),
   ]);
 
   return {

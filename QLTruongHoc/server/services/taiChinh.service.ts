@@ -30,6 +30,10 @@ import {
   setDanhMucKhoanThuTrangThai,
   setKyThuTrangThai,
   sumCongNoByDonVi,
+  sumCongNoAllDonVi,
+  sumHoanPhiDaDuyetAllDonViTrongKhoang,
+  sumHoanPhiDaDuyetTrongKhoang,
+  sumPhieuThuAllDonViTrongKhoang,
   sumPhieuThuTrongKhoang,
   updateDanhMucKhoanThu,
   updateDieuChinhQuyetDinh,
@@ -827,9 +831,15 @@ export async function getBaoCaoTaiChinh(input: {
 }) {
   validateKhoangNgay(input.tuNgay, input.denNgay);
 
-  const [tongThu, tongCongNo, theoKyThuRaw] = await Promise.all([
-    sumPhieuThuTrongKhoang(input.donViId, input.tuNgay, input.denNgay),
-    sumCongNoByDonVi(input.donViId),
+  const isSystem = input.loaiDonVi === "he_thong";
+  const [tongThu, tongHoanPhi, tongCongNo, theoKyThuRaw] = await Promise.all([
+    isSystem
+      ? sumPhieuThuAllDonViTrongKhoang(input.tuNgay, input.denNgay)
+      : sumPhieuThuTrongKhoang(input.donViId, input.tuNgay, input.denNgay),
+    isSystem
+      ? sumHoanPhiDaDuyetAllDonViTrongKhoang(input.tuNgay, input.denNgay)
+      : sumHoanPhiDaDuyetTrongKhoang(input.donViId, input.tuNgay, input.denNgay),
+    isSystem ? sumCongNoAllDonVi() : sumCongNoByDonVi(input.donViId),
     input.loaiDonVi === "he_thong"
       ? listKyThuBaoCaoAllDonVi()
       : listKyThuBaoCaoByDonVi(input.donViId),
@@ -855,6 +865,8 @@ export async function getBaoCaoTaiChinh(input: {
 
   return {
     tongThu: tongThu.tongThu,
+    tongHoanPhi: tongHoanPhi.tongHoanPhi,
+    tongThuRong: (Number(tongThu.tongThu) - Number(tongHoanPhi.tongHoanPhi)).toFixed(2),
     soPhieuThu: tongThu.soPhieuThu,
     tongCongNo: tongCongNo.tongCongNo,
     theoKyThu,

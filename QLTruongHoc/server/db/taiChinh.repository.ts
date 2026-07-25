@@ -599,6 +599,71 @@ export async function sumPhieuThuTrongKhoang(donViId: number, tuNgay: string, de
   return rows[0] ?? { tongThu: "0.00", soPhieuThu: 0 };
 }
 
+export async function sumPhieuThuAllDonViTrongKhoang(tuNgay: string, denNgay: string) {
+  const db = getDb();
+  const rows = await db
+    .select({
+      tongThu: sql<string>`COALESCE(SUM(${phieuThu.soTien}), 0)`,
+      soPhieuThu: count(),
+    })
+    .from(phieuThu)
+    .innerJoin(donVi, eq(phieuThu.donViId, donVi.id))
+    .where(
+      and(
+        eq(donVi.trangThai, "hoat_dong"),
+        gte(phieuThu.ngayThu, `${tuNgay} 00:00:00`),
+        lte(phieuThu.ngayThu, `${denNgay} 23:59:59`),
+      ),
+    );
+
+  return rows[0] ?? { tongThu: "0.00", soPhieuThu: 0 };
+}
+
+export async function sumHoanPhiDaDuyetTrongKhoang(
+  donViId: number,
+  tuNgay: string,
+  denNgay: string,
+) {
+  const db = getDb();
+  const rows = await db
+    .select({
+      tongHoanPhi: sql<string>`COALESCE(SUM(${dieuChinhKhoanPhaiThu.soTien}), 0)`,
+    })
+    .from(dieuChinhKhoanPhaiThu)
+    .where(
+      and(
+        eq(dieuChinhKhoanPhaiThu.donViId, donViId),
+        eq(dieuChinhKhoanPhaiThu.loaiDieuChinh, "hoan_phi"),
+        eq(dieuChinhKhoanPhaiThu.trangThai, "da_duyet"),
+        gte(dieuChinhKhoanPhaiThu.duyetAt, `${tuNgay} 00:00:00`),
+        lte(dieuChinhKhoanPhaiThu.duyetAt, `${denNgay} 23:59:59`),
+      ),
+    );
+
+  return rows[0] ?? { tongHoanPhi: "0.00" };
+}
+
+export async function sumHoanPhiDaDuyetAllDonViTrongKhoang(tuNgay: string, denNgay: string) {
+  const db = getDb();
+  const rows = await db
+    .select({
+      tongHoanPhi: sql<string>`COALESCE(SUM(${dieuChinhKhoanPhaiThu.soTien}), 0)`,
+    })
+    .from(dieuChinhKhoanPhaiThu)
+    .innerJoin(donVi, eq(dieuChinhKhoanPhaiThu.donViId, donVi.id))
+    .where(
+      and(
+        eq(donVi.trangThai, "hoat_dong"),
+        eq(dieuChinhKhoanPhaiThu.loaiDieuChinh, "hoan_phi"),
+        eq(dieuChinhKhoanPhaiThu.trangThai, "da_duyet"),
+        gte(dieuChinhKhoanPhaiThu.duyetAt, `${tuNgay} 00:00:00`),
+        lte(dieuChinhKhoanPhaiThu.duyetAt, `${denNgay} 23:59:59`),
+      ),
+    );
+
+  return rows[0] ?? { tongHoanPhi: "0.00" };
+}
+
 export async function sumCongNoByDonVi(donViId: number) {
   const db = getDb();
 

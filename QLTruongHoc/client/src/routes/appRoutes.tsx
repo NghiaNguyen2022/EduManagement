@@ -8,6 +8,7 @@ export type AppRouteDefinition = {
       label: string;
       group: string;
       permissions?: string[];
+      roles?: string[];
       /**
        * Loại hình đào tạo được phép thấy mục menu này. Không khai báo (undefined)
        * nghĩa là dùng chung cho mọi loại hình, kể cả đơn vị hệ thống gốc.
@@ -46,6 +47,54 @@ export type AppRouteDefinition = {
 };
 
 export const appRoutes: AppRouteDefinition[] = [
+      {
+            id: "portal-parent",
+            path: "/portal/parent",
+            label: "Cổng phụ huynh",
+            group: "Cổng làm việc",
+            roles: ["phu_huynh"],
+            hideFromSidebar: true,
+      },
+      {
+            id: "portal-he-thong",
+            path: "/portal/he-thong",
+            label: "Cổng quản trị hệ thống",
+            group: "Cổng làm việc",
+            roles: ["quan_tri_he_thong"],
+            onlyAtHeThong: true,
+            hideFromSidebar: true,
+      },
+      {
+            id: "portal-giao-vien",
+            path: "/portal/giao-vien",
+            label: "Cổng giáo viên",
+            group: "Cổng làm việc",
+            roles: ["giao_vien"],
+            hideAtHeThong: true,
+      },
+      {
+            id: "portal-hoc-vu",
+            path: "/portal/hoc-vu",
+            label: "Cổng học vụ",
+            group: "Cổng làm việc",
+            roles: ["hoc_vu"],
+            hideAtHeThong: true,
+      },
+      {
+            id: "portal-ke-toan",
+            path: "/portal/ke-toan",
+            label: "Cổng kế toán",
+            group: "Cổng làm việc",
+            roles: ["ke_toan"],
+      },
+      {
+            id: "portal-tuyen-sinh",
+            path: "/portal/tuyen-sinh",
+            label: "Cổng tư vấn · tuyển sinh",
+            group: "Cổng làm việc",
+            roles: ["tu_van", "tuyen_sinh"],
+            hideAtHeThong: true,
+      },
       {
             id: "dashboard",
             path: "/dashboard",
@@ -86,6 +135,14 @@ export const appRoutes: AppRouteDefinition[] = [
             label: "Lịch học",
             group: "Đào tạo",
             permissions: ["lop_hoc.xem", "lop_hoc.quan_ly"],
+            hideAtHeThong: true,
+      },
+      {
+            id: "leave-requests",
+            path: "/attendance/xin-phep",
+            label: "Đơn xin phép",
+            group: "Đào tạo",
+            permissions: ["diem_danh.xem", "diem_danh.thuc_hien"],
             hideAtHeThong: true,
       },
       {
@@ -186,9 +243,24 @@ export const appRoutes: AppRouteDefinition[] = [
       },
 ];
 
+const fallbackRoute: AppRouteDefinition = {
+      id: "unknown",
+      path: "",
+      label: "Quản lý trường học",
+      group: "Hệ thống",
+      hideFromSidebar: true,
+};
+
+function findBestRouteMatch(pathname: string) {
+      return appRoutes
+            .filter((route) => pathname === route.path || pathname.startsWith(`${route.path}/`))
+            .sort((left, right) => right.path.length - left.path.length)[0] ?? null;
+}
+
 export function findRouteByPath(pathname: string) {
-      return (
-            appRoutes.find((route) => pathname === route.path || pathname.startsWith(`${route.path}/`)) ??
-            appRoutes[0]
-      );
+      return findBestRouteMatch(pathname) ?? fallbackRoute;
+}
+
+export function findRouteAccessByPath(pathname: string) {
+      return findBestRouteMatch(pathname);
 }

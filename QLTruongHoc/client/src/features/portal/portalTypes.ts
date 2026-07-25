@@ -118,3 +118,27 @@ export type ParentPortalOverview = {
   upcomingSessions: ParentPortalUpcomingSession[];
   organizations: ParentPortalOrganizationGroup[];
 };
+
+export type TeacherPortalOverview = {
+  teacher: {
+    id: number;
+    maGiaoVien: string;
+    hoTen: string;
+    chuyenMon: string | null;
+  };
+  classes: Array<{
+    assignment: {
+      id: number;
+      vaiTro: "giao_vien_chinh" | "ho_tro" | "chu_nhiem";
+      tuNgay: string;
+      denNgay: string | null;
+    };
+    class: {
+      id: number;
+      maLop: string;
+      tenLop: string;
+      trangThai: string;
+    };
+  }>;
+  sessions: import("../lichHoc/lichHocTypes").ThoiKhoaBieuItem[];
+};

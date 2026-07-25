@@ -1,3 +1,6 @@
+import { hash } from "bcryptjs";
+
+import { normalizeTeacherUsername } from "../domain/teacher-account.js";
 import {
   createAuditLog,
 } from "../db/audit.repository.js";
@@ -9,8 +12,16 @@ import {
   listGiaoVienByDonVi,
   setGiaoVienTrangThai,
   updateGiaoVien,
+  updateGiaoVienNguoiDungId,
 } from "../db/giaoVien.repository.js";
+import { findRoleByCode } from "../db/role.repository.js";
+import {
+  createUserWithRole,
+  findUserById,
+  findUserByUsername,
+} from "../db/user.repository.js";
 import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
+import { createTemporaryPassword } from "./user.service.js";
 
 async function sinhMaGiaoVien(donViId: number) {
   const total = await countGiaoVienTheoMaPrefix(donViId, "GV");
@@ -172,4 +183,99 @@ export async function setGiaoVienStatus(input: {
   });
 
   return updated;
+}
+
+async function sinhTenDangNhapGiaoVien(dienThoai: string | null) {
+  const base = normalizeTeacherUsername(dienThoai);
+  let candidate = base;
+  let attempt = 1;
+
+  while (await findUserByUsername(candidate)) {
+    attempt += 1;
+    candidate = `${base}-${attempt}`;
+  }
+
+  return candidate;
+}
+
+export async function createGiaoVienAccount(input: {
+  donViId: number;
+  id: number;
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  await assertDonViChoPhepNghiepVu(input.donViId);
+
+  const teacher = await findGiaoVienById(input.donViId, input.id);
+
+  if (!teacher) {
+    throw new Error("Không tìm thấy giáo viên trong đơn vị hiện tại.");
+  }
+
+  if (teacher.nguoiDungId) {
+    const existingUser = await findUserById(teacher.nguoiDungId);
+
+    return {
+      created: false as const,
+      nguoiDungId: teacher.nguoiDungId,
+      tenDangNhap: existingUser?.tenDangNhap ?? null,
+      temporaryPassword: null,
+    };
+  }
+
+  if (teacher.trangThai !== "hoat_dong") {
+    throw new Error(
+      "Chỉ có thể tạo tài khoản cho giáo viên đang hoạt động.",
+    );
+  }
+
+  const role = await findRoleByCode("giao_vien");
+
+  if (!role) {
+    throw new Error("Chưa cấu hình vai trò giáo viên trong hệ thống.");
+  }
+
+  const tenDangNhap = await sinhTenDangNhapGiaoVien(teacher.dienThoai);
+  const temporaryPassword = createTemporaryPassword();
+  const passwordHash = await hash(temporaryPassword, 12);
+
+  let createdUser;
+
+  try {
+    createdUser = await createUserWithRole({
+      username: tenDangNhap,
+      passwordHash,
+      fullName: teacher.hoTen,
+      email: teacher.email,
+      phone: teacher.dienThoai,
+      roleId: role.id,
+      organizationId: input.donViId,
+    });
+  } catch {
+    throw new Error(
+      "Không thể tạo tài khoản. Email hoặc số điện thoại có thể đã được dùng cho tài khoản khác.",
+    );
+  }
+
+  await updateGiaoVienNguoiDungId({
+    id: teacher.id,
+    nguoiDungId: createdUser.id,
+  });
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "giao_vien.create_account",
+    objectType: "GiaoVien",
+    objectId: String(teacher.id),
+    content: `Tạo tài khoản đăng nhập ${tenDangNhap} cho giáo viên ${teacher.hoTen} (${teacher.maGiaoVien}).`,
+    ipAddress: input.ipAddress,
+  });
+
+  return {
+    created: true as const,
+    nguoiDungId: createdUser.id,
+    tenDangNhap,
+    temporaryPassword,
+  };
 }

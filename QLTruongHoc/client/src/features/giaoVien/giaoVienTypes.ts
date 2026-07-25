@@ -19,3 +19,10 @@ export type GiaoVienFormInput = {
   chuyenMon: string;
   trinhDo: string;
 };
+
+export type GiaoVienAccountResult = {
+  created: boolean;
+  nguoiDungId: number;
+  tenDangNhap: string | null;
+  temporaryPassword: string | null;
+};

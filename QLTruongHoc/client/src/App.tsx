@@ -1,7 +1,8 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { AppShell } from "./components/layout/AppShell";
 import { getDefaultLandingPath, getDefaultPortalPath } from "./config/portal";
+import { findRouteAccessByPath } from "./routes/appRoutes";
 import { useAuth } from "./features/auth/AuthContext";
 import { AttendancePage } from "./pages/AttendancePage";
 import { ChangePasswordPage } from "./pages/ChangePasswordPage";
@@ -39,6 +40,7 @@ import { UserManagementPage } from "./pages/UserManagementPage";
 
 function ProtectedApp() {
   const { auth, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <main className="loading-page">Đang tải phiên đăng nhập...</main>;
@@ -59,6 +61,28 @@ function ProtectedApp() {
   const defaultPortalPath = getDefaultPortalPath(auth.currentOrganization.vaiTro);
 
   const defaultLandingPath = getDefaultLandingPath(auth.currentOrganization.vaiTro);
+
+  const routeAccess = findRouteAccessByPath(location.pathname);
+  const permissions = auth.currentOrganization.quyen;
+  const roles = auth.currentOrganization.vaiTro;
+  const isSystemAdmin = permissions.includes("he_thong.quan_tri");
+  const allowedByPermission =
+    !routeAccess?.permissions ||
+    isSystemAdmin ||
+    routeAccess.permissions.some((permission) => permissions.includes(permission));
+  const allowedByRole =
+    !routeAccess?.roles || routeAccess.roles.some((role) => roles.includes(role));
+  const allowedByOrganization =
+    (!routeAccess?.onlyAtHeThong || auth.currentOrganization.loaiDonVi === "he_thong") &&
+    (!routeAccess?.hideAtHeThong || auth.currentOrganization.loaiDonVi !== "he_thong");
+
+  if (!allowedByPermission || !allowedByRole || !allowedByOrganization) {
+    return (
+      <AppShell>
+        <Navigate to={defaultLandingPath} replace />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>

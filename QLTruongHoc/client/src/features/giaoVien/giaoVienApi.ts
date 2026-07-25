@@ -1,4 +1,5 @@
 import type {
+  GiaoVienAccountResult,
   GiaoVienFormInput,
   GiaoVienItem,
 } from "./giaoVienTypes";
@@ -50,6 +51,13 @@ export function createGiaoVienApi(input: GiaoVienFormInput) {
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+export function createGiaoVienAccountApi(id: number) {
+  return request<GiaoVienAccountResult>(
+    `/api/giao-vien/${id}/tai-khoan`,
+    { method: "POST" },
+  );
 }
 
 export function updateGiaoVienApi(

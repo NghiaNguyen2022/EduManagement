@@ -191,6 +191,29 @@ export async function updateGiaoVien(input: {
   return rows[0] ?? null;
 }
 
+export async function updateGiaoVienNguoiDungId(input: {
+  id: number;
+  nguoiDungId: number;
+}) {
+  const db = getDb();
+
+  await db
+    .update(giaoVien)
+    .set({
+      nguoiDungId: input.nguoiDungId,
+      updatedAt: now(),
+    })
+    .where(eq(giaoVien.id, input.id));
+
+  const rows = await db
+    .select()
+    .from(giaoVien)
+    .where(eq(giaoVien.id, input.id))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
 export async function setGiaoVienTrangThai(input: {
   id: number;
   trangThai: "hoat_dong" | "ngung_hoat_dong";

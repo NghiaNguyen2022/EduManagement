@@ -12,6 +12,8 @@ import {
   findAssignableRoleById,
   findUserById,
 } from "../db/user.repository.js";
+import { findDonViById } from "../db/donVi.repository.js";
+import { canAssignRoleAtOrganization } from "../domain/role-policy.js";
 
 export async function getUserAssignments(
   userId: number,
@@ -57,6 +59,20 @@ export async function addUserAssignment(
     throw new Error(
       "Vai trò không hợp lệ.",
     );
+  }
+
+  const targetOrganization = await findDonViById(input.organizationId);
+
+  if (
+    !targetOrganization ||
+    !canAssignRoleAtOrganization({
+      roleCode: role.maVaiTro,
+      organizationLevel: targetOrganization.loaiDonVi,
+      educationType: targetOrganization.loaiHinhDaoTao,
+      channel: "staff_ui",
+    })
+  ) {
+    throw new Error("Vai trò này không được phép gán tại loại đơn vị đã chọn.");
   }
 
   const existed =

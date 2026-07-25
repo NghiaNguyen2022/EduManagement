@@ -19,6 +19,8 @@
     "db:studio": "drizzle-kit studio",
     "db:seed:auth": "tsx server/scripts/seedAuthFoundation.ts",
     "db:seed:sample": "tsx server/scripts/seedSampleData.ts",
+    "db:seed:test:mam-non": "tsx server/scripts/seedMamNonTeacherTest.ts",
+    "db:seed:test:ngoai-ngu": "tsx server/scripts/seedMamNonTeacherTest.ts --ngoai-ngu",
     "test": "node --import tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit"
   },

@@ -105,6 +105,13 @@ export function FinanceReportPage() {
             />
 
             <StatCard
+              title="Hoàn phí đã duyệt"
+              value={formatTien(report.tongHoanPhi)}
+              note={`Thu ròng ${formatTien(report.tongThuRong)}`}
+              tone="info"
+            />
+
+            <StatCard
               title="Tổng công nợ hiện tại"
               value={formatTien(report.tongCongNo)}
               note="Toàn bộ khoản còn phải thu"

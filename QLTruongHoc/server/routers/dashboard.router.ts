@@ -13,6 +13,7 @@ dashboardRouter.get("/summary", async (req, res) => {
     const data = await getDashboardSummary(
       req.auth!.currentOrganization!.id,
       req.auth!.currentOrganization!.loaiDonVi,
+      req.auth!.currentOrganization!.quyen,
     );
 
     res.json({ ok: true, data });

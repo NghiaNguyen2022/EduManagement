@@ -6,11 +6,13 @@ import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
 import { useAuth } from "../features/auth/AuthContext";
 import {
+  createGiaoVienAccountApi,
   getGiaoVienDetailApi,
   setGiaoVienStatusApi,
   updateGiaoVienApi,
 } from "../features/giaoVien/giaoVienApi";
 import type {
+  GiaoVienAccountResult,
   GiaoVienFormInput,
   GiaoVienItem,
 } from "../features/giaoVien/giaoVienTypes";
@@ -43,6 +45,9 @@ export function GiaoVienDetailPage() {
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savingStatus, setSavingStatus] = useState(false);
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [accountResult, setAccountResult] =
+    useState<GiaoVienAccountResult | null>(null);
 
   const isHeThong =
     auth?.currentOrganization?.loaiDonVi === "he_thong";
@@ -142,6 +147,33 @@ export function GiaoVienDetailPage() {
     }
   }
 
+  async function handleCreateAccount() {
+    if (!item || !id) return;
+
+    setError("");
+    setNotice("");
+    setCreatingAccount(true);
+
+    try {
+      const result = await createGiaoVienAccountApi(Number(id));
+      setAccountResult(result);
+      setNotice(
+        result.created
+          ? "Đã tạo tài khoản giáo viên. Hãy lưu lại mật khẩu tạm trước khi rời trang."
+          : "Giáo viên này đã có tài khoản đăng nhập.",
+      );
+      await loadData();
+    } catch (accountError) {
+      setError(
+        accountError instanceof Error
+          ? accountError.message
+          : "Không thể tạo tài khoản giáo viên.",
+      );
+    } finally {
+      setCreatingAccount(false);
+    }
+  }
+
   if (loading || !item || !form) {
     return (
       <div className="page-stack">
@@ -203,6 +235,60 @@ export function GiaoVienDetailPage() {
             ? "Giáo viên đang hoạt động, có thể phân công vào lớp mới."
             : "Giáo viên đã ngừng hoạt động, không phân công được vào lớp mới."}
         </p>
+      </SectionCard>
+
+      <SectionCard
+        title="Tài khoản đăng nhập"
+        subtitle={
+          item.nguoiDungId
+            ? "Hồ sơ giáo viên đã được liên kết với một tài khoản."
+            : "Tạo tài khoản vai trò giáo viên tại đơn vị hiện tại."
+        }
+        actions={
+          canManage && !item.nguoiDungId ? (
+            <button
+              type="button"
+              className="primary-button"
+              disabled={
+                creatingAccount ||
+                item.trangThai !== "hoat_dong" ||
+                !item.dienThoai
+              }
+              onClick={() => void handleCreateAccount()}
+            >
+              {creatingAccount
+                ? "Đang tạo..."
+                : "Tạo tài khoản đăng nhập"}
+            </button>
+          ) : null
+        }
+      >
+        {accountResult ? (
+          <div className="form-success">
+            <div>
+              Tên đăng nhập:{" "}
+              <strong>{accountResult.tenDangNhap ?? "Không xác định"}</strong>
+            </div>
+            {accountResult.temporaryPassword ? (
+              <div>
+                Mật khẩu tạm:{" "}
+                <strong>{accountResult.temporaryPassword}</strong>{" "}
+                (chỉ hiển thị trong lần tạo này)
+              </div>
+            ) : null}
+          </div>
+        ) : item.nguoiDungId ? (
+          <p>Tài khoản đã được tạo và sẵn sàng đăng nhập.</p>
+        ) : !item.dienThoai ? (
+          <p>Hãy cập nhật số điện thoại trước khi tạo tài khoản.</p>
+        ) : item.trangThai !== "hoat_dong" ? (
+          <p>Hãy kích hoạt lại giáo viên trước khi tạo tài khoản.</p>
+        ) : (
+          <p>
+            Tên đăng nhập sẽ được tạo từ số điện thoại; người dùng phải đổi
+            mật khẩu khi đăng nhập lần đầu.
+          </p>
+        )}
       </SectionCard>
 
       <SectionCard title="Thông tin giáo viên">

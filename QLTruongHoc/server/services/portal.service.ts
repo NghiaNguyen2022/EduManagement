@@ -1,6 +1,10 @@
 import { listDiemDanhGanDayByHocSinh } from "../db/diemDanh.repository.js";
 import { findDonViById } from "../db/donVi.repository.js";
-import { listEnrollmentsByHocSinh } from "../db/lopHoc.repository.js";
+import { findGiaoVienByNguoiDungId } from "../db/giaoVien.repository.js";
+import {
+  listEnrollmentsByHocSinh,
+  listLopHocByGiaoVienId,
+} from "../db/lopHoc.repository.js";
 import { listPhuHuynhByNguoiDungId, listHocSinhByPhuHuynhId } from "../db/phuHuynh.repository.js";
 import { listKhoanPhaiThuByHocSinh } from "../db/taiChinh.repository.js";
 import { listDonXinPhepByHocSinhIds } from "../db/xinPhep.repository.js";
@@ -15,6 +19,39 @@ function addDaysIso(iso: string, days: number) {
   const date = new Date(`${iso}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+export async function getTeacherPortalOverview(input: {
+  userId: number;
+  donViId: number;
+}) {
+  const teacher = await findGiaoVienByNguoiDungId(input.donViId, input.userId);
+
+  if (!teacher) {
+    throw new Error(
+      "Tài khoản giáo viên chưa được liên kết với hồ sơ giáo viên tại đơn vị này.",
+    );
+  }
+
+  const today = todayIso();
+  const [assignments, sessions] = await Promise.all([
+    listLopHocByGiaoVienId(teacher.id),
+    listThoiKhoaBieu({
+      donViId: input.donViId,
+      tuNgay: today,
+      denNgay: addDaysIso(today, 7),
+      giaoVienId: teacher.id,
+    }),
+  ]);
+
+  return {
+    teacher,
+    classes: assignments.map((item) => ({
+      assignment: item.phanCong,
+      class: item.lopHoc,
+    })),
+    sessions,
+  };
 }
 
 /**

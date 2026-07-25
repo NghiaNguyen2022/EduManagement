@@ -2,7 +2,10 @@ import { Router } from "express";
 
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { requireCurrentOrganization } from "../middleware/permission.middleware.js";
-import { getParentPortalOverview } from "../services/portal.service.js";
+import {
+  getParentPortalOverview,
+  getTeacherPortalOverview,
+} from "../services/portal.service.js";
 
 export const portalRouter = Router();
 
@@ -27,6 +30,30 @@ portalRouter.get("/parent", async (req, res) => {
     res.status(400).json({
       ok: false,
       error: error instanceof Error ? error.message : "Không thể tải portal phụ huynh.",
+    });
+  }
+});
+
+portalRouter.get("/teacher", async (req, res) => {
+  try {
+    if (!req.auth?.currentOrganization?.vaiTro.includes("giao_vien")) {
+      res.status(403).json({
+        ok: false,
+        error: "Portal giáo viên chỉ dành cho vai trò giáo viên.",
+      });
+      return;
+    }
+
+    const data = await getTeacherPortalOverview({
+      userId: req.auth.user.id,
+      donViId: req.auth.currentOrganization.id,
+    });
+
+    res.json({ ok: true, data });
+  } catch (error) {
+    res.status(400).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Không thể tải Portal giáo viên.",
     });
   }
 });

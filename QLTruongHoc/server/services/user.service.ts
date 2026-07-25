@@ -16,6 +16,8 @@ import {
   revokeAllUserSessions,
   updateUserStatus,
 } from "../db/user.repository.js";
+import { findDonViById } from "../db/donVi.repository.js";
+import { canAssignRoleAtOrganization } from "../domain/role-policy.js";
 
 function normalizeUsername(
   value: string,
@@ -121,16 +123,26 @@ export async function getUsers(
  * - Đứng ở đơn vị con: mọi vai trò vận hành, trừ `phu_huynh` (tài khoản phụ
  *   huynh chỉ tạo được từ hồ sơ học sinh — xem `createUser`).
  */
-export async function getRoles(loaiDonVi?: string) {
+export async function getRoles(loaiDonVi?: string, loaiHinhDaoTao?: string | null) {
   const roles = await listAssignableRoles();
 
-  if (loaiDonVi === "he_thong") {
-    return roles.filter(
-      (role) => role.maVaiTro === "quan_ly_don_vi" || role.maVaiTro === "ke_toan",
-    );
-  }
-
-  return roles.filter((role) => role.maVaiTro !== "phu_huynh");
+  return roles.filter((role) =>
+    canAssignRoleAtOrganization({
+      roleCode: role.maVaiTro,
+      organizationLevel: (loaiDonVi ?? "co_so") as
+        | "he_thong"
+        | "truong"
+        | "trung_tam"
+        | "co_so",
+      educationType: (loaiHinhDaoTao ?? null) as
+        | "mam_non"
+        | "ngoai_ngu"
+        | "tin_hoc"
+        | "khac"
+        | null,
+      channel: "staff_ui",
+    }),
+  );
 }
 
 export async function getUserDetail(id: number) {
@@ -208,6 +220,20 @@ export async function createUser(input: {
     throw new Error(
       "Tài khoản phụ huynh chỉ tạo được từ hồ sơ học sinh (mục Phụ huynh · Người giám hộ).",
     );
+  }
+
+  const organization = await findDonViById(input.organizationId);
+
+  if (
+    !organization ||
+    !canAssignRoleAtOrganization({
+      roleCode: role.maVaiTro,
+      organizationLevel: organization.loaiDonVi,
+      educationType: organization.loaiHinhDaoTao,
+      channel: "staff_ui",
+    })
+  ) {
+    throw new Error("Vai trò này không được phép gán tại loại đơn vị đã chọn.");
   }
 
   const existed =

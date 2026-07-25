@@ -279,7 +279,9 @@
       hợp nhiều con/nhiều đơn vị. Xem `docs/analysis/D01_D03_ho_so_hoc_sinh_phu_huynh.md` mục
       11. Portal giáo viên/kế toán/tuyển sinh/hệ thống (`/portal/:roleSlug` khác) vẫn là khung
       tĩnh — xem J02.)
-- [ ] J02 Portal giáo viên. (Khung tĩnh có sẵn (`config/portal.ts`), chưa nối dữ liệu thật.)
+- [x] J02 Portal giáo viên. (2026-07-25: nối hồ sơ giáo viên theo tài khoản,
+  lớp được phân công và lịch dạy 7 ngày tới; endpoint `/api/portal/teacher`
+  kiểm tra vai trò và đơn vị hiện tại.)
 - [x] J03 Lịch học và thông báo. (2026-07-22: Lịch học — đã có trong J01 (buổi sắp tới theo
       từng con). Thông báo — mở quyền xem/xác nhận đã đọc cho vai trò `phu_huynh` qua
       `requireAnyPermissionOrRole` (`thongBao.router.ts`), không cấp thêm quyền quản lý; danh

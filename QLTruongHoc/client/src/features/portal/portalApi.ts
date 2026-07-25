@@ -26,3 +26,7 @@ async function request<T>(url: string): Promise<T> {
 export function loadParentPortalOverviewApi() {
   return request<ParentPortalOverview>("/api/portal/parent");
 }
+
+export function loadTeacherPortalOverviewApi() {
+  return request<import("./portalTypes").TeacherPortalOverview>("/api/portal/teacher");
+}

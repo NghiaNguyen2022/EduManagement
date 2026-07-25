@@ -178,6 +178,25 @@ async function main() {
       });
   }
 
+  // Quản lý đơn vị là lớp phê duyệt độc lập cho hoàn/chuyển phí/bảo lưu.
+  const unitManagerRoleId = roleMap.get("quan_ly_don_vi");
+  const financeApprovalPermissionId = permissionMap.get("tai_chinh.duyet");
+
+  if (unitManagerRoleId && financeApprovalPermissionId) {
+    await db
+      .insert(vaiTroQuyen)
+      .values({
+        vaiTroId: unitManagerRoleId,
+        quyenId: financeApprovalPermissionId,
+        createdAt: now(),
+      })
+      .onDuplicateKeyUpdate({
+        set: {
+          createdAt: now(),
+        },
+      });
+  }
+
   const units = [
     {
       maDonVi: "SYSTEM",

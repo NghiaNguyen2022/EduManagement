@@ -103,6 +103,8 @@ export type BaoCaoKyThuItem = {
 
 export type BaoCaoTaiChinh = {
   tongThu: string;
+  tongHoanPhi: string;
+  tongThuRong: string;
   soPhieuThu: number;
   tongCongNo: string;
   theoKyThu: BaoCaoKyThuItem[];
