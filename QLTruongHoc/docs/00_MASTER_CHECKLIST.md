@@ -133,7 +133,7 @@
 > không tổ chức lớp" khi đứng ở hệ thống (trang duy nhất trong nhóm Đào tạo còn thiếu kiểu này
 > so với Học sinh/Giáo viên/Lớp học); (6) sidebar ẩn "Lịch học"/"Điểm danh" khi đứng ở hệ thống
 > (đơn vị hệ thống không tổ chức lớp nên 2 mục này luôn trống, không còn ý nghĩa hiện ra); (7)
-> `/dashboard` ở hệ thống thêm khối "Lối vào nhanh cho quản trị" (Cây đơn vị/Người dùng/Vai
+> `/dashboard` ở hệ thống thêm khối "Lối vào nhanh cho quản trị" (Danh mục đơn vị/Người dùng/Vai
 > trò/Nhật ký). Nhân tiện tick lại B04/B05/B07/J04 trong checklist — đã xong từ trước (H, F/G,
 > J01, F03) nhưng bị sót không cập nhật dấu tick khi các mục đó hoàn tất. Xem
 > `docs/analysis/QUAN_TRI_HE_THONG_UX.md`.
@@ -141,14 +141,14 @@
 > Cập nhật 2026-07-23 (tiếp, sau khi xem qua UI thật): 5 điểm bổ sung cho vai trò quản trị hệ
 > thống — style lại scrollbar sidebar khớp tông xanh; bỏ "Hệ thống" khỏi dropdown "Đơn vị cha"
 > khi tạo đơn vị mới (chọn "Không có" nay tự gán đúng id đơn vị hệ thống thay vì NULL, khớp dữ
-> liệu thật thay vì tạo gốc rời rạc); ẩn cả nhóm menu "Hệ thống" (Cây đơn vị, Vai trò·Phân
+> liệu thật thay vì tạo gốc rời rạc); ẩn cả nhóm menu "Hệ thống" (Danh mục đơn vị, Vai trò·Phân
 > quyền, Nhật ký, Cấu hình) khi đứng ở đơn vị con, chỉ giữ "Quản lý người dùng" hiện mọi nơi;
 > ẩn "Trao đổi phụ huynh" khỏi menu ở hệ thống và chuyển hẳn UI ghi/xem vào trong từng lớp
 > (`ClassDetailPage.tsx`), giữ nguyên `/communications` cho nhu cầu xem gộp. Xem
 > `docs/analysis/QUAN_TRI_HE_THONG_UX.md`.
 
 ## A. Nền tảng và đa đơn vị
-- [x] A01 Tạo cây đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)
+- [x] A01 Tạo Danh mục đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)
 - [x] A02 Chọn đơn vị sau đăng nhập.
 - [x] A03 Lưu đơn vị đang làm việc trong session/token. (`PhienDangNhap.donViHienTaiId`.)
 - [x] A04 Phân quyền người dùng theo từng đơn vị. (`NguoiDungVaiTroDonVi` + middleware `requirePermission`.)

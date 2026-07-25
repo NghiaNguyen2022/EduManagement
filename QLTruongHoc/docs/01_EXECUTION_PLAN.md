@@ -15,7 +15,7 @@
 
 ### Sprint 0 – Foundation
 - Tạo project từ kiến trúc ResidenceCore.
-- Multi-tenant `DonVi` và cây đơn vị.
+- Multi-tenant `DonVi` và Danh mục đơn vị.
 - Đăng nhập, chọn đơn vị, quyền theo đơn vị.
 - Shared appearance, layout, message box, date/time picker.
 - Audit log và các danh mục lõi.

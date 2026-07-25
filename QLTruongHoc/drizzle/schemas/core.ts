@@ -43,6 +43,12 @@ export const donVi = mysqlTable(
     soDienThoai: varchar("soDienThoai", { length: 30 }),
     email: varchar("email", { length: 255 }),
 
+    hinhAnhUrl: varchar("hinhAnhUrl", { length: 500 }),
+    nguoiDaiDien: varchar("nguoiDaiDien", { length: 255 }),
+    maSoThue: varchar("maSoThue", { length: 50 }),
+    maGiayPhep: varchar("maGiayPhep", { length: 100 }),
+    giayPhepUrl: varchar("giayPhepUrl", { length: 500 }),
+
     trangThai: mysqlEnum("trangThai", [
       "hoat_dong",
       "tam_ngung",
@@ -74,6 +80,7 @@ export const nguoiDung = mysqlTable(
 
     hoTen: varchar("hoTen", { length: 255 }).notNull(),
     email: varchar("email", { length: 255 }),
+    hinhAnhUrl: varchar("hinhAnhUrl", { length: 500 }),
     soDienThoai: varchar("soDienThoai", { length: 30 }),
 
     trangThai: mysqlEnum("trangThai", [

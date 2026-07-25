@@ -12,10 +12,10 @@
 ## Sprint 0 — Nền tảng đa đơn vị (khôi phục 2026-07-20)
 
 **Trạng thái:** Auth + RBAC + audit log backend/frontend đã chạy được. Còn thiếu: UI quản lý
-cây đơn vị (CRUD `DonVi`), migration chính thức, test tự động.
+Danh mục đơn vị (CRUD `DonVi`), migration chính thức, test tự động.
 
 ### Database
-- `DonVi` (cây đơn vị: `donViChaId`, `loaiDonVi`, `loaiHinhDaoTao`, `trangThai`).
+- `DonVi` (Danh mục đơn vị: `donViChaId`, `loaiDonVi`, `loaiHinhDaoTao`, `trangThai`).
 - `NguoiDung`, `VaiTro`, `Quyen`, `VaiTroQuyen`, `NguoiDungVaiTroDonVi` — RBAC tách bảng
   quyền riêng thay vì nhồi vào enum vai trò như bản nháp SQL ban đầu.
 - `PhienDangNhap` — session lưu DB (token hash SHA-256, không lưu token thô), có
@@ -151,7 +151,7 @@ Không có module nghiệp vụ mới nào được thêm kể từ lần rà so
 
 | Sprint | Nội dung | Trạng thái thật |
 | --- | --- | --- |
-| 0 — Foundation | Đa đơn vị, user/role/quyền, audit, layout | **Xong.** CRUD cây đơn vị hoàn tất 2026-07-21 (xem mục A01 bên dưới). Còn thiếu migration chính thức (`db:generate`/`db:migrate`). |
+| 0 — Foundation | Đa đơn vị, user/role/quyền, audit, layout | **Xong.** CRUD Danh mục đơn vị hoàn tất 2026-07-21 (xem mục A01 bên dưới). Còn thiếu migration chính thức (`db:generate`/`db:migrate`). |
 | 1 — Tuyển sinh & ghi danh | Lead, tư vấn, đăng ký, học sinh + phụ huynh, tài khoản phụ huynh | **Chưa bắt đầu.** Chỉ có scaffold `HocSinh` mồ côi (xem trên); chưa có Lead/Consultation, chưa có `PhuHuynh`. |
 | 2 — Chương trình, lớp, xếp lớp | `ChuongTrinhDaoTao`, `LopHoc`, xếp lớp | **Chưa bắt đầu.** Chỉ có trong bản nháp SQL chưa áp dụng. |
 | 3 — Lịch học & điểm danh | `LichHoc`, `BuoiHoc`, `DiemDanh`, học bù | **Chưa bắt đầu.** |
@@ -186,7 +186,7 @@ nhận trước khi code.
 
 ---
 
-## A01 — Quản lý cây đơn vị (2026-07-21)
+## A01 — Quản lý Danh mục đơn vị (2026-07-21)
 
 Quy trình áp dụng đúng 4 bước đã thống nhất: phân tích → tài liệu phân tích chi tiết → cập
 nhật BPD → code.
@@ -656,7 +656,7 @@ buổi học ở bước này chỉ là khung thời gian.
 ## Phạm vi nghiệp vụ tại đơn vị hệ thống + dữ liệu mẫu lịch học (2026-07-21)
 
 Người dùng xác nhận lại: đơn vị gốc `SYSTEM` (`loaiDonVi = 'he_thong'`) chỉ dùng để quản
-trị (cây đơn vị, người dùng/vai trò), không mở lớp học, không tạo học viên/lớp/lịch. Vẫn có
+trị (Danh mục đơn vị, người dùng/vai trò), không mở lớp học, không tạo học viên/lớp/lịch. Vẫn có
 thể tạo tài khoản (kể cả vai trò giáo viên) và gán về đơn vị nghiệp vụ cụ thể — luồng "trụ
 sở tạo tài khoản → phân bổ nhân sự về từng trường/trung tâm".
 
@@ -1108,7 +1108,7 @@ modal `UserAssignmentPanel`, chưa có trang riêng). Làm cả 3 theo yêu cầ
   - Cả 3 trang dùng `EntityLink`/`GuardedLink` cho link nội bộ và
     `useUnsavedChangesGuard` cho form sửa — đúng hạ tầng vừa xây ở mục trên.
 - Test tay qua UI thật (dùng chung server đang chạy):
-  - `DonViDetailPage`: bấm từ cây đơn vị vào TTNN-Q8 — hiện đúng trạng thái, form sửa, danh
+  - `DonViDetailPage`: bấm từ Danh mục đơn vị vào TTNN-Q8 — hiện đúng trạng thái, form sửa, danh
     sách đơn vị con (0 đơn vị, đúng thực tế) — PASS.
   - `UserDetailPage`: bấm vào tài khoản `demo_hocvu` — hiện đúng thông tin, đúng cờ "Bắt buộc
     đổi mật khẩu", đúng 1 phân công vai trò có sẵn (`hoc_vu` tại TTNN-Q8). Reset mật khẩu →

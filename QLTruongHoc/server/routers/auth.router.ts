@@ -9,6 +9,7 @@ import {
   changePassword,
   login,
   logout,
+  updateOwnProfile,
 } from "../services/auth.service.js";
 
 export const authRouter = Router();
@@ -72,6 +73,42 @@ authRouter.get("/me", requireAuth, async (req, res) => {
     ok: true,
     data: req.auth,
   });
+});
+
+authRouter.patch("/me", requireAuth, async (req, res) => {
+  try {
+    const token = req.cookies?.[
+      AUTH_COOKIE_NAME
+    ] as string | undefined;
+
+    const context = await updateOwnProfile({
+      token,
+      hoTen: String(req.body?.hoTen ?? ""),
+      email: req.body?.email ? String(req.body.email) : null,
+      soDienThoai: req.body?.soDienThoai
+        ? String(req.body.soDienThoai)
+        : null,
+      hinhAnhUrl: req.body?.hinhAnhUrl
+        ? String(req.body.hinhAnhUrl)
+        : null,
+      ipAddress: req.ip,
+    });
+
+    res.json({
+      ok: true,
+      data: context,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Không thể cập nhật thông tin cá nhân.";
+
+    res.status(400).json({
+      ok: false,
+      error: message,
+    });
+  }
 });
 
 authRouter.post(

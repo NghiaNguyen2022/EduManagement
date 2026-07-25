@@ -1,5 +1,5 @@
 INSERT INTO VaiTro (maVaiTro, tenVaiTro, moTa, phamVi) VALUES
-('platform_admin', 'Quản trị nền tảng', 'Quản trị toàn hệ thống và cây đơn vị', 'he_thong'),
+('platform_admin', 'Quản trị nền tảng', 'Quản trị toàn hệ thống và Danh mục đơn vị', 'he_thong'),
 ('unit_admin', 'Quản lý đơn vị', 'Quản lý toàn bộ nghiệp vụ trong đơn vị', 'don_vi'),
 ('admissions', 'Tuyển sinh', 'Tiếp nhận, tư vấn và ghi danh', 'don_vi'),
 ('academic_officer', 'Học vụ', 'Quản lý lớp, lịch học và học sinh', 'don_vi'),

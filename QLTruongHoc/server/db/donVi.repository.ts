@@ -95,6 +95,11 @@ export async function createDonVi(input: {
   diaChi: string | null;
   soDienThoai: string | null;
   email: string | null;
+  hinhAnhUrl: string | null;
+  nguoiDaiDien: string | null;
+  maSoThue: string | null;
+  maGiayPhep: string | null;
+  giayPhepUrl: string | null;
 }) {
   const db = getDb();
 
@@ -107,6 +112,11 @@ export async function createDonVi(input: {
     diaChi: input.diaChi,
     soDienThoai: input.soDienThoai,
     email: input.email,
+    hinhAnhUrl: input.hinhAnhUrl,
+    nguoiDaiDien: input.nguoiDaiDien,
+    maSoThue: input.maSoThue,
+    maGiayPhep: input.maGiayPhep,
+    giayPhepUrl: input.giayPhepUrl,
     trangThai: "hoat_dong",
     createdAt: now(),
     updatedAt: now(),
@@ -123,6 +133,11 @@ export async function updateDonVi(input: {
   diaChi: string | null;
   soDienThoai: string | null;
   email: string | null;
+  hinhAnhUrl: string | null;
+  nguoiDaiDien: string | null;
+  maSoThue: string | null;
+  maGiayPhep: string | null;
+  giayPhepUrl: string | null;
 }) {
   const db = getDb();
 
@@ -135,6 +150,11 @@ export async function updateDonVi(input: {
       diaChi: input.diaChi,
       soDienThoai: input.soDienThoai,
       email: input.email,
+      hinhAnhUrl: input.hinhAnhUrl,
+      nguoiDaiDien: input.nguoiDaiDien,
+      maSoThue: input.maSoThue,
+      maGiayPhep: input.maGiayPhep,
+      giayPhepUrl: input.giayPhepUrl,
       updatedAt: now(),
     })
     .where(eq(donVi.id, input.id));

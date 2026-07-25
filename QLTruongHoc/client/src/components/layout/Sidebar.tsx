@@ -74,6 +74,7 @@ export function Sidebar({
       if (
         !coQuyen ||
         !dungLoaiHinh ||
+        route.hideFromSidebar ||
         (route.hideAtHeThong && isHeThong) ||
         (route.onlyAtHeThong && !isHeThong)
       ) {

@@ -83,6 +83,11 @@ donViRouter.post(
           ? String(req.body.soDienThoai)
           : null,
         email: req.body?.email ? String(req.body.email) : null,
+        hinhAnhUrl: req.body?.hinhAnhUrl ? String(req.body.hinhAnhUrl) : null,
+        nguoiDaiDien: req.body?.nguoiDaiDien ? String(req.body.nguoiDaiDien) : null,
+        maSoThue: req.body?.maSoThue ? String(req.body.maSoThue) : null,
+        maGiayPhep: req.body?.maGiayPhep ? String(req.body.maGiayPhep) : null,
+        giayPhepUrl: req.body?.giayPhepUrl ? String(req.body.giayPhepUrl) : null,
         actorUserId: req.auth!.user.id,
         ipAddress: req.ip,
       });
@@ -120,6 +125,11 @@ donViRouter.patch(
           ? String(req.body.soDienThoai)
           : null,
         email: req.body?.email ? String(req.body.email) : null,
+        hinhAnhUrl: req.body?.hinhAnhUrl ? String(req.body.hinhAnhUrl) : null,
+        nguoiDaiDien: req.body?.nguoiDaiDien ? String(req.body.nguoiDaiDien) : null,
+        maSoThue: req.body?.maSoThue ? String(req.body.maSoThue) : null,
+        maGiayPhep: req.body?.maGiayPhep ? String(req.body.maGiayPhep) : null,
+        giayPhepUrl: req.body?.giayPhepUrl ? String(req.body.giayPhepUrl) : null,
         actorUserId: req.auth!.user.id,
         ipAddress: req.ip,
       });

@@ -1,4 +1,4 @@
-# Phân tích chi tiết — A01: Cây đơn vị trường/trung tâm/cơ sở
+# Phân tích chi tiết — A01: Danh mục đơn vị trường/trung tâm/cơ sở
 
 > Theo khung checklist mục 14 của BPD (`BPD_App_Quan_Ly_Truong_Hoc_Trung_Tam_v0.1.docx`).
 > Module liên quan: M01 — Tổ chức & đơn vị (P0).
@@ -9,7 +9,7 @@
   trường/trung tâm/cơ sở) theo đúng mô hình cây đã chốt ở BPD mục 3.
 - Actor chính: **System Owner / Super Admin** (`he_thong.quan_tri`).
 - Actor phụ (chỉ xem): School/Center Admin (`quan_ly_don_vi`) — xem được đơn vị mình đang
-  làm việc và cây đơn vị con (nếu có), không tạo/sửa/ngừng hoạt động.
+  làm việc và Danh mục đơn vị con (nếu có), không tạo/sửa/ngừng hoạt động.
 
 ## 2. Điểm bắt đầu, điều kiện trước, luồng chính, luồng ngoại lệ, kết quả
 
@@ -19,7 +19,7 @@ là thao tác phạm vi hệ thống, không phụ thuộc đơn vị hiện t�
 **Điều kiện trước:** Có quyền `he_thong.quan_tri`.
 
 **Luồng chính — Tạo đơn vị:**
-1. Mở màn hình "Cây đơn vị" (menu Hệ thống).
+1. Mở màn hình "Danh mục đơn vị" (menu Hệ thống).
 2. Bấm "Thêm đơn vị", chọn đơn vị cha (hoặc để trống nếu là đơn vị cấp 1 dưới `SYSTEM`).
 3. Nhập mã đơn vị, tên đơn vị, loại đơn vị (`truong`/`trung_tam`/`co_so`), loại hình đào
    tạo (nếu áp dụng), địa chỉ, điện thoại, email.
@@ -48,7 +48,7 @@ là thao tác phạm vi hệ thống, không phụ thuộc đơn vị hiện t�
   vẫn cho phép (phiên đó sẽ tự mất quyền chọn lại đơn vị ở lần tải context tiếp theo, không
   cần thu hồi phiên ngay).
 
-**Kết quả:** Cây đơn vị phản ánh đúng cấu trúc vận hành thật; đơn vị ngừng hoạt động không
+**Kết quả:** Danh mục đơn vị phản ánh đúng cấu trúc vận hành thật; đơn vị ngừng hoạt động không
 còn xuất hiện trong các lựa chọn nghiệp vụ (chọn đơn vị khi đăng nhập, gán vai trò mới).
 
 ## 3. Danh sách trạng thái và quy tắc chuyển trạng thái
@@ -73,7 +73,7 @@ Quy tắc chặn chuyển trạng thái:
 
 | Thao tác | `he_thong.quan_tri` | `don_vi.quan_ly` (khác) |
 | --- | --- | --- |
-| Xem cây đơn vị (toàn bộ) | Có | Chỉ xem đơn vị mình + đơn vị con trực tiếp (nếu có) |
+| Xem Danh mục đơn vị (toàn bộ) | Có | Chỉ xem đơn vị mình + đơn vị con trực tiếp (nếu có) |
 | Tạo đơn vị | Có | Không |
 | Sửa thông tin đơn vị | Có | Không |
 | Ngừng hoạt động | Có | Không |
@@ -125,7 +125,7 @@ sau khi có nhu cầu để `don_vi.quan_ly` tự tạo `co_so` (chi nhánh) dư
 Đơn vị `loaiDonVi = 'he_thong'` (node gốc `SYSTEM`) **chỉ dùng để quản trị**, không phải nơi
 vận hành nghiệp vụ đào tạo/tuyển sinh thật:
 
-- **Được phép tại đơn vị hệ thống:** quản lý cây đơn vị (A01), tạo/khoá tài khoản người
+- **Được phép tại đơn vị hệ thống:** quản lý Danh mục đơn vị (A01), tạo/khoá tài khoản người
   dùng và gán vai trò vào bất kỳ đơn vị nào (A04/B01/B02) — kể cả gán vai trò `giao_vien`,
   `ke_toan`... cho một tài khoản rồi chuyển (gán thêm) tài khoản đó sang đơn vị nghiệp vụ
   cụ thể. Đây là luồng "trụ sở tạo tài khoản → phân bổ nhân sự về từng trường/trung tâm".

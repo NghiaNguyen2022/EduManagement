@@ -21,17 +21,19 @@ import { LeadDetailPage } from "./pages/LeadDetailPage";
 import { LeadsPage } from "./pages/LeadsPage";
 import { LeaveRequestsPage } from "./pages/LeaveRequestsPage";
 import { LoginPage } from "./pages/LoginPage";
+import { MyProfilePage } from "./pages/MyProfilePage";
 import { OpenInOrganizationPage } from "./pages/OpenInOrganizationPage";
 import { OrganizationTreePage } from "./pages/OrganizationTreePage";
-import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { PortalLandingPage } from "./pages/PortalLandingPage";
 import { RolePermissionPage } from "./pages/RolePermissionPage";
 import { SchedulePage } from "./pages/SchedulePage";
 import { SelectOrganizationPage } from "./pages/SelectOrganizationPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { StudentDetailPage } from "./pages/StudentDetailPage";
 import { StudentsPage } from "./pages/StudentsPage";
 import { TeachersPage } from "./pages/TeachersPage";
 import { SystemAuditLogPage } from "./pages/SystemAuditLogPage";
+import { TimKiemPage } from "./pages/TimKiemPage";
 import { UserDetailPage } from "./pages/UserDetailPage";
 import { UserManagementPage } from "./pages/UserManagementPage";
 
@@ -75,6 +77,8 @@ function ProtectedApp() {
 
         <Route path="/organizations/:id" element={<DonViDetailPage />} />
 
+        <Route path="/tim-kiem" element={<TimKiemPage />} />
+
         <Route path="/admissions" element={<LeadsPage />} />
 
         <Route path="/admissions/:id" element={<LeadDetailPage />} />
@@ -115,7 +119,9 @@ function ProtectedApp() {
 
         <Route path="/mo-don-vi" element={<OpenInOrganizationPage />} />
 
-        <Route path="/settings" element={<PlaceholderPage title="Cấu hình hệ thống" />} />
+        <Route path="/settings" element={<SettingsPage />} />
+
+        <Route path="/thong-tin-ca-nhan" element={<MyProfilePage />} />
 
         <Route path="/portal" element={<Navigate to={defaultPortalPath} replace />} />
 

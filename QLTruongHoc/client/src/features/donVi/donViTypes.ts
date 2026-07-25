@@ -12,6 +12,11 @@ export type DonViItem = {
   diaChi: string | null;
   soDienThoai: string | null;
   email: string | null;
+  hinhAnhUrl: string | null;
+  nguoiDaiDien: string | null;
+  maSoThue: string | null;
+  maGiayPhep: string | null;
+  giayPhepUrl: string | null;
   trangThai: TrangThaiDonVi;
 };
 
@@ -23,4 +28,9 @@ export type DonViFormInput = {
   diaChi: string;
   soDienThoai: string;
   email: string;
+  hinhAnhUrl: string;
+  nguoiDaiDien: string;
+  maSoThue: string;
+  maGiayPhep: string;
+  giayPhepUrl: string;
 };

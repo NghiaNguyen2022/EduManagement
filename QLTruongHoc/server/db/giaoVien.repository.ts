@@ -1,4 +1,4 @@
-import { and, count, eq, like } from "drizzle-orm";
+import { and, count, eq, like, or } from "drizzle-orm";
 
 import { donVi, giaoVien } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
@@ -33,6 +33,32 @@ export async function listGiaoVienAllDonVi() {
     .innerJoin(donVi, eq(giaoVien.donViId, donVi.id))
     .where(eq(donVi.trangThai, "hoat_dong"))
     .orderBy(donVi.tenDonVi, giaoVien.hoTen);
+}
+
+/** Tìm kiếm xuyên đơn vị theo tên/mã — dùng cho quản trị hệ thống. */
+export async function searchGiaoVienAllDonVi(keyword: string) {
+  const db = getDb();
+  const pattern = `%${keyword}%`;
+
+  return db
+    .select({
+      giaoVien,
+      donVi: {
+        id: donVi.id,
+        maDonVi: donVi.maDonVi,
+        tenDonVi: donVi.tenDonVi,
+      },
+    })
+    .from(giaoVien)
+    .innerJoin(donVi, eq(giaoVien.donViId, donVi.id))
+    .where(
+      and(
+        eq(donVi.trangThai, "hoat_dong"),
+        or(like(giaoVien.hoTen, pattern), like(giaoVien.maGiaoVien, pattern)),
+      ),
+    )
+    .orderBy(giaoVien.hoTen)
+    .limit(10);
 }
 
 export async function findGiaoVienByNguoiDungId(

@@ -208,7 +208,7 @@ Phụ huynh | Lịch, thông báo, xin phép, trao đổi | Nhật ký ngày, s�
 Tài chính | Kỳ thu, khoản phải thu, thu tiền, công nợ | Học phí, tiền ăn, dịch vụ, đồng phục | Học phí theo khóa/tháng/buổi, giáo trình, thi, học lại
 ---TABLE---
 Vai trò | Phạm vi chính | Ghi chú
-System Owner / Super Admin | Toàn hệ thống, cây đơn vị, cấu hình, giám sát | Không tham gia nghiệp vụ hằng ngày nếu không được phân công
+System Owner / Super Admin | Toàn hệ thống, Danh mục đơn vị, cấu hình, giám sát | Không tham gia nghiệp vụ hằng ngày nếu không được phân công
 School/Center Admin | Quản trị một đơn vị, người dùng, cấu hình, báo cáo | Có thể kiêm nhiệm ở đơn vị nhỏ
 Tuyển sinh | Lead, tư vấn, lịch hẹn, hồ sơ đăng ký | Không mặc định xem sổ kế toán chi tiết
 Tư vấn viên | Chăm sóc lead, tư vấn khóa/lớp, follow-up | Theo dõi KPI và chuyển đổi

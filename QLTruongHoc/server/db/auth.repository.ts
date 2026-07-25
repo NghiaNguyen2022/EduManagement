@@ -72,6 +72,27 @@ export async function updatePassword(input: {
     .where(eq(nguoiDung.id, input.userId));
 }
 
+export async function updateUserProfile(input: {
+  userId: number;
+  hoTen: string;
+  email: string | null;
+  soDienThoai: string | null;
+  hinhAnhUrl: string | null;
+}) {
+  const db = getDb();
+
+  await db
+    .update(nguoiDung)
+    .set({
+      hoTen: input.hoTen,
+      email: input.email,
+      soDienThoai: input.soDienThoai,
+      hinhAnhUrl: input.hinhAnhUrl,
+      updatedAt: now(),
+    })
+    .where(eq(nguoiDung.id, input.userId));
+}
+
 export async function setFailedLoginState(input: {
   userId: number;
   attempts: number;

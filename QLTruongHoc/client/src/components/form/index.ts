@@ -1,6 +1,7 @@
 export * from "./CurrencyInput";
 export * from "./DateField";
 export * from "./DateTimeField";
+export * from "./FileUploadField";
 export * from "./FormField";
 export * from "./NumberInput";
 export * from "./SelectField";

@@ -133,6 +133,21 @@ export function selectOrganizationApi(
   );
 }
 
+export function updateProfileApi(input: {
+  hoTen: string;
+  email: string;
+  soDienThoai: string;
+  hinhAnhUrl: string;
+}) {
+  return request<AuthContextData>(
+    "/api/auth/me",
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
 export function changePasswordApi(input: {
   currentPassword: string;
   newPassword: string;

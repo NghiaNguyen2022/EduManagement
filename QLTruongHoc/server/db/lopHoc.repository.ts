@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNull, or } from "drizzle-orm";
+import { and, count, desc, eq, isNull, like, or } from "drizzle-orm";
 
 import {
   donVi,
@@ -30,6 +30,32 @@ export async function listLopHocAllDonVi() {
     .innerJoin(donVi, eq(lopHoc.donViId, donVi.id))
     .where(eq(donVi.trangThai, "hoat_dong"))
     .orderBy(donVi.tenDonVi, lopHoc.tenLop);
+}
+
+/** Tìm kiếm xuyên đơn vị theo tên/mã — dùng cho quản trị hệ thống. */
+export async function searchLopHocAllDonVi(keyword: string) {
+  const db = getDb();
+  const pattern = `%${keyword}%`;
+
+  return db
+    .select({
+      lopHoc,
+      donVi: {
+        id: donVi.id,
+        maDonVi: donVi.maDonVi,
+        tenDonVi: donVi.tenDonVi,
+      },
+    })
+    .from(lopHoc)
+    .innerJoin(donVi, eq(lopHoc.donViId, donVi.id))
+    .where(
+      and(
+        eq(donVi.trangThai, "hoat_dong"),
+        or(like(lopHoc.tenLop, pattern), like(lopHoc.maLop, pattern)),
+      ),
+    )
+    .orderBy(lopHoc.tenLop)
+    .limit(10);
 }
 
 export async function listLopHocByDonVi(donViId: number) {

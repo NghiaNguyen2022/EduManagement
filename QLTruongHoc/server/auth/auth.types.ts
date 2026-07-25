@@ -4,6 +4,7 @@ export type AuthUser = {
   hoTen: string;
   email: string | null;
   soDienThoai: string | null;
+  hinhAnhUrl: string | null;
   batBuocDoiMatKhau: boolean;
 };
 

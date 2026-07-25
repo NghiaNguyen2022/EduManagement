@@ -9,3 +9,4 @@ export * from "./schemas/lichHoc.js";
 export * from "./schemas/diemDanh.js";
 export * from "./schemas/xinPhep.js";
 export * from "./schemas/taiChinh.js";
+export * from "./schemas/settings.js";

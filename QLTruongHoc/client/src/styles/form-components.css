@@ -102,3 +102,23 @@ textarea.form-control {
 .date-control__format {
   display: none;
 }
+
+.file-upload-field {
+  display: grid;
+  gap: 8px;
+}
+
+.file-upload-field__preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-upload-field__thumb {
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--edu-color-border);
+  border-radius: var(--edu-radius-small);
+  object-fit: cover;
+  background: var(--edu-color-surface);
+}

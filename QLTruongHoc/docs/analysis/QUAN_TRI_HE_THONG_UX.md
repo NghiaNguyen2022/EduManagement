@@ -13,7 +13,7 @@
 >    (đơn vị cấp 1)" trước đây submit `donViChaId: null` — khiến đơn vị mới không nằm trong
 >    cây (thành gốc riêng). Sửa: bỏ "Hệ thống" khỏi danh sách chọn, và khi chọn "Không có"
 >    thì tự động dùng đúng id đơn vị hệ thống thay vì null.
-> 3. **Menu nhóm "Hệ thống"** (Cây đơn vị, Vai trò·Phân quyền, Nhật ký hệ thống, Cấu hình hệ
+> 3. **Menu nhóm "Hệ thống"** (Danh mục đơn vị, Vai trò·Phân quyền, Nhật ký hệ thống, Cấu hình hệ
 >    thống) trước đây hiện ở MỌI đơn vị vì không có điều kiện lọc theo cấp đơn vị — đây là các
 >    nghiệp vụ quản trị toàn hệ thống, chỉ nên làm ở đúng trang quản trị (đơn vị hệ thống), để
 >    tránh rải rác. Thêm cờ `onlyAtHeThong` (ngược với `hideAtHeThong` đã thêm ở vòng trước),
@@ -28,7 +28,7 @@
 >    (seed), không phải thứ người dùng tự tạo — đây là lý do nó không nên xuất hiện như một
 >    lựa chọn "cha" tường minh (mục 2) và không nên tạo thêm được (đã chặn ở vòng trước).
 >
-> Cập nhật (2026-07-23): siết thêm mục 2 — quyết định nghiệp vụ hiện tại là cây đơn vị chỉ có
+> Cập nhật (2026-07-23): siết thêm mục 2 — quyết định nghiệp vụ hiện tại là Danh mục đơn vị chỉ có
 > **một cấp** (mọi trường/trung tâm/cơ sở nằm trực tiếp dưới đơn vị hệ thống, không đơn vị nào
 > chứa đơn vị con khác), không phải "cho chọn cha nhưng mặc định Hệ thống" như bản trước. Bỏ hẳn
 > field "Đơn vị cha" khỏi form tạo đơn vị (`OrganizationTreePage.tsx`); server

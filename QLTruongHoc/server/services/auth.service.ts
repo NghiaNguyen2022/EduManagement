@@ -4,8 +4,6 @@ import {
 } from "bcryptjs";
 
 import {
-  AUTH_LOCKOUT_MINUTES,
-  AUTH_MAX_FAILED_ATTEMPTS,
   AUTH_SESSION_DAYS,
 } from "../auth/auth.constants.js";
 import {
@@ -19,6 +17,7 @@ import type {
 import {
   createAuditLog,
 } from "../db/audit.repository.js";
+import { getCauHinhHeThong } from "./cauHinh.service.js";
 import {
   createSession,
   findActiveSessionByHash,
@@ -32,15 +31,16 @@ import {
   updateCurrentOrganization,
   updateLastLogin,
   updatePassword,
+  updateUserProfile,
 } from "../db/auth.repository.js";
 
 function toDateTimeString(date: Date): string {
   return date.toISOString().slice(0, 19).replace("T", " ");
 }
 
-function validateNewPassword(password: string) {
-  if (password.length < 8) {
-    throw new Error("Mật khẩu mới phải có ít nhất 8 ký tự.");
+function validateNewPassword(password: string, minLength: number) {
+  if (password.length < minLength) {
+    throw new Error(`Mật khẩu mới phải có ít nhất ${minLength} ký tự.`);
   }
 
   if (!/[A-Z]/.test(password)) {
@@ -96,6 +96,10 @@ export async function login(input: {
     throw new Error("Tài khoản đang bị khóa hoặc đã ngừng hoạt động.");
   }
 
+  const cauHinh = await getCauHinhHeThong();
+  const maxFailedAttempts = cauHinh.soLanDangNhapSaiToiDa;
+  const lockoutMinutes = cauHinh.soPhutKhoaDangNhap;
+
   let failedAttempts = user.soLanDangNhapSaiLienTiep;
   const lockUntil = user.khoaDangNhapDenLuc;
 
@@ -111,7 +115,7 @@ export async function login(input: {
     });
 
     throw new Error(
-      `Tài khoản đang tạm khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau ${AUTH_LOCKOUT_MINUTES} phút.`,
+      `Tài khoản đang tạm khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau ${lockoutMinutes} phút.`,
     );
   }
 
@@ -126,7 +130,7 @@ export async function login(input: {
 
   if (!passwordValid) {
     const nextAttempts = failedAttempts + 1;
-    const shouldLock = nextAttempts >= AUTH_MAX_FAILED_ATTEMPTS;
+    const shouldLock = nextAttempts >= maxFailedAttempts;
 
     await setFailedLoginState({
       userId: user.id,
@@ -134,7 +138,7 @@ export async function login(input: {
       lockUntil: shouldLock
         ? toDateTimeString(
             new Date(
-              Date.now() + AUTH_LOCKOUT_MINUTES * 60 * 1000,
+              Date.now() + lockoutMinutes * 60 * 1000,
             ),
           )
         : null,
@@ -146,7 +150,7 @@ export async function login(input: {
       objectType: "NguoiDung",
       objectId: String(user.id),
       content: shouldLock
-        ? `Tài khoản bị tạm khóa ${AUTH_LOCKOUT_MINUTES} phút do đăng nhập sai ${AUTH_MAX_FAILED_ATTEMPTS} lần liên tiếp.`
+        ? `Tài khoản bị tạm khóa ${lockoutMinutes} phút do đăng nhập sai ${maxFailedAttempts} lần liên tiếp.`
         : "Sai mật khẩu.",
       level: "canh_bao",
       ipAddress: input.ipAddress,
@@ -154,7 +158,7 @@ export async function login(input: {
 
     throw new Error(
       shouldLock
-        ? `Tài khoản tạm khóa ${AUTH_LOCKOUT_MINUTES} phút do đăng nhập sai quá nhiều lần.`
+        ? `Tài khoản tạm khóa ${lockoutMinutes} phút do đăng nhập sai quá nhiều lần.`
         : "Tên đăng nhập hoặc mật khẩu không đúng.",
     );
   }
@@ -326,7 +330,9 @@ export async function changePassword(input: {
     throw new Error("Mật khẩu xác nhận không khớp.");
   }
 
-  validateNewPassword(input.newPassword);
+  const cauHinh = await getCauHinhHeThong();
+
+  validateNewPassword(input.newPassword, cauHinh.doDaiMatKhauToiThieu);
 
   if (input.currentPassword === input.newPassword) {
     throw new Error("Mật khẩu mới phải khác mật khẩu hiện tại.");
@@ -392,6 +398,7 @@ function buildAuthContext(
     hoTen: string;
     email: string | null;
     soDienThoai: string | null;
+    hinhAnhUrl: string | null;
     batBuocDoiMatKhau: boolean;
   },
   organizations: AuthOrganization[],
@@ -405,6 +412,7 @@ function buildAuthContext(
       hoTen: user.hoTen,
       email: user.email,
       soDienThoai: user.soDienThoai,
+      hinhAnhUrl: user.hinhAnhUrl,
       batBuocDoiMatKhau:
         Boolean(user.batBuocDoiMatKhau),
     },
@@ -414,4 +422,56 @@ function buildAuthContext(
         (item) => item.id === currentOrganizationId,
       ) ?? null,
   };
+}
+
+export async function updateOwnProfile(input: {
+  token: string | undefined;
+  hoTen: string;
+  email: string | null;
+  soDienThoai: string | null;
+  hinhAnhUrl: string | null;
+  ipAddress?: string;
+}) {
+  const context = await getAuthContext(input.token);
+
+  if (!context) {
+    throw new Error("Phiên đăng nhập không hợp lệ.");
+  }
+
+  const hoTen = input.hoTen.trim();
+
+  if (!hoTen) {
+    throw new Error("Vui lòng nhập họ tên.");
+  }
+
+  await updateUserProfile({
+    userId: context.user.id,
+    hoTen,
+    email: input.email?.trim() || null,
+    soDienThoai: input.soDienThoai?.trim() || null,
+    hinhAnhUrl: input.hinhAnhUrl?.trim() || null,
+  });
+
+  await createAuditLog({
+    userId: context.user.id,
+    organizationId: context.currentOrganization?.id ?? null,
+    action: "auth.update_profile",
+    objectType: "NguoiDung",
+    objectId: String(context.user.id),
+    content: "Cập nhật thông tin cá nhân.",
+    ipAddress: input.ipAddress,
+  });
+
+  const refreshedUser = await findUserById(context.user.id);
+
+  if (!refreshedUser) {
+    throw new Error("Không thể tải lại tài khoản.");
+  }
+
+  return buildAuthContext(
+    context.sessionId,
+    refreshedUser,
+    context.organizations,
+    context.currentOrganization?.id ?? null,
+  );
 }

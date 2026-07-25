@@ -2,7 +2,20 @@
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
   gap: 14px;
-  align-items: end;
+  align-items: start;
+}
+
+/*
+ * Số ô nhập không phải lúc nào cũng là 5 (bội số của lưới cố định ở trên) —
+ * khi lệch, nút submit tự rơi vào một cột fr giữa chừng thay vì cột auto
+ * cuối, và với `align-items:end` cũ, các ô cao thấp khác nhau (textarea so
+ * với input một dòng, ô có helpText so với không) lệch hàng. Ép nút luôn
+ * xuống hàng riêng, căn phải — không phụ thuộc số ô nhập phía trên.
+ */
+.user-create-form > button[type="submit"] {
+  grid-column: 1 / -1;
+  justify-self: end;
+  margin-top: 4px;
 }
 
 .user-create-form label {
