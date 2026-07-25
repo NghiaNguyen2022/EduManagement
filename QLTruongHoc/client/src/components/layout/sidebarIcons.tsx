@@ -10,6 +10,30 @@ const ICON_PROPS = {
 };
 
 export const sidebarIcons: Record<string, ReactNode> = {
+  "parent-overview": (
+    <svg {...ICON_PROPS}>
+      <path d="M3 11.2 12 4l9 7.2" />
+      <path d="M5.5 10v10h13V10" />
+      <path d="M9.5 20v-6h5v6" />
+    </svg>
+  ),
+
+  "parent-schedule": (
+    <svg {...ICON_PROPS}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+      <path d="M8 14h3M13 14h3M8 17.5h3" />
+    </svg>
+  ),
+
+  "parent-children": (
+    <svg {...ICON_PROPS}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 20c.9-3.8 2.8-5.7 5.5-5.7s4.6 1.9 5.5 5.7" />
+      <path d="M17 6v6M14 9h6" />
+    </svg>
+  ),
+
   dashboard: (
     <svg {...ICON_PROPS}>
       <rect x="3" y="3" width="7.5" height="9" rx="1.6" />

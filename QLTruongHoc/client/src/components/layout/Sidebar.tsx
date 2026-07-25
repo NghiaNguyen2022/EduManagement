@@ -3,6 +3,7 @@ import {
 } from "react";
 import {
   NavLink,
+  useLocation,
 } from "react-router-dom";
 
 import {
@@ -10,6 +11,7 @@ import {
 } from "../../features/auth/AuthContext";
 import {
   appRoutes,
+  type AppRouteDefinition,
 } from "../../routes/appRoutes";
 import {
   sidebarIcons,
@@ -27,6 +29,7 @@ export function Sidebar({
   onCloseMobile,
 }: SidebarProps) {
   const { auth } = useAuth();
+  const location = useLocation();
 
   const permissions =
     auth?.currentOrganization?.quyen ?? [];
@@ -44,13 +47,49 @@ export function Sidebar({
     auth?.currentOrganization?.loaiDonVi ===
     "he_thong";
 
+  const isParent =
+    auth?.currentOrganization?.vaiTro.includes("phu_huynh") ?? false;
+
+  const parentRoutes: AppRouteDefinition[] = [
+    {
+      id: "parent-overview",
+      path: "/portal/parent#tong-quan",
+      label: "Tổng quan",
+      group: "Cổng phụ huynh",
+    },
+    {
+      id: "parent-schedule",
+      path: "/portal/parent#lich-hoc",
+      label: "Lịch học",
+      group: "Cổng phụ huynh",
+    },
+    {
+      id: "parent-children",
+      path: "/portal/parent#thong-tin-con",
+      label: "Thông tin các con",
+      group: "Cổng phụ huynh",
+    },
+    {
+      id: "notifications",
+      path: "/notifications",
+      label: "Thông báo",
+      group: "Liên lạc",
+    },
+    {
+      id: "my-profile",
+      path: "/thong-tin-ca-nhan",
+      label: "Hồ sơ cá nhân",
+      group: "Tài khoản",
+    },
+  ];
+
   const visibleGroups = useMemo(() => {
     const groupMap = new Map<
       string,
       typeof appRoutes
     >();
 
-    for (const route of appRoutes) {
+    for (const route of isParent ? parentRoutes : appRoutes) {
       const coQuyen =
         !route.permissions ||
         isSystemAdmin ||
@@ -96,6 +135,7 @@ export function Sidebar({
     isHeThong,
     loaiHinhDaoTaoHienTai,
     permissions,
+    isParent,
   ]);
 
   return (
@@ -164,12 +204,15 @@ export function Sidebar({
                             ? route.label
                             : undefined
                       }
-                      className={({
-                        isActive,
-                      }) =>
+                      className={({ isActive }) =>
                         [
                           "sidebar-item",
-                          isActive
+                          (route.path.includes("#")
+                            ? `${location.pathname}${
+                                location.hash ||
+                                (route.id === "parent-overview" ? "#tong-quan" : "")
+                              }` === route.path
+                            : isActive)
                             ? "sidebar-item--active"
                             : "",
                           route.comingSoon

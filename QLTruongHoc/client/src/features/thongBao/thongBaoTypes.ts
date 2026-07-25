@@ -9,6 +9,8 @@ export type ThongBaoItem = {
   tepDinhKemTen: string | null;
   tepDinhKemUrl: string | null;
   phamVi: PhamViThongBao;
+  lopHocId: number | null;
+  hocSinhId: number | null;
   doiTuong: string | null;
   nguoiTaoId: number;
   createdAt: string;
@@ -23,5 +25,11 @@ export type ThongBaoFormInput = {
   tepDinhKemTen: string;
   tepDinhKemUrl: string;
   phamVi: PhamViThongBao;
-  doiTuong: string;
+  lopHocId: number | null;
+  hocSinhId: number | null;
+};
+
+export type ThongBaoTargets = {
+  classes: Array<{ id: number; maLop: string; tenLop: string }>;
+  students: Array<{ id: number; maHocSinh: string; hoTen: string }>;
 };

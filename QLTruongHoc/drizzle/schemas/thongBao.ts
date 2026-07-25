@@ -22,6 +22,12 @@ export const thongBao = mysqlTable(
     phamVi: mysqlEnum("phamVi", ["toan_truong", "theo_lop", "ca_nhan"])
       .notNull()
       .default("toan_truong"),
+    lopHocId: bigint("lopHocId", { mode: "number", unsigned: true }),
+    hocSinhId: bigint("hocSinhId", { mode: "number", unsigned: true }),
+    /**
+     * Nhãn hiển thị được giữ lại để tương thích dữ liệu cũ. Quyền truy cập
+     * phải dựa trên `lopHocId`/`hocSinhId`, không dựa vào chuỗi này.
+     */
     doiTuong: varchar("doiTuong", { length: 255 }),
     nguoiTaoId: bigint("nguoiTaoId", { mode: "number", unsigned: true }).notNull(),
     createdAt: datetime("createdAt", { mode: "string" }).notNull(),
@@ -34,6 +40,8 @@ export const thongBao = mysqlTable(
     ),
     donViIdx: index("IX_ThongBao_donViId").on(table.donViId),
     phamViIdx: index("IX_ThongBao_donViId_phamVi").on(table.donViId, table.phamVi),
+    lopHocIdx: index("IX_ThongBao_lopHocId").on(table.lopHocId),
+    hocSinhIdx: index("IX_ThongBao_hocSinhId").on(table.hocSinhId),
     nguoiTaoIdx: index("IX_ThongBao_nguoiTaoId").on(table.nguoiTaoId),
   }),
 );

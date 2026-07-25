@@ -16,9 +16,9 @@ import {
   vaiTroQuyen,
 } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
+import { toDatabaseDateTime } from "../utils/dateTime.js";
 
-const now = () =>
-  new Date().toISOString().slice(0, 19).replace("T", " ");
+const now = toDatabaseDateTime;
 
 export async function findUserByUsername(username: string) {
   const db = getDb();

@@ -1,6 +1,11 @@
-import { and, count, eq, like } from "drizzle-orm";
+import { and, count, eq, inArray, like } from "drizzle-orm";
 
-import { hocSinh, hocSinhPhuHuynh, phuHuynh } from "../../drizzle/schema.js";
+import {
+  hocSinh,
+  hocSinhLopHoc,
+  hocSinhPhuHuynh,
+  phuHuynh,
+} from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
 const now = () => new Date().toISOString().slice(0, 19).replace("T", " ");
@@ -41,6 +46,34 @@ export async function listPhuHuynhByNguoiDungId(nguoiDungId: number) {
   const db = getDb();
 
   return db.select().from(phuHuynh).where(eq(phuHuynh.nguoiDungId, nguoiDungId));
+}
+
+export async function listGuardianNotificationScopeRows(nguoiDungId: number) {
+  const db = getDb();
+
+  return db
+    .select({
+      hocSinhId: hocSinh.id,
+      donViId: hocSinh.donViId,
+      lopHocId: hocSinhLopHoc.lopHocId,
+    })
+    .from(phuHuynh)
+    .innerJoin(hocSinhPhuHuynh, eq(hocSinhPhuHuynh.phuHuynhId, phuHuynh.id))
+    .innerJoin(hocSinh, eq(hocSinh.id, hocSinhPhuHuynh.hocSinhId))
+    .leftJoin(
+      hocSinhLopHoc,
+      and(
+        eq(hocSinhLopHoc.hocSinhId, hocSinh.id),
+        inArray(hocSinhLopHoc.trangThai, ["dang_hoc", "bao_luu"]),
+      ),
+    )
+    .where(
+      and(
+        eq(phuHuynh.nguoiDungId, nguoiDungId),
+        eq(hocSinhPhuHuynh.nhanThongBao, true),
+        eq(phuHuynh.trangThai, "hoat_dong"),
+      ),
+    );
 }
 
 export async function updatePhuHuynhNguoiDungId(input: { id: number; nguoiDungId: number }) {

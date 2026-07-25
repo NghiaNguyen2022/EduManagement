@@ -617,6 +617,10 @@ button {
   gap: 14px;
 }
 
+.parent-portal-anchor {
+  scroll-margin-top: 86px;
+}
+
 .portal-organization-tabs {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

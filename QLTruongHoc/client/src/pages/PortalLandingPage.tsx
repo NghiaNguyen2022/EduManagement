@@ -269,7 +269,7 @@ export function PortalLandingPage() {
 
         {parentError ? <div className="form-error">{parentError}</div> : null}
 
-        <section className="summary-grid">
+        <section className="summary-grid parent-portal-anchor" id="tong-quan">
           {stats.map((stat) => (
             <StatCard
               key={stat.title}
@@ -296,7 +296,7 @@ export function PortalLandingPage() {
               title="Thông tin chung"
               subtitle="Thông tin của bạn — dùng chung cho mọi đơn vị con đang theo học, không gắn với một đơn vị cụ thể"
             >
-              <div className="portal-parent-info">
+              <div className="portal-parent-info parent-portal-anchor" id="thong-tin-phu-huynh">
                 <div>
                   <span>Họ tên</span>
                   <strong>{parentOverview.parent.hoTen}</strong>
@@ -317,7 +317,10 @@ export function PortalLandingPage() {
               </div>
             </SectionCard>
 
-            <section className="dashboard-grid portal-grid--single-column">
+            <section
+              className="dashboard-grid portal-grid--single-column parent-portal-anchor"
+              id="lich-hoc"
+            >
               <SectionCard
                 title="Buổi học sắp tới"
                 subtitle="Tổng hợp nhanh theo tất cả các con và đơn vị, xem chi tiết theo từng đơn vị ở bên dưới"
@@ -356,6 +359,7 @@ export function PortalLandingPage() {
               </SectionCard>
             </section>
 
+            <div className="parent-portal-anchor" id="thong-tin-con">
             {parentOverview.organizations.map((group) => (
               <section className="dashboard-grid portal-grid--single-column" key={group.donVi.id}>
                 <SectionCard
@@ -451,7 +455,10 @@ export function PortalLandingPage() {
                           )}
                         </div>
 
-                        <div className="portal-fee-box">
+                        <div
+                          className="portal-fee-box parent-portal-anchor"
+                          id={`hoc-phi-${child.hocSinh.id}`}
+                        >
                           <strong>Học phí</strong>
                           {child.khoanPhaiThu.length === 0 ? (
                             <div className="empty-cell">Chưa có khoản phải thu nào.</div>
@@ -474,7 +481,10 @@ export function PortalLandingPage() {
                           )}
                         </div>
 
-                        <div className="portal-fee-box">
+                        <div
+                          className="portal-fee-box parent-portal-anchor"
+                          id={`xin-phep-${child.hocSinh.id}`}
+                        >
                           <strong>Xin phép nghỉ</strong>
                           {child.donXinPhep.length === 0 ? (
                             <div className="empty-cell">Chưa gửi đơn xin phép nào.</div>
@@ -496,7 +506,10 @@ export function PortalLandingPage() {
                           />
                         </div>
 
-                        <div className="portal-exchange-box">
+                        <div
+                          className="portal-exchange-box parent-portal-anchor"
+                          id={`trao-doi-${child.hocSinh.id}`}
+                        >
                           <strong>Trao đổi gần đây</strong>
                           {child.traoDoi.length === 0 ? (
                             <div className="empty-cell">Chưa có trao đổi nào.</div>
@@ -518,6 +531,7 @@ export function PortalLandingPage() {
                 </SectionCard>
               </section>
             ))}
+            </div>
           </>
         ) : null}
       </>

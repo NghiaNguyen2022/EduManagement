@@ -15,6 +15,7 @@ import {
   findPhuHuynhById,
   findPhuHuynhByPhoneGlobal,
   listHocSinhByPhuHuynhId,
+  listGuardianNotificationScopeRows,
   listPhuHuynhByNguoiDungId,
   updateGuardianLink,
   updatePhuHuynhNguoiDungId,
@@ -22,6 +23,7 @@ import {
 import { findRoleByCode } from "../db/role.repository.js";
 import { createUserWithRole, findUserById, findUserByUsername } from "../db/user.repository.js";
 import { createTemporaryPassword } from "./user.service.js";
+import { collectGuardianOrganizationIds } from "../domain/guardian-scope.js";
 
 /**
  * Danh sách đơn vị mà tài khoản này là phụ huynh (có con đang học), dùng để
@@ -31,8 +33,32 @@ import { createTemporaryPassword } from "./user.service.js";
  */
 export async function getGuardianDonViIds(userId: number) {
   const guardians = await listPhuHuynhByNguoiDungId(userId);
+  const children = (
+    await Promise.all(
+      guardians.map((guardian) => listHocSinhByPhuHuynhId(guardian.id)),
+    )
+  ).flat();
 
-  return Array.from(new Set(guardians.map((guardian) => guardian.donViId)));
+  // Hồ sơ phụ huynh có thể được dùng chung giữa nhiều đơn vị. Phạm vi thật
+  // phải lấy từ đơn vị của từng học sinh, không phải `PhuHuynh.donViId`
+  // (đơn vị nơi hồ sơ được tạo lần đầu).
+  return collectGuardianOrganizationIds(children);
+}
+
+export async function getGuardianNotificationScope(userId: number) {
+  const rows = await listGuardianNotificationScopeRows(userId);
+
+  return {
+    organizationIds: Array.from(new Set(rows.map((row) => row.donViId))),
+    studentIds: Array.from(new Set(rows.map((row) => row.hocSinhId))),
+    classIds: Array.from(
+      new Set(
+        rows
+          .map((row) => row.lopHocId)
+          .filter((id): id is number => id !== null),
+      ),
+    ),
+  };
 }
 
 /**

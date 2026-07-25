@@ -33,9 +33,10 @@ import {
   updatePassword,
   updateUserProfile,
 } from "../db/auth.repository.js";
+import { toDatabaseDateTime } from "../utils/dateTime.js";
 
 function toDateTimeString(date: Date): string {
-  return date.toISOString().slice(0, 19).replace("T", " ");
+  return toDatabaseDateTime(date);
 }
 
 function validateNewPassword(password: string, minLength: number) {

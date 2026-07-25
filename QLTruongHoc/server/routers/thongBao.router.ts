@@ -6,11 +6,12 @@ import {
   requireAnyPermissionOrRole,
   requireCurrentOrganization,
 } from "../middleware/permission.middleware.js";
-import { getGuardianDonViIds } from "../services/phuHuynh.service.js";
+import { getGuardianNotificationScope } from "../services/phuHuynh.service.js";
 import {
   confirmThongBaoDaDoc,
   createThongBaoMoi,
   listThongBao,
+  listThongBaoTargets,
 } from "../services/thongBao.service.js";
 
 export const thongBaoRouter = Router();
@@ -48,7 +49,7 @@ function handleError(res: import("express").Response, error: unknown, fallback: 
  * `THONG_BAO_VAI_TRO_XEM`) mới cần gộp theo đơn vị con — quản lý hệ thống/đơn
  * vị vẫn giữ nguyên hành vi xem theo đơn vị đang chọn như trước.
  */
-async function resolveGuardianDonViIds(req: import("express").Request) {
+async function resolveGuardianScope(req: import("express").Request) {
   const organization = req.auth?.currentOrganization;
 
   if (!organization) return undefined;
@@ -61,7 +62,7 @@ async function resolveGuardianDonViIds(req: import("express").Request) {
     return undefined;
   }
 
-  return getGuardianDonViIds(req.auth!.user.id);
+  return getGuardianNotificationScope(req.auth!.user.id);
 }
 
 // ---------------------------------------------------------------
@@ -69,17 +70,30 @@ async function resolveGuardianDonViIds(req: import("express").Request) {
 // ---------------------------------------------------------------
 
 thongBaoRouter.get(
+  "/targets",
+  requireAnyPermission(THONG_BAO_QUYEN),
+  async (req, res) => {
+    try {
+      const data = await listThongBaoTargets(req.auth!.currentOrganization!.id);
+      res.json({ ok: true, data });
+    } catch (error) {
+      handleError(res, error, "Không thể tải đối tượng nhận thông báo.");
+    }
+  },
+);
+
+thongBaoRouter.get(
   "/",
   requireAnyPermissionOrRole(THONG_BAO_QUYEN, THONG_BAO_VAI_TRO_XEM),
   async (req, res) => {
     try {
-      const guardianDonViIds = await resolveGuardianDonViIds(req);
+      const guardianScope = await resolveGuardianScope(req);
 
       const rows = await listThongBao(
         req.auth!.currentOrganization!.id,
         req.auth!.currentOrganization!.loaiDonVi,
         req.auth!.user.id,
-        guardianDonViIds,
+        guardianScope,
       );
 
       res.json({ ok: true, data: rows });
@@ -94,14 +108,14 @@ thongBaoRouter.post(
   requireAnyPermissionOrRole(THONG_BAO_QUYEN, THONG_BAO_VAI_TRO_XEM),
   async (req, res) => {
     try {
-      const guardianDonViIds = await resolveGuardianDonViIds(req);
+      const guardianScope = await resolveGuardianScope(req);
 
       const result = await confirmThongBaoDaDoc({
         donViId: req.auth!.currentOrganization!.id,
         thongBaoId: Number(req.params.id),
         actorUserId: req.auth!.user.id,
         ipAddress: req.ip,
-        guardianDonViIds,
+        guardianScope,
       });
 
       res.json({ ok: true, data: result });
@@ -124,6 +138,8 @@ thongBaoRouter.post("/", requireAnyPermission(THONG_BAO_QUYEN), async (req, res)
       tepDinhKemTen: req.body?.tepDinhKemTen ? String(req.body.tepDinhKemTen) : null,
       tepDinhKemUrl: req.body?.tepDinhKemUrl ? String(req.body.tepDinhKemUrl) : null,
       phamVi: String(req.body?.phamVi ?? ""),
+      lopHocId: req.body?.lopHocId ? Number(req.body.lopHocId) : null,
+      hocSinhId: req.body?.hocSinhId ? Number(req.body.hocSinhId) : null,
       doiTuong: req.body?.doiTuong ? String(req.body.doiTuong) : null,
       actorUserId: req.auth!.user.id,
       ipAddress: req.ip,

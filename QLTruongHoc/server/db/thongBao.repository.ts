@@ -1,9 +1,10 @@
-import { and, count, desc, eq, inArray, like } from "drizzle-orm";
+import { and, count, desc, eq, inArray, like, or } from "drizzle-orm";
 
 import { donVi, thongBao, thongBaoDaDoc } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
+import { toDatabaseDateTime } from "../utils/dateTime.js";
 
-const now = () => new Date().toISOString().slice(0, 19).replace("T", " ");
+const now = toDatabaseDateTime;
 
 export async function listThongBaoByDonVi(donViId: number, userId: number) {
   const db = getDb();
@@ -51,11 +52,38 @@ export async function listThongBaoAllDonVi(userId: number) {
  * đang theo học, khác với `listThongBaoAllDonVi` (gộp TOÀN BỘ đơn vị, chỉ hợp
  * lý cho quản trị hệ thống).
  */
-export async function listThongBaoByDonViIds(donViIds: number[], userId: number) {
+export async function listThongBaoByDonViIds(
+  donViIds: number[],
+  userId: number,
+  options?: {
+    guardianClassIds?: number[];
+    guardianStudentIds?: number[];
+  },
+) {
   const db = getDb();
 
   if (donViIds.length === 0) {
     return [];
+  }
+
+  const scopeConditions = [eq(thongBao.phamVi, "toan_truong")];
+
+  if (options?.guardianClassIds?.length) {
+    scopeConditions.push(
+      and(
+        eq(thongBao.phamVi, "theo_lop"),
+        inArray(thongBao.lopHocId, options.guardianClassIds),
+      )!,
+    );
+  }
+
+  if (options?.guardianStudentIds?.length) {
+    scopeConditions.push(
+      and(
+        eq(thongBao.phamVi, "ca_nhan"),
+        inArray(thongBao.hocSinhId, options.guardianStudentIds),
+      )!,
+    );
   }
 
   return db
@@ -74,7 +102,7 @@ export async function listThongBaoByDonViIds(donViIds: number[], userId: number)
       and(eq(thongBaoDaDoc.thongBaoId, thongBao.id), eq(thongBaoDaDoc.nguoiDungId, userId)),
     )
     .innerJoin(donVi, eq(thongBao.donViId, donVi.id))
-    .where(inArray(thongBao.donViId, donViIds))
+    .where(and(inArray(thongBao.donViId, donViIds), or(...scopeConditions)))
     .orderBy(donVi.tenDonVi, desc(thongBao.createdAt));
 }
 
@@ -154,6 +182,8 @@ export async function createThongBao(input: {
   tepDinhKemTen: string | null;
   tepDinhKemUrl: string | null;
   phamVi: "toan_truong" | "theo_lop" | "ca_nhan";
+  lopHocId: number | null;
+  hocSinhId: number | null;
   doiTuong: string | null;
   nguoiTaoId: number;
 }) {
@@ -167,6 +197,8 @@ export async function createThongBao(input: {
     tepDinhKemTen: input.tepDinhKemTen,
     tepDinhKemUrl: input.tepDinhKemUrl,
     phamVi: input.phamVi,
+    lopHocId: input.lopHocId,
+    hocSinhId: input.hocSinhId,
     doiTuong: input.doiTuong,
     nguoiTaoId: input.nguoiTaoId,
     createdAt: now(),

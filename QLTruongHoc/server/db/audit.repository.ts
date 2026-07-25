@@ -1,8 +1,8 @@
 import { nhatKyHeThong } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
+import { toDatabaseDateTime } from "../utils/dateTime.js";
 
-const now = () =>
-  new Date().toISOString().slice(0, 19).replace("T", " ");
+const now = toDatabaseDateTime;
 
 export type AuditLevel = "thong_tin" | "canh_bao" | "loi";
 

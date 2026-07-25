@@ -1,4 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
+import {
+  hasAnyPermission,
+  hasAnyPermissionOrRole,
+} from "../domain/access-control.js";
 
 export function requireCurrentOrganization(req: Request, res: Response, next: NextFunction) {
   if (!req.auth?.currentOrganization) {
@@ -24,9 +28,12 @@ export function requirePermission(permissionCode: string) {
       return;
     }
 
-    const isSystemAdmin = organization.quyen.includes("he_thong.quan_tri");
-
-    if (!isSystemAdmin && !organization.quyen.includes(permissionCode)) {
+    if (
+      !hasAnyPermission({
+        grantedPermissions: organization.quyen,
+        requiredPermissions: [permissionCode],
+      })
+    ) {
       res.status(403).json({
         ok: false,
         error: "Bạn không có quyền thực hiện thao tác này.",
@@ -55,11 +62,12 @@ export function requireAnyPermission(permissionCodes: string[]) {
       return;
     }
 
-    const isSystemAdmin = organization.quyen.includes("he_thong.quan_tri");
-
-    const hasAny = permissionCodes.some((code) => organization.quyen.includes(code));
-
-    if (!isSystemAdmin && !hasAny) {
+    if (
+      !hasAnyPermission({
+        grantedPermissions: organization.quyen,
+        requiredPermissions: permissionCodes,
+      })
+    ) {
       res.status(403).json({
         ok: false,
         error: "Bạn không có quyền thực hiện thao tác này.",
@@ -90,13 +98,14 @@ export function requireAnyPermissionOrRole(permissionCodes: string[], roleCodes:
       return;
     }
 
-    const isSystemAdmin = organization.quyen.includes("he_thong.quan_tri");
-
-    const hasAnyPermission = permissionCodes.some((code) => organization.quyen.includes(code));
-
-    const hasAnyRole = roleCodes.some((code) => organization.vaiTro.includes(code));
-
-    if (!isSystemAdmin && !hasAnyPermission && !hasAnyRole) {
+    if (
+      !hasAnyPermissionOrRole({
+        grantedPermissions: organization.quyen,
+        grantedRoles: organization.vaiTro,
+        requiredPermissions: permissionCodes,
+        requiredRoles: roleCodes,
+      })
+    ) {
       res.status(403).json({
         ok: false,
         error: "Bạn không có quyền thực hiện thao tác này.",

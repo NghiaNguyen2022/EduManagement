@@ -1,4 +1,8 @@
-import type { ThongBaoFormInput, ThongBaoItem } from "./thongBaoTypes";
+import type {
+  ThongBaoFormInput,
+  ThongBaoItem,
+  ThongBaoTargets,
+} from "./thongBaoTypes";
 
 type ApiResponse<T> = {
   ok: boolean;
@@ -39,6 +43,10 @@ export function createThongBaoApi(input: ThongBaoFormInput) {
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+export function listThongBaoTargetsApi() {
+  return request<ThongBaoTargets>("/api/thong-bao/targets");
 }
 
 export function confirmThongBaoDaDocApi(id: number) {

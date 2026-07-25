@@ -10,11 +10,13 @@ import {
   confirmThongBaoDaDocApi,
   createThongBaoApi,
   listThongBaoApi,
+  listThongBaoTargetsApi,
 } from "../features/thongBao/thongBaoApi";
 import type {
   PhamViThongBao,
   ThongBaoFormInput,
   ThongBaoItem,
+  ThongBaoTargets,
 } from "../features/thongBao/thongBaoTypes";
 
 const emptyForm: ThongBaoFormInput = {
@@ -23,7 +25,8 @@ const emptyForm: ThongBaoFormInput = {
   tepDinhKemTen: "",
   tepDinhKemUrl: "",
   phamVi: "toan_truong",
-  doiTuong: "",
+  lopHocId: null,
+  hocSinhId: null,
 };
 
 const PHAM_VI_LABEL: Record<PhamViThongBao, string> = {
@@ -52,6 +55,10 @@ export function ThongBaoPage() {
   const [phamViFilter, setPhamViFilter] = useState("all");
   const [form, setForm] = useState<ThongBaoFormInput>(emptyForm);
   const [busyReadId, setBusyReadId] = useState<number | null>(null);
+  const [targets, setTargets] = useState<ThongBaoTargets>({
+    classes: [],
+    students: [],
+  });
 
   const isHeThong = auth?.currentOrganization?.loaiDonVi === "he_thong";
   const isPhuHuynh = auth?.currentOrganization?.vaiTro.includes("phu_huynh") ?? false;
@@ -74,6 +81,12 @@ export function ThongBaoPage() {
         permissions.includes("tai_chinh.quan_ly"))
     );
   }, [auth, isHeThong]);
+
+  const canSubmit =
+    !submitting &&
+    (form.phamVi === "toan_truong" ||
+      (form.phamVi === "theo_lop" && form.lopHocId !== null) ||
+      (form.phamVi === "ca_nhan" && form.hocSinhId !== null));
 
   useUnsavedChangesGuard(JSON.stringify(form) !== JSON.stringify(emptyForm));
 
@@ -111,6 +124,23 @@ export function ThongBaoPage() {
   useEffect(() => {
     void loadData();
   }, [auth?.currentOrganization?.id]);
+
+  useEffect(() => {
+    if (!canManage) {
+      setTargets({ classes: [], students: [] });
+      return;
+    }
+
+    listThongBaoTargetsApi()
+      .then(setTargets)
+      .catch((loadError) => {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Không thể tải lớp/học sinh nhận thông báo.",
+        );
+      });
+  }, [auth?.currentOrganization?.id, canManage]);
 
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -190,6 +220,8 @@ export function ThongBaoPage() {
                     setForm({
                       ...form,
                       phamVi: value as PhamViThongBao,
+                      lopHocId: null,
+                      hocSinhId: null,
                     })
                   }
                 />
@@ -206,13 +238,39 @@ export function ThongBaoPage() {
               </div>
 
               <div className="thong-bao-form__field thong-bao-form__field--span-3">
-                <TextField
-                  label="Đối tượng áp dụng"
-                  value={form.doiTuong}
-                  placeholder="Ví dụ: Lớp Mầm 1, học sinh Nguyễn Văn A"
-                  helpText="Bắt buộc khi chọn theo lớp hoặc cá nhân."
-                  onChange={(value) => setForm({ ...form, doiTuong: value })}
-                />
+                {form.phamVi === "theo_lop" ? (
+                  <SelectField
+                    label="Lớp nhận thông báo"
+                    required
+                    value={form.lopHocId ?? ""}
+                    placeholder="-- Chọn lớp --"
+                    options={targets.classes.map((item) => ({
+                      value: item.id,
+                      label: `${item.tenLop} (${item.maLop})`,
+                    }))}
+                    onChange={(value) =>
+                      setForm({ ...form, lopHocId: Number(value), hocSinhId: null })
+                    }
+                  />
+                ) : form.phamVi === "ca_nhan" ? (
+                  <SelectField
+                    label="Học sinh nhận thông báo"
+                    required
+                    value={form.hocSinhId ?? ""}
+                    placeholder="-- Chọn học sinh --"
+                    options={targets.students.map((item) => ({
+                      value: item.id,
+                      label: `${item.hoTen} (${item.maHocSinh})`,
+                    }))}
+                    onChange={(value) =>
+                      setForm({ ...form, hocSinhId: Number(value), lopHocId: null })
+                    }
+                  />
+                ) : (
+                  <div className="form-help">
+                    Thông báo sẽ gửi tới toàn bộ phụ huynh có liên kết nhận thông báo trong đơn vị.
+                  </div>
+                )}
               </div>
 
               <div className="thong-bao-form__field thong-bao-form__field--span-2">
@@ -237,7 +295,7 @@ export function ThongBaoPage() {
             </div>
 
             <div className="thong-bao-form__actions">
-              <button type="submit" className="primary-button" disabled={submitting}>
+              <button type="submit" className="primary-button" disabled={!canSubmit}>
                 {submitting ? "Đang tạo..." : "Tạo thông báo"}
               </button>
             </div>

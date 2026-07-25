@@ -269,7 +269,9 @@
 - [x] I02 Đính kèm tài liệu/hình ảnh. (2026-07-22: thêm một slot đính kèm duy nhất cho thông báo nội bộ — tên + liên kết; chưa làm upload đa tệp riêng.)
 - [x] I03 Xác nhận đã đọc. (2026-07-22: thêm bảng `ThongBaoDaDoc` theo từng người dùng, nút "Xác nhận đã đọc" ngay trên trang `/thong-bao`, badge trạng thái theo từng dòng.)
 - [x] I04 Trao đổi phụ huynh – giáo viên theo học sinh/lớp. (2026-07-22: API `/api/trao-doi` + trang `/communications`, ghi nhận trao đổi theo học sinh/lớp, xem gộp đơn vị hệ thống và lưu `trao_doi.create` vào nhật ký hệ thống.)
-- [ ] I05 Kiểm soát phạm vi và lưu lịch sử.
+- [x] I05 Kiểm soát phạm vi và lưu lịch sử. (2026-07-25: thêm `lopHocId`/`hocSinhId`
+  có cấu trúc cho thông báo; Portal phụ huynh lọc và xác nhận đã đọc theo đúng
+  đơn vị/lớp/con, không suy đoán từ tên tự do. Dữ liệu cũ thiếu ID được ẩn an toàn.)
 
 ## J. Portal
 - [x] J01 Portal phụ huynh. (2026-07-22: trang `/portal/parent` — tổng quan chung không gắn
