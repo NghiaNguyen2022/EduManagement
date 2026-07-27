@@ -498,6 +498,19 @@ button {
   margin-bottom: 0;
 }
 
+.summary-grid--halves {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-section-label {
+  margin: 0 0 10px;
+  color: var(--edu-color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .stat-card {
   min-height: 142px;
   display: flex;
@@ -965,6 +978,54 @@ button {
   border-top: 0;
 }
 
+.attention-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  min-height: 56px;
+  border-top: 1px solid var(--edu-color-border);
+}
+
+.attention-row:first-child {
+  border-top: 0;
+}
+
+.attention-row__label {
+  font-weight: 700;
+}
+
+.attention-row__detail {
+  color: var(--edu-color-text-muted);
+  font-size: var(--edu-small-size);
+}
+
+.attention-row__value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  white-space: nowrap;
+  font-weight: 800;
+  color: var(--edu-color-text);
+}
+
+.attention-row__action {
+  font-weight: 600;
+  font-size: var(--edu-small-size);
+  color: var(--edu-color-primary);
+}
+
+.attention-row--link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.attention-row--link:hover {
+  background: var(--edu-color-surface-hover, rgba(0, 0, 0, 0.03));
+}
+
 .class-row__time {
   color: var(--edu-color-primary-strong);
   font-size: var(--edu-small-size);
@@ -991,43 +1052,6 @@ button {
   font-size: var(--edu-small-size);
 }
 
-.system-status {
-  min-height: 96px;
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  padding: 16px;
-  border-radius: var(--edu-radius-medium);
-  background: var(--edu-color-surface-soft);
-}
-
-.system-status__dot {
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: var(--edu-color-text-soft);
-  box-shadow: 0 0 0 6px rgba(130, 149, 162, 0.13);
-}
-
-.system-status__dot.is-online {
-  background: var(--edu-color-success);
-  box-shadow: 0 0 0 6px rgba(47, 167, 111, 0.13);
-}
-
-.system-status__dot.is-offline {
-  background: var(--edu-color-danger);
-  box-shadow: 0 0 0 6px rgba(217, 93, 88, 0.13);
-}
-
-.system-status strong,
-.system-status small {
-  display: block;
-}
-
-.system-status small {
-  margin-top: 5px;
-  color: var(--edu-color-text-muted);
-}
 
 .pagination {
   display: flex;

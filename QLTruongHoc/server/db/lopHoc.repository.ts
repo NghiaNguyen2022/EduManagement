@@ -108,6 +108,17 @@ export async function findLopHocByMa(
   return rows[0] ?? null;
 }
 
+export async function countLopHocTheoMaPrefix(donViId: number, prefix: string) {
+  const db = getDb();
+
+  const rows = await db
+    .select({ total: count() })
+    .from(lopHoc)
+    .where(and(eq(lopHoc.donViId, donViId), like(lopHoc.maLop, `${prefix}%`)));
+
+  return rows[0]?.total ?? 0;
+}
+
 export async function createLopHoc(input: {
   donViId: number;
   chuongTrinhDaoTaoId: number | null;
@@ -334,6 +345,34 @@ export async function listHocSinhTrongLop(lopHocId: number) {
     .from(hocSinhLopHoc)
     .innerJoin(hocSinh, eq(hocSinhLopHoc.hocSinhId, hocSinh.id))
     .where(eq(hocSinhLopHoc.lopHocId, lopHocId));
+}
+
+/** Sĩ số hiện tại/tối đa của TỪNG lớp đang học trong 1 đơn vị — cho Bảng điều hành. */
+export async function listSiSoTheoLop(donViId: number) {
+  const db = getDb();
+
+  return db
+    .select({
+      id: lopHoc.id,
+      tenLop: lopHoc.tenLop,
+      maLop: lopHoc.maLop,
+      siSoToiDa: lopHoc.siSoToiDa,
+      siSoHienTai: count(hocSinhLopHoc.id),
+    })
+    .from(lopHoc)
+    .leftJoin(
+      hocSinhLopHoc,
+      and(
+        eq(hocSinhLopHoc.lopHocId, lopHoc.id),
+        or(
+          eq(hocSinhLopHoc.trangThai, "dang_hoc"),
+          eq(hocSinhLopHoc.trangThai, "bao_luu"),
+        ),
+      ),
+    )
+    .where(and(eq(lopHoc.donViId, donViId), eq(lopHoc.trangThai, "dang_hoc")))
+    .groupBy(lopHoc.id)
+    .orderBy(lopHoc.tenLop);
 }
 
 export async function countHocSinhDangHocTrongLop(

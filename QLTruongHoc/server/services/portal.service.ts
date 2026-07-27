@@ -1,3 +1,4 @@
+import { listBuoiHocDaHocThieuBaoGiang } from "../db/baoGiang.repository.js";
 import { listDiemDanhGanDayByHocSinh } from "../db/diemDanh.repository.js";
 import { findDonViById } from "../db/donVi.repository.js";
 import { findGiaoVienByNguoiDungId } from "../db/giaoVien.repository.js";
@@ -7,6 +8,7 @@ import {
 } from "../db/lopHoc.repository.js";
 import { listPhuHuynhByNguoiDungId, listHocSinhByPhuHuynhId } from "../db/phuHuynh.repository.js";
 import { listKhoanPhaiThuByHocSinh } from "../db/taiChinh.repository.js";
+import { countTraoDoiGanDayTheoLop } from "../db/traoDoi.repository.js";
 import { listDonXinPhepByHocSinhIds } from "../db/xinPhep.repository.js";
 import { listThoiKhoaBieu } from "./lichHoc.service.js";
 import { listTraoDoi } from "./traoDoi.service.js";
@@ -44,6 +46,19 @@ export async function getTeacherPortalOverview(input: {
     }),
   ]);
 
+  const lopHocIds = assignments.map((item) => item.lopHoc.id);
+
+  // Buổi đã dạy trong 7 ngày qua nhưng chưa ghi báo giảng — nhắc giáo viên bổ
+  // sung, chỉ tính trên các lớp giáo viên này đang phụ trách.
+  const [baoGiangThieu, traoDoiGanDay] = await Promise.all([
+    listBuoiHocDaHocThieuBaoGiang({
+      lopHocIds,
+      tuNgay: addDaysIso(today, -7),
+      denNgay: today,
+    }),
+    countTraoDoiGanDayTheoLop(lopHocIds, `${addDaysIso(today, -7)} 00:00:00`),
+  ]);
+
   return {
     teacher,
     classes: assignments.map((item) => ({
@@ -51,6 +66,9 @@ export async function getTeacherPortalOverview(input: {
       class: item.lopHoc,
     })),
     sessions,
+    sessionsHomNay: sessions.filter((item) => item.buoiHoc.ngayHoc === today).length,
+    baoGiangChoNhap: baoGiangThieu.length,
+    traoDoiGanDay,
   };
 }
 

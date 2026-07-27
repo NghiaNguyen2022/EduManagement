@@ -1,16 +1,23 @@
 import type {
   BaoCaoTaiChinh,
+  CauHinhTaiChinhDonVi,
+  ChiPhiItem,
+  DanhMucChiPhiItem,
   DanhMucKhoanThuFormInput,
   DanhMucKhoanThuItem,
   DieuChinhFormInput,
   DieuChinhItem,
+  DieuChinhListItem,
   KhoanPhaiThuItem,
   KyThuDetail,
   KyThuFormInput,
   KyThuItem,
+  LoaiDeXuatChi,
   PhieuThuDetail,
   PhieuThuItem,
   SinhKhoanPhaiThuResult,
+  TrangThaiChiPhi,
+  TrangThaiDieuChinh,
 } from "./taiChinhTypes";
 
 type ApiResponse<T> = {
@@ -57,10 +64,7 @@ export function createDanhMucKhoanThuApi(input: DanhMucKhoanThuFormInput) {
   });
 }
 
-export function updateDanhMucKhoanThuApi(
-  id: number,
-  input: Omit<DanhMucKhoanThuFormInput, "maKhoanThu">,
-) {
+export function updateDanhMucKhoanThuApi(id: number, input: DanhMucKhoanThuFormInput) {
   return request<DanhMucKhoanThuItem>(`/api/tai-chinh/khoan-thu/${id}`, {
     method: "PATCH",
     body: JSON.stringify(input),
@@ -101,7 +105,7 @@ export function createKyThuApi(input: KyThuFormInput) {
   });
 }
 
-export function updateKyThuApi(id: number, input: Omit<KyThuFormInput, "maKyThu">) {
+export function updateKyThuApi(id: number, input: KyThuFormInput) {
   return request<KyThuItem>(`/api/tai-chinh/ky-thu/${id}`, {
     method: "PATCH",
     body: JSON.stringify({
@@ -199,6 +203,108 @@ export function taoYeuCauDieuChinhApi(khoanPhaiThuId: number, input: DieuChinhFo
 
 export function listDieuChinhApi(khoanPhaiThuId: number) {
   return request<DieuChinhItem[]>(`/api/tai-chinh/khoan-phai-thu/${khoanPhaiThuId}/dieu-chinh`);
+}
+
+export function listYeuCauDieuChinhApi(trangThai?: TrangThaiDieuChinh) {
+  const params = trangThai ? `?trangThai=${trangThai}` : "";
+  return request<DieuChinhListItem[]>(`/api/tai-chinh/dieu-chinh${params}`);
+}
+
+// ---------------------------------------------------------------
+// Chi phí
+// ---------------------------------------------------------------
+
+export function listDanhMucChiPhiApi() {
+  return request<DanhMucChiPhiItem[]>("/api/tai-chinh/danh-muc-chi-phi");
+}
+
+export function createDanhMucChiPhiApi(input: {
+  tenChiPhi: string;
+  loaiChiPhi: string;
+}) {
+  return request<DanhMucChiPhiItem>("/api/tai-chinh/danh-muc-chi-phi", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function setDanhMucChiPhiStatusApi(id: number, trangThai: "hoat_dong" | "ngung_ap_dung") {
+  return request<DanhMucChiPhiItem>(`/api/tai-chinh/danh-muc-chi-phi/${id}/trang-thai`, {
+    method: "POST",
+    body: JSON.stringify({ trangThai }),
+  });
+}
+
+export function listDanhMucChiPhiChoDuyetApi() {
+  return request<DanhMucChiPhiItem[]>("/api/tai-chinh/danh-muc-chi-phi/cho-duyet");
+}
+
+export function duyetDanhMucChiPhiApi(
+  id: number,
+  input: { quyetDinh: "duyet" | "tu_choi"; ghiChuDuyet?: string },
+) {
+  return request<DanhMucChiPhiItem>(`/api/tai-chinh/danh-muc-chi-phi/${id}/duyet`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function getCauHinhTaiChinhDonViApi() {
+  return request<CauHinhTaiChinhDonVi>("/api/tai-chinh/cau-hinh-don-vi");
+}
+
+export function updateCauHinhTaiChinhDonViApi(input: {
+  duyetDanhMucChiPhi: boolean;
+  duyetChiDinhKy: boolean;
+  duyetChiDotXuat: boolean;
+}) {
+  return request<CauHinhTaiChinhDonVi>("/api/tai-chinh/cau-hinh-don-vi", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function listChiPhiApi(params?: {
+  tuNgay?: string;
+  denNgay?: string;
+  trangThai?: TrangThaiChiPhi;
+}) {
+  const query = new URLSearchParams();
+  if (params?.tuNgay) query.set("tuNgay", params.tuNgay);
+  if (params?.denNgay) query.set("denNgay", params.denNgay);
+  if (params?.trangThai) query.set("trangThai", params.trangThai);
+  const qs = query.toString();
+
+  return request<ChiPhiItem[]>(`/api/tai-chinh/chi-phi${qs ? `?${qs}` : ""}`);
+}
+
+export function createChiPhiApi(input: {
+  danhMucChiPhiId: number;
+  soTien: number;
+  ngayChi: string;
+  moTa?: string;
+  loaiDeXuat?: LoaiDeXuatChi;
+}) {
+  return request<Omit<ChiPhiItem, "danhMuc" | "donVi" | "nguoiTao" | "nguoiDuyet">>(
+    "/api/tai-chinh/chi-phi",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export function duyetChiPhiApi(
+  chiPhiId: number,
+  input: { quyetDinh: "duyet" | "tu_choi"; ghiChuDuyet?: string },
+) {
+  return request<Omit<ChiPhiItem, "danhMuc" | "donVi" | "nguoiTao" | "nguoiDuyet">>(
+    `/api/tai-chinh/chi-phi/${chiPhiId}/duyet`,
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
 }
 
 export function duyetDieuChinhApi(

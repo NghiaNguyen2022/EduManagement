@@ -65,7 +65,6 @@ chuongTrinhRouter.post(
     try {
       const created = await createChuongTrinhMoi({
         donViId: req.auth!.currentOrganization!.id,
-        maChuongTrinh: String(req.body?.maChuongTrinh ?? ""),
         tenChuongTrinh: String(req.body?.tenChuongTrinh ?? ""),
         capDo: req.body?.capDo ? String(req.body.capDo) : null,
         tongSoBuoi: req.body?.tongSoBuoi

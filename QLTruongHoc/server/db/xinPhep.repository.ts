@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 
 import { donXinPhep, hocSinh, lopHoc } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
@@ -115,6 +115,17 @@ export async function listDonXinPhepByDonVi(donViId: number, trangThai?: string)
     .innerJoin(lopHoc, eq(donXinPhep.lopHocId, lopHoc.id))
     .where(and(...conditions))
     .orderBy(desc(donXinPhep.createdAt));
+}
+
+export async function countDonXinPhepChoDuyet(donViId: number) {
+  const db = getDb();
+
+  const rows = await db
+    .select({ total: count() })
+    .from(donXinPhep)
+    .where(and(eq(donXinPhep.donViId, donViId), eq(donXinPhep.trangThai, "cho_duyet")));
+
+  return rows[0]?.total ?? 0;
 }
 
 export async function updateDonXinPhepTrangThai(input: {

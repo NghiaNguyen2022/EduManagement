@@ -1,12 +1,11 @@
 export type PortalRoleSlug =
-      "parent" | "giao-vien" | "hoc-vu" | "ke-toan" | "tuyen-sinh" | "he-thong";
+      "parent" | "quan-ly-don-vi" | "giao-vien" | "hoc-vu" | "ke-toan" | "tuyen-sinh" | "he-thong";
 
 export type PortalRoleDefinition = {
       slug: PortalRoleSlug;
       title: string;
       subtitle: string;
       summary: string;
-      highlight: string;
       featuredActions?: Array<{
             label: string;
             description: string;
@@ -39,6 +38,7 @@ export const portalRoleOrder: Array<{
       slug: PortalRoleSlug;
 }> = [
             { role: "phu_huynh", slug: "parent" },
+            { role: "quan_ly_don_vi", slug: "quan-ly-don-vi" },
             { role: "giao_vien", slug: "giao-vien" },
             { role: "hoc_vu", slug: "hoc-vu" },
             { role: "ke_toan", slug: "ke-toan" },
@@ -53,7 +53,6 @@ export const portalRoles: PortalRoleDefinition[] = [
             title: "Cổng phụ huynh",
             subtitle: "Theo dõi học tập, lịch học và trao đổi với nhà trường.",
             summary: "Màn hình tổng quan cho phụ huynh/người giám hộ.",
-            highlight: "Tập trung vào học sinh, lịch học, thông báo và trao đổi.",
             featuredActions: [
                   {
                         label: "Xem hồ sơ con",
@@ -160,11 +159,97 @@ export const portalRoles: PortalRoleDefinition[] = [
             ],
       },
       {
+            slug: "quan-ly-don-vi",
+            title: "Cổng quản lý đơn vị",
+            subtitle: "Tổng quan toàn đơn vị: đào tạo, tuyển sinh, tài chính và việc cần xử lý.",
+            summary: "Màn hình điều phối cho người phụ trách đơn vị.",
+            quickLinks: [
+                  {
+                        label: "Học sinh · Học viên",
+                        description: "Xem hồ sơ và tình trạng học tập trong đơn vị.",
+                        to: "/students",
+                  },
+                  {
+                        label: "Lớp học",
+                        description: "Theo dõi lớp đang hoạt động và sĩ số.",
+                        to: "/classes",
+                  },
+                  {
+                        label: "Tuyển sinh",
+                        description: "Xem lead mới và tỷ lệ chuyển đổi trong tháng.",
+                        to: "/admissions",
+                  },
+                  {
+                        label: "Báo cáo tài chính",
+                        description: "Doanh thu, công nợ và thu ròng trong khoảng ngày.",
+                        to: "/finance/bao-cao",
+                  },
+                  {
+                        label: "Chi phí",
+                        description: "Duyệt đề xuất chi và theo dõi chi phí vận hành.",
+                        to: "/finance/chi-phi",
+                  },
+                  {
+                        label: "Người dùng",
+                        description: "Quản lý tài khoản nhân sự trong đơn vị.",
+                        to: "/users",
+                  },
+                  {
+                        label: "Thông báo nội bộ",
+                        description: "Gửi thông báo tới nhân sự và phụ huynh trong đơn vị.",
+                        to: "/notifications",
+                  },
+            ],
+            stats: [
+                  {
+                        title: "Học viên đang học",
+                        value: "—",
+                        note: 'Đang có trạng thái "Đang học"',
+                        icon: "🎒",
+                        tone: "primary",
+                  },
+                  {
+                        title: "Lớp đang hoạt động",
+                        value: "—",
+                        note: 'Đang có trạng thái "Đang học"',
+                        icon: "🏫",
+                        tone: "secondary",
+                  },
+                  {
+                        title: "Công nợ hiện tại",
+                        value: "—",
+                        note: "Tổng khoản phải thu còn lại",
+                        icon: "💳",
+                        tone: "warning",
+                  },
+                  {
+                        title: "Lead mới trong tháng",
+                        value: "—",
+                        note: "Tính từ đầu tháng tới hôm nay",
+                        icon: "📈",
+                        tone: "success",
+                  },
+            ],
+            nextSteps: [
+                  {
+                        title: "Xử lý các việc đang chờ",
+                        detail: "Rà soát khoản thu quá hạn, đơn xin phép và yêu cầu điều chỉnh đang chờ duyệt.",
+                  },
+                  {
+                        title: "Theo dõi tuyển sinh",
+                        detail: "Nắm số lead mới và tỷ lệ chuyển đổi để điều phối đội tư vấn.",
+                  },
+                  {
+                        title: "Rà soát sĩ số lớp",
+                        detail: "Phát hiện lớp gần đầy hoặc lớp thiếu học viên để điều chỉnh kế hoạch.",
+                  },
+            ],
+      },
+      {
             slug: "giao-vien",
             title: "Cổng giáo viên",
             subtitle: "Quản lý lớp dạy, báo giảng, điểm danh và theo dõi học sinh.",
             summary: "Màn hình làm việc nhanh cho giáo viên.",
-            highlight: "Ưu tiên lịch dạy, lớp phụ trách, điểm danh và ghi nhận buổi dạy.",
             quickLinks: [
                   {
                         label: "Lớp học",
@@ -190,29 +275,29 @@ export const portalRoles: PortalRoleDefinition[] = [
             stats: [
                   {
                         title: "Lớp đang dạy",
-                        value: "Theo phân công",
-                        note: "Danh sách lớp chủ nhiệm và lớp hỗ trợ",
+                        value: "—",
+                        note: "Lớp chủ nhiệm và lớp hỗ trợ đang phụ trách",
                         icon: "🏫",
                         tone: "primary",
                   },
                   {
-                        title: "Buổi cần điểm danh",
-                        value: "Hôm nay",
-                        note: "Nhấn vào để mở màn hình điểm danh",
+                        title: "Buổi dạy hôm nay",
+                        value: "—",
+                        note: "Số buổi cần điểm danh trong ngày",
                         icon: "✅",
                         tone: "success",
                   },
                   {
                         title: "Báo giảng chờ nhập",
-                        value: "Trong ngày",
-                        note: "Dùng cho ghi nhận nội dung dạy và phản hồi",
+                        value: "—",
+                        note: "Buổi đã dạy trong 7 ngày qua chưa ghi báo giảng",
                         icon: "📝",
                         tone: "warning",
                   },
                   {
-                        title: "Trao đổi cần xử lý",
-                        value: "Mới nhất",
-                        note: "Các ghi chú với phụ huynh hoặc học vụ",
+                        title: "Trao đổi trong tuần",
+                        value: "—",
+                        note: "Số lượt trao đổi đã ghi nhận trong 7 ngày qua",
                         icon: "💬",
                         tone: "info",
                   },
@@ -220,15 +305,15 @@ export const portalRoles: PortalRoleDefinition[] = [
             nextSteps: [
                   {
                         title: "Mở lớp phụ trách",
-                        detail: "Đưa giáo viên vào đúng lớp để xem sĩ số và thành phần học sinh.",
+                        detail: "Xem sĩ số và thành phần học sinh của từng lớp đang dạy.",
                   },
                   {
-                        title: "Chấm điểm danh",
-                        detail: "Portal nên đi thẳng tới luồng làm việc trong buổi dạy hiện tại.",
+                        title: "Điểm danh buổi hôm nay",
+                        detail: "Ghi nhận điểm danh ngay sau khi kết thúc buổi dạy.",
                   },
                   {
-                        title: "Ghi báo giảng",
-                        detail: "Sau buổi học, ghi nhanh nội dung và kết quả để học vụ theo dõi.",
+                        title: "Bổ sung báo giảng còn thiếu",
+                        detail: "Ghi nội dung bài học và bài tập cho các buổi đã dạy nhưng chưa nhập.",
                   },
             ],
       },
@@ -237,7 +322,6 @@ export const portalRoles: PortalRoleDefinition[] = [
             title: "Cổng học vụ",
             subtitle: "Quản lý lớp học, lịch học, xếp lớp và theo dõi tiến độ đào tạo.",
             summary: "Màn hình điều phối nghiệp vụ học vụ.",
-            highlight: "Tập trung vào lớp học, chương trình, lịch học và điều phối vận hành.",
             quickLinks: [
                   {
                         label: "Chương trình đào tạo",
@@ -268,29 +352,29 @@ export const portalRoles: PortalRoleDefinition[] = [
             stats: [
                   {
                         title: "Lớp đang hoạt động",
-                        value: "Nhiều lớp",
+                        value: "—",
                         note: "Cần theo dõi sĩ số và tiến độ học",
                         icon: "🏫",
                         tone: "primary",
                   },
                   {
-                        title: "Lịch học cần điều chỉnh",
-                        value: "Tuần này",
-                        note: "Thay đổi phòng, ca hoặc giáo viên phụ trách",
+                        title: "Buổi học nghỉ/hủy tuần này",
+                        value: "—",
+                        note: "Cần xếp bù hoặc báo lại cho học sinh/giáo viên",
                         icon: "📅",
                         tone: "warning",
                   },
                   {
-                        title: "Học sinh cần hỗ trợ",
-                        value: "Theo lớp",
-                        note: "Liên quan xếp lớp, chuyển lớp hoặc theo dõi tiến độ",
+                        title: "Học sinh đang bảo lưu",
+                        value: "—",
+                        note: "Cần theo dõi để hỗ trợ quay lại học hoặc kết thúc bảo lưu",
                         icon: "🎒",
                         tone: "info",
                   },
                   {
-                        title: "Tác vụ ưu tiên",
-                        value: "Hôm nay",
-                        note: "Các đầu việc cần xử lý ngay trong ca làm việc",
+                        title: "Đơn xin phép chờ duyệt",
+                        value: "—",
+                        note: "Đơn xin nghỉ của học sinh đang chờ xử lý",
                         icon: "✅",
                         tone: "success",
                   },
@@ -298,15 +382,15 @@ export const portalRoles: PortalRoleDefinition[] = [
             nextSteps: [
                   {
                         title: "Xem lớp và sĩ số",
-                        detail: "Nơi học vụ cần nhìn nhanh lớp nào đang thiếu/đủ học sinh.",
+                        detail: "Nhìn nhanh lớp nào đang thiếu/đủ học sinh để điều phối.",
                   },
                   {
-                        title: "Điều chỉnh thời khóa biểu",
-                        detail: "Portal nên dẫn vào lịch học để xử lý thay đổi trong ngày.",
+                        title: "Xếp bù buổi nghỉ/hủy",
+                        detail: "Sắp lịch bù và báo lại cho học sinh/giáo viên liên quan.",
                   },
                   {
-                        title: "Theo dõi thông báo",
-                        detail: "Tập trung vào thông báo nội bộ và luồng điều phối nghiệp vụ.",
+                        title: "Duyệt đơn xin phép",
+                        detail: "Xử lý các đơn xin nghỉ đang chờ duyệt trong ngày.",
                   },
             ],
       },
@@ -315,7 +399,6 @@ export const portalRoles: PortalRoleDefinition[] = [
             title: "Cổng kế toán",
             subtitle: "Theo dõi kỳ thu, công nợ, phiếu thu và báo cáo tài chính.",
             summary: "Màn hình tổng quan cho nghiệp vụ tài chính.",
-            highlight: "Ưu tiên kỳ thu, công nợ, phiếu thu và báo cáo tổng hợp.",
             quickLinks: [
                   {
                         label: "Kỳ thu học phí",
@@ -337,49 +420,59 @@ export const portalRoles: PortalRoleDefinition[] = [
                         description: "Tổng hợp nhanh số thu và tình trạng công nợ.",
                         to: "/finance/bao-cao",
                   },
+                  {
+                        label: "Yêu cầu điều chỉnh",
+                        description: "Theo dõi hoàn phí/chuyển phí/bảo lưu chờ duyệt.",
+                        to: "/finance/dieu-chinh",
+                  },
+                  {
+                        label: "Chi phí",
+                        description: "Ghi nhận và theo dõi chi phí vận hành.",
+                        to: "/finance/chi-phi",
+                  },
             ],
             stats: [
                   {
                         title: "Kỳ thu đang mở",
-                        value: "Hiện tại",
-                        note: "Dùng để theo dõi khoản phải thu",
+                        value: "—",
+                        note: "Tính đến hôm nay",
                         icon: "💳",
                         tone: "primary",
                   },
                   {
-                        title: "Công nợ cần xử lý",
-                        value: "Theo dõi",
-                        note: "Mục tiêu là vào việc nhanh ngay khi mở portal",
+                        title: "Tổng công nợ hiện tại",
+                        value: "—",
+                        note: "Tính đến hôm nay",
                         icon: "📋",
                         tone: "warning",
                   },
                   {
-                        title: "Phiếu thu gần nhất",
-                        value: "Trong ngày",
-                        note: "Giúp kiểm tra giao dịch phát sinh",
+                        title: "Đã thu trong tháng",
+                        value: "—",
+                        note: "Từ đầu tháng tới hôm nay",
                         icon: "🧾",
                         tone: "success",
                   },
                   {
-                        title: "Báo cáo chốt ngày",
-                        value: "Tổng hợp",
-                        note: "Phục vụ đối soát nhanh trong ca làm việc",
+                        title: "Thu ròng trong tháng",
+                        value: "—",
+                        note: "Đã trừ hoàn phí, từ đầu tháng tới hôm nay",
                         icon: "📊",
                         tone: "info",
                   },
             ],
             nextSteps: [
                   {
-                        title: "Mở kỳ thu",
-                        detail: "Portal kế toán nên dẫn tới những kỳ đang cần thao tác ngay.",
+                        title: "Xử lý khoản thu quá hạn",
+                        detail: "Rà soát khoản phải thu đã quá hạn thanh toán, nhắc thu hoặc liên hệ phụ huynh/học viên.",
                   },
                   {
-                        title: "Xem công nợ theo lớp",
-                        detail: "Cần một lối vào ngắn để rà soát công nợ học viên.",
+                        title: "Duyệt yêu cầu điều chỉnh",
+                        detail: "Xử lý các yêu cầu hoàn phí, chuyển phí hoặc bảo lưu đang chờ duyệt.",
                   },
                   {
-                        title: "Xuất báo cáo",
-                        detail: "Đây là nơi phù hợp để thêm báo cáo tổng hợp sau này.",
+                        title: "Đối chiếu trước khi chốt báo cáo",
+                        detail: "Kiểm tra số thu và công nợ trong tháng trước khi tổng hợp báo cáo tài chính.",
                   },
             ],
       },
@@ -388,7 +481,6 @@ export const portalRoles: PortalRoleDefinition[] = [
             title: "Cổng tuyển sinh",
             subtitle: "Theo dõi lead, hồ sơ đăng ký và chăm sóc khách hàng tiềm năng.",
             summary: "Màn hình làm việc nhanh cho tuyển sinh.",
-            highlight: "Ưu tiên lead, hồ sơ đăng ký và lịch chăm sóc trong ngày.",
             quickLinks: [
                   {
                         label: "Lead tuyển sinh",
@@ -413,30 +505,30 @@ export const portalRoles: PortalRoleDefinition[] = [
             ],
             stats: [
                   {
-                        title: "Lead mới",
-                        value: "Trong ngày",
-                        note: "Những khách hàng tiềm năng cần gọi lại",
+                        title: "Lead mới trong tháng",
+                        value: "—",
+                        note: "Từ đầu tháng tới hôm nay",
                         icon: "📞",
                         tone: "primary",
                   },
                   {
-                        title: "Hồ sơ chờ xử lý",
-                        value: "Ưu tiên",
-                        note: "Cần bổ sung giấy tờ hoặc xác nhận",
+                        title: "Lead đang chăm sóc",
+                        value: "—",
+                        note: "Chưa đăng ký, chưa dừng chăm sóc",
                         icon: "📋",
                         tone: "warning",
                   },
                   {
-                        title: "Lịch hẹn tư vấn",
-                        value: "Hôm nay",
-                        note: "Điểm vào nhanh cho tác vụ gọi điện và hẹn gặp",
+                        title: "Lịch hẹn tư vấn hôm nay",
+                        value: "—",
+                        note: "Cuộc hẹn cần gọi điện hoặc gặp trực tiếp",
                         icon: "📅",
                         tone: "success",
                   },
                   {
                         title: "Tỷ lệ chuyển đổi",
-                        value: "Theo dõi",
-                        note: "Portal giúp tập trung vào hoạt động bán hàng/tiếp nhận",
+                        value: "—",
+                        note: "Lead đã đăng ký / tổng lead đã tiếp nhận",
                         icon: "📈",
                         tone: "info",
                   },
@@ -444,15 +536,15 @@ export const portalRoles: PortalRoleDefinition[] = [
             nextSteps: [
                   {
                         title: "Mở danh sách lead",
-                        detail: "Portal phải cho vào được ngay màn hình xử lý khách hàng tiềm năng.",
+                        detail: "Ưu tiên xử lý lead mới và lead đang chăm sóc dở dang.",
                   },
                   {
                         title: "Theo dõi hồ sơ",
-                        detail: "Từ portal có thể chuyển sang hồ sơ và học sinh liên quan.",
+                        detail: "Chuyển lead đã xác nhận sang hồ sơ đăng ký và học sinh liên quan.",
                   },
                   {
-                        title: "Nhắc việc chăm sóc",
-                        detail: "Giúp đội tuyển sinh nhìn nhanh việc cần gọi lại/hẹn gặp.",
+                        title: "Nhắc lịch hẹn hôm nay",
+                        detail: "Chuẩn bị trước nội dung cho các cuộc hẹn tư vấn trong ngày.",
                   },
             ],
       },
@@ -461,7 +553,6 @@ export const portalRoles: PortalRoleDefinition[] = [
             title: "Cổng quản trị hệ thống",
             subtitle: "Điều phối đơn vị, người dùng, vai trò và nhật ký hệ thống.",
             summary: "Màn hình tổng quan cho quản trị nền tảng.",
-            highlight: "Ưu tiên đơn vị, người dùng, phân quyền và audit log.",
             quickLinks: [
                   {
                         label: "Danh mục đơn vị",
@@ -531,6 +622,40 @@ export const portalRoles: PortalRoleDefinition[] = [
       },
 ];
 
+/**
+ * Kế toán tổng (đứng ở hệ thống) không thao tác được ở đơn vị con (xem
+ * `getPortalContext`), nên "Định hướng portal" mặc định của kế toán (viết
+ * cho người đứng tại 1 đơn vị, có thể tự "xử lý"/"duyệt") không đúng ở đây —
+ * đổi thành các bước giám sát/tổng hợp thực sự làm được từ hệ thống.
+ */
+export function getPortalNextSteps(input: {
+      slug: PortalRoleSlug;
+      organizationLevel: string;
+}) {
+      const role = findPortalRole(input.slug);
+
+      if (!role) return [];
+
+      if (input.slug === "ke-toan" && input.organizationLevel === "he_thong") {
+            return [
+                  {
+                        title: "Rà soát đơn vị có công nợ cao",
+                        detail: "Dùng bảng kỳ thu theo đơn vị để phát hiện chi nhánh cần nhắc thu sớm.",
+                  },
+                  {
+                        title: "Theo dõi yêu cầu chờ duyệt",
+                        detail: "Nắm số lượng hoàn phí/chuyển phí/bảo lưu đang chờ, nhắc kế toán đơn vị xử lý đúng hạn.",
+                  },
+                  {
+                        title: "Tổng hợp báo cáo toàn hệ thống",
+                        detail: "Dùng số thu, công nợ và thu ròng gộp để lập báo cáo cuối kỳ cho ban điều hành.",
+                  },
+            ];
+      }
+
+      return role.nextSteps;
+}
+
 export function findPortalRole(slug: string) {
       return portalRoles.find((item) => item.slug === slug) ?? null;
 }
@@ -560,16 +685,26 @@ export function getPortalContext(input: {
 }) {
       const isSystem = input.organizationLevel === "he_thong";
 
-      if (input.slug === "ke-toan") {
+      if (input.slug === "quan-ly-don-vi") {
             return isSystem
-                  ? {
-                          title: "Kế toán tổng hợp toàn hệ thống",
+                  ? null
+                  : {
+                          title: "Quản lý đơn vị",
                           details: [
-                                "Xem gộp khoản thu, kỳ thu, công nợ và báo cáo của các đơn vị.",
-                                "Không lập kỳ thu, phiếu thu hoặc điều chỉnh tại đơn vị hệ thống.",
-                                "Muốn thao tác nghiệp vụ phải chuyển sang đúng trường/trung tâm.",
+                                "Xem và điều phối toàn bộ đơn vị: đào tạo, tuyển sinh, tài chính, nhân sự.",
+                                "Không giới hạn theo một mảng nghiệp vụ như các vai trò chuyên môn khác.",
+                                "Chỉ trong phạm vi đơn vị đang đứng, không xem được đơn vị khác.",
                           ],
-                    }
+                    };
+      }
+
+      if (input.slug === "ke-toan") {
+            // Kế toán tổng (đứng ở hệ thống) đã có báo cáo theo đơn vị và các thẻ
+            // số liệu để tự nói lên phạm vi xem gộp — không cần thêm khối mô tả
+            // scope riêng nữa. Kế toán tại đơn vị vẫn giữ khối này vì có thao tác
+            // thực (lập/thu/điều chỉnh), cần nói rõ ranh giới trước khi bắt tay vào.
+            return isSystem
+                  ? null
                   : {
                           title: "Kế toán vận hành tại đơn vị",
                           details: [

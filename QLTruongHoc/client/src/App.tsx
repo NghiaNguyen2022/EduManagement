@@ -9,7 +9,9 @@ import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 import { ClassDetailPage } from "./pages/ClassDetailPage";
 import { ClassesPage } from "./pages/ClassesPage";
 import { ChuongTrinhDetailPage } from "./pages/ChuongTrinhDetailPage";
+import { ChiPhiPage } from "./pages/ChiPhiPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { DieuChinhListPage } from "./pages/DieuChinhListPage";
 import { DonViDetailPage } from "./pages/DonViDetailPage";
 import { GiaoVienDetailPage } from "./pages/GiaoVienDetailPage";
 import { FinancePage } from "./pages/FinancePage";
@@ -87,7 +89,7 @@ function ProtectedApp() {
   return (
     <AppShell>
       <Routes>
-        <Route path="/dashboard" element={<DashboardPage databaseConnected={true} />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
 
         <Route path="/users" element={<UserManagementPage />} />
 
@@ -138,6 +140,10 @@ function ProtectedApp() {
         <Route path="/finance/ky-thu/:id" element={<KyThuDetailPage />} />
 
         <Route path="/finance/bao-cao" element={<FinanceReportPage />} />
+
+        <Route path="/finance/dieu-chinh" element={<DieuChinhListPage />} />
+
+        <Route path="/finance/chi-phi" element={<ChiPhiPage />} />
 
         <Route path="/finance/phieu-thu/:id" element={<PhieuThuDetailPage />} />
 

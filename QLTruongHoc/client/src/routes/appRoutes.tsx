@@ -65,6 +65,13 @@ export const appRoutes: AppRouteDefinition[] = [
             hideFromSidebar: true,
       },
       {
+            id: "portal-quan-ly-don-vi",
+            path: "/portal/quan-ly-don-vi",
+            label: "Cổng quản lý đơn vị",
+            group: "Cổng làm việc",
+            roles: ["quan_ly_don_vi"],
+      },
+      {
             id: "portal-giao-vien",
             path: "/portal/giao-vien",
             label: "Cổng giáo viên",
@@ -100,6 +107,16 @@ export const appRoutes: AppRouteDefinition[] = [
             path: "/dashboard",
             label: "Bảng điều hành",
             group: "Tổng quan",
+            // Vai trò nào đã có Portal riêng (Cổng kế toán/học vụ/giáo viên/tư vấn·
+            // tuyển sinh/quản lý đơn vị/hệ thống) thì Portal đó chính là màn điều
+            // khiển của họ, không cần thêm Dashboard song song — chỉ quản trị hệ
+            // thống (dùng Dashboard làm trang chính có chủ đích, xem
+            // `docs/analysis/QUAN_TRI_HE_THONG_UX.md`) còn thấy mục này. Lọc bằng
+            // `permissions` (không phải `roles`): quản trị hệ thống chỉ có `vaiTro`
+            // tường minh ở đúng đơn vị hệ thống (không lan sang đơn vị con như
+            // `quyen`), nên lọc theo role sẽ ẩn nhầm mục này khi họ đứng ở một
+            // trường/trung tâm cụ thể.
+            permissions: ["he_thong.quan_tri"],
       },
       {
             id: "admissions",
@@ -161,6 +178,27 @@ export const appRoutes: AppRouteDefinition[] = [
             permissions: ["tai_chinh.xem", "tai_chinh.quan_ly"],
       },
       {
+            id: "finance-dieu-chinh",
+            path: "/finance/dieu-chinh",
+            label: "Yêu cầu điều chỉnh",
+            group: "Tài chính",
+            permissions: ["tai_chinh.xem", "tai_chinh.quan_ly"],
+      },
+      {
+            id: "finance-report",
+            path: "/finance/bao-cao",
+            label: "Báo cáo tài chính",
+            group: "Tài chính",
+            permissions: ["tai_chinh.xem", "tai_chinh.quan_ly"],
+      },
+      {
+            id: "finance-chi-phi",
+            path: "/finance/chi-phi",
+            label: "Chi phí",
+            group: "Tài chính",
+            permissions: ["tai_chinh.xem", "tai_chinh.quan_ly"],
+      },
+      {
             id: "notifications",
             path: "/notifications",
             label: "Thông báo nội bộ",
@@ -178,13 +216,12 @@ export const appRoutes: AppRouteDefinition[] = [
             path: "/communications",
             label: "Trao đổi phụ huynh",
             group: "Tổng quan",
-            permissions: [
-                  "hoc_sinh.xem",
-                  "lop_hoc.xem",
-                  "hoc_sinh.quan_ly",
-                  "lop_hoc.quan_ly",
-                  "tuyen_sinh.quan_ly",
-            ],
+            // Trang cần tải danh sách lớp (lop_hoc.xem/quan_ly) để lọc/ghi trao
+            // đổi theo lớp — vai trò không có quyền này (kế toán, tuyển
+            // sinh/tư vấn) trước đây vẫn thấy menu nhờ hoc_sinh.xem/
+            // tuyen_sinh.quan_ly, mở ra sẽ vỡ vì thiếu lop_hoc. Ẩn menu đúng
+            // theo quyền thật, xem `docs/analysis/TRAO_DOI_PHU_HUYNH_QUYEN.md`.
+            permissions: ["lop_hoc.xem", "lop_hoc.quan_ly"],
             hideAtHeThong: true,
       },
       {

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import {
   DateField,
+  DateTimeField,
   SelectField,
   TextField,
 } from "../components/form";
@@ -17,6 +18,7 @@ import {
   markLeadNotContinuingApi,
   reopenLeadApi,
   updateLeadApi,
+  xuLyLichHenApi,
 } from "../features/lead/leadApi";
 import type {
   ConfirmRegistrationInput,
@@ -60,12 +62,30 @@ const MOI_QUAN_HE_LABEL: Record<string, string> = {
   khac: "Khác",
 };
 
-const emptyActivityForm: LeadActivityFormInput = {
-  loaiHoatDong: "",
-  noiDung: "",
-  ketQua: "",
-  trangThaiMoi: "",
+const TRANG_THAI_HOAT_DONG_LABEL: Record<string, string> = {
+  cho_xu_ly: "Chờ xử lý",
+  da_xu_ly: "Đã thực hiện",
+  da_huy: "Đã huỷ",
 };
+
+function nowDateTimeLocal() {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const now = new Date();
+
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(
+    now.getHours(),
+  )}:${pad(now.getMinutes())}`;
+}
+
+function emptyActivityFormValue(): LeadActivityFormInput {
+  return {
+    loaiHoatDong: "",
+    noiDung: "",
+    ketQua: "",
+    thoiGian: nowDateTimeLocal(),
+    trangThaiMoi: "",
+  };
+}
 
 const emptyConfirmForm: ConfirmRegistrationInput = {
   hoTenHocVien: "",
@@ -91,9 +111,11 @@ export function LeadDetailPage() {
     null,
   );
   const [savingInfo, setSavingInfo] = useState(false);
-  const [activityForm, setActivityForm] =
-    useState<LeadActivityFormInput>(emptyActivityForm);
+  const [activityForm, setActivityForm] = useState<LeadActivityFormInput>(
+    emptyActivityFormValue,
+  );
   const [savingActivity, setSavingActivity] = useState(false);
+  const [xuLyLichHenId, setXuLyLichHenId] = useState<number | null>(null);
   const [notContinuingReason, setNotContinuingReason] = useState("");
   const [pendingNotContinuing, setPendingNotContinuing] =
     useState(false);
@@ -183,7 +205,7 @@ export function LeadDetailPage() {
     try {
       await addLeadActivityApi(leadId, activityForm);
       setNotice("Đã ghi nhận hoạt động chăm sóc.");
-      setActivityForm(emptyActivityForm);
+      setActivityForm(emptyActivityFormValue());
       await loadDetail();
     } catch (activityError) {
       setError(
@@ -193,6 +215,33 @@ export function LeadDetailPage() {
       );
     } finally {
       setSavingActivity(false);
+    }
+  }
+
+  async function handleXuLyLichHen(
+    hoatDongId: number,
+    trangThai: "da_xu_ly" | "da_huy",
+  ) {
+    setError("");
+    setNotice("");
+    setXuLyLichHenId(hoatDongId);
+
+    try {
+      await xuLyLichHenApi(hoatDongId, trangThai);
+      setNotice(
+        trangThai === "da_xu_ly"
+          ? "Đã đánh dấu lịch hẹn hoàn thành."
+          : "Đã huỷ lịch hẹn.",
+      );
+      await loadDetail();
+    } catch (xuLyError) {
+      setError(
+        xuLyError instanceof Error
+          ? xuLyError.message
+          : "Không thể cập nhật lịch hẹn.",
+      );
+    } finally {
+      setXuLyLichHenId(null);
     }
   }
 
@@ -436,6 +485,23 @@ export function LeadDetailPage() {
               }
             />
 
+            <DateTimeField
+              label="Thời gian"
+              value={activityForm.thoiGian}
+              required
+              helpText={
+                activityForm.loaiHoatDong === "hen_lich"
+                  ? "Chọn thời điểm hẹn — có thể đặt trong tương lai để hẹn lịch trước, sẽ hiện ở \"Lịch hẹn sắp tới\"."
+                  : undefined
+              }
+              onChange={(value) =>
+                setActivityForm({
+                  ...activityForm,
+                  thoiGian: value,
+                })
+              }
+            />
+
             <TextField
               label="Kết quả"
               value={activityForm.ketQua}
@@ -492,6 +558,8 @@ export function LeadDetailPage() {
                 <th>Loại</th>
                 <th>Nội dung</th>
                 <th>Kết quả</th>
+                <th>Trạng thái</th>
+                {canManage ? <th>Thao tác</th> : null}
               </tr>
             </thead>
 
@@ -502,12 +570,44 @@ export function LeadDetailPage() {
                   <td>{LOAI_HOAT_DONG_LABEL[item.loaiHoatDong]}</td>
                   <td>{item.noiDung}</td>
                   <td>{item.ketQua ?? "—"}</td>
+                  <td>
+                    <span className={`status-badge status-badge--${item.trangThai}`}>
+                      {TRANG_THAI_HOAT_DONG_LABEL[item.trangThai]}
+                    </span>
+                  </td>
+                  {canManage ? (
+                    <td>
+                      {item.loaiHoatDong === "hen_lich" &&
+                      item.trangThai === "cho_xu_ly" ? (
+                        <div className="section-card-actions">
+                          <button
+                            type="button"
+                            className="text-button"
+                            disabled={xuLyLichHenId === item.id}
+                            onClick={() => void handleXuLyLichHen(item.id, "da_xu_ly")}
+                          >
+                            Đã thực hiện
+                          </button>
+                          <button
+                            type="button"
+                            className="text-button"
+                            disabled={xuLyLichHenId === item.id}
+                            onClick={() => void handleXuLyLichHen(item.id, "da_huy")}
+                          >
+                            Huỷ
+                          </button>
+                        </div>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  ) : null}
                 </tr>
               ))}
 
               {detail.hoatDong.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="empty-cell">
+                  <td colSpan={canManage ? 6 : 5} className="empty-cell">
                     Chưa có hoạt động nào.
                   </td>
                 </tr>

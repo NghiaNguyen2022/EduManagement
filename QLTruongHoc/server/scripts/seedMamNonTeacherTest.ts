@@ -10,16 +10,16 @@ import {
   nguoiDung,
   nguoiDungVaiTroDonVi,
 } from "../../drizzle/schema.js";
-import { findChuongTrinhByMa } from "../db/chuongTrinh.repository.js";
+import { listChuongTrinhByDonVi } from "../db/chuongTrinh.repository.js";
 import { closeDbConnection, getDb } from "../db/connection.js";
 import { findDonViByCode } from "../db/donVi.repository.js";
 import { updateGiaoVienNguoiDungId } from "../db/giaoVien.repository.js";
 import { listBuoiHocByLopHoc } from "../db/lichHoc.repository.js";
-import { findLopHocByMa } from "../db/lopHoc.repository.js";
+import { listLopHocByDonVi } from "../db/lopHoc.repository.js";
 import { findRoleByCode } from "../db/role.repository.js";
 import {
-  findDanhMucKhoanThuByMa,
-  findKyThuByMa,
+  listDanhMucKhoanThuByDonVi,
+  listKyThuByDonVi,
 } from "../db/taiChinh.repository.js";
 import {
   createUserWithRole,
@@ -170,11 +170,11 @@ async function main() {
 
   const actorUserId = admin.id;
 
-  let program = await findChuongTrinhByMa(organization.id, config.programCode);
+  const existingChuongTrinh = await listChuongTrinhByDonVi(organization.id);
+  let program = existingChuongTrinh.find((item) => item.tenChuongTrinh === config.programName) ?? null;
   if (!program) {
     program = await createChuongTrinhMoi({
       donViId: organization.id,
-      maChuongTrinh: config.programCode,
       tenChuongTrinh: config.programName,
       capDo: config.programLevel,
       moTa: config.programDescription,
@@ -431,12 +431,12 @@ async function main() {
     })
     .where(eq(nguoiDung.id, teacherUser.id));
 
-  let classItem = await findLopHocByMa(organization.id, config.classCode);
+  const existingLopHoc = await listLopHocByDonVi(organization.id);
+  let classItem = existingLopHoc.find((item) => item.tenLop === config.className) ?? null;
   if (!classItem) {
     classItem = await createLopHocMoi({
       donViId: organization.id,
       chuongTrinhDaoTaoId: program.id,
-      maLop: config.classCode,
       tenLop: config.className,
       capDo: config.classLevel,
       ngayBatDau: today,
@@ -588,14 +588,15 @@ async function main() {
     });
   }
 
+  // Mã khoản thu/kỳ thu giờ do hệ thống tự sinh (không nhận từ input nữa) —
+  // đối chiếu idempotency theo TÊN thay vì mã cố định trước đây.
+  const existingKhoanThu = await listDanhMucKhoanThuByDonVi(organization.id);
   const feeCategories = [];
   for (const fee of config.fees) {
-    const code = `${config.feePrefix}-${fee.code}`;
-    let category = await findDanhMucKhoanThuByMa(organization.id, code);
+    let category = existingKhoanThu.find((item) => item.tenKhoanThu === fee.name) ?? null;
     if (!category) {
       category = await createDanhMucKhoanThuMoi({
         donViId: organization.id,
-        maKhoanThu: code,
         tenKhoanThu: fee.name,
         loaiKhoanThu: fee.type,
         soTienMacDinh: fee.amount,
@@ -606,14 +607,13 @@ async function main() {
     feeCategories.push({ category, amount: fee.amount });
   }
 
-  const monthCode = today.slice(0, 7).replace("-", "");
-  const feePeriodCode = `${config.feePrefix}-${monthCode}`;
-  let feePeriod = await findKyThuByMa(organization.id, feePeriodCode);
+  const feePeriodName = `${config.feePeriodName} ${today.slice(0, 7)}`;
+  const existingKyThu = await listKyThuByDonVi(organization.id);
+  let feePeriod = existingKyThu.find((item) => item.tenKyThu === feePeriodName) ?? null;
   if (!feePeriod) {
     feePeriod = await createKyThuMoi({
       donViId: organization.id,
-      maKyThu: feePeriodCode,
-      tenKyThu: `${config.feePeriodName} ${today.slice(0, 7)}`,
+      tenKyThu: feePeriodName,
       loaiKy: isEnglishCenter ? "khoa_hoc" : "thang",
       tuNgay: today,
       denNgay: addDaysIso(today, 30),
@@ -711,7 +711,7 @@ async function main() {
     portalClasses: portal.classes.length,
     portalSessionsNext7Days: portal.sessions.length,
     attendanceRoster: attendance?.hocSinh.length ?? 0,
-    feePeriodCode,
+    feePeriodCode: feePeriod.maKyThu,
     receivables: receivables.length,
     receivableStatuses: Object.fromEntries(
       ["chua_thu", "thu_mot_phan", "da_thu_du"].map((status) => [

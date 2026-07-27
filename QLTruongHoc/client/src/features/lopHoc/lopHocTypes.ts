@@ -30,7 +30,6 @@ export type LopHocItem = {
 
 export type LopHocFormInput = {
   chuongTrinhDaoTaoId: number | null;
-  maLop: string;
   tenLop: string;
   capDo: string;
   ngayBatDau: string;

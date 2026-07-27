@@ -37,7 +37,6 @@ const TRANG_THAI_LOP_LABEL: Record<string, string> = {
 };
 
 const emptyChuongTrinhForm: ChuongTrinhFormInput = {
-  maChuongTrinh: "",
   tenChuongTrinh: "",
   capDo: "",
   tongSoBuoi: null,
@@ -47,7 +46,6 @@ const emptyChuongTrinhForm: ChuongTrinhFormInput = {
 
 const emptyLopForm: LopHocFormInput = {
   chuongTrinhDaoTaoId: null,
-  maLop: "",
   tenLop: "",
   capDo: "",
   ngayBatDau: "",
@@ -220,19 +218,6 @@ export function ClassesPage() {
             onSubmit={handleCreateProgram}
           >
             <TextField
-              label="Mã chương trình"
-              value={programForm.maChuongTrinh}
-              required
-              placeholder="VD: IELTS-6.5"
-              onChange={(value) =>
-                setProgramForm({
-                  ...programForm,
-                  maChuongTrinh: value,
-                })
-              }
-            />
-
-            <TextField
               label="Tên chương trình"
               value={programForm.tenChuongTrinh}
               required
@@ -377,16 +362,6 @@ export function ClassesPage() {
                   ...classForm,
                   chuongTrinhDaoTaoId: value ? Number(value) : null,
                 })
-              }
-            />
-
-            <TextField
-              label="Mã lớp"
-              value={classForm.maLop}
-              required
-              placeholder="VD: MAM-LA1"
-              onChange={(value) =>
-                setClassForm({ ...classForm, maLop: value })
               }
             />
 

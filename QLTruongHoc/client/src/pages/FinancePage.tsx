@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import {
   CurrencyInput,
@@ -33,6 +34,27 @@ function formatTien(value: string) {
   return `${Number(value).toLocaleString("vi-VN")} ₫`;
 }
 
+type HanTrangThai = "qua_han" | "sap_den_han" | "binh_thuong";
+
+const HAN_TRANG_THAI_LABEL: Record<HanTrangThai, string> = {
+  qua_han: "Quá hạn",
+  sap_den_han: "Sắp đến hạn",
+  binh_thuong: "Còn hạn",
+};
+
+function getHanTrangThai(hanThanhToan: string | null | undefined): HanTrangThai {
+  if (!hanThanhToan) return "binh_thuong";
+
+  const homNay = new Date().toISOString().slice(0, 10);
+  const denNgaySapHan = new Date(`${homNay}T00:00:00Z`);
+  denNgaySapHan.setUTCDate(denNgaySapHan.getUTCDate() + 7);
+  const sapHanIso = denNgaySapHan.toISOString().slice(0, 10);
+
+  if (hanThanhToan < homNay) return "qua_han";
+  if (hanThanhToan <= sapHanIso) return "sap_den_han";
+  return "binh_thuong";
+}
+
 const LOAI_KHOAN_THU_LABEL: Record<LoaiKhoanThu, string> = {
   hoc_phi: "Học phí",
   tien_an: "Tiền ăn",
@@ -55,7 +77,6 @@ const KY_THU_TRANG_THAI_LABEL: Record<string, string> = {
 };
 
 const emptyKhoanThuForm: DanhMucKhoanThuFormInput = {
-  maKhoanThu: "",
   tenKhoanThu: "",
   loaiKhoanThu: "hoc_phi",
   soTienMacDinh: null,
@@ -63,7 +84,6 @@ const emptyKhoanThuForm: DanhMucKhoanThuFormInput = {
 };
 
 const emptyKyThuForm: KyThuFormInput = {
-  maKyThu: "",
   tenKyThu: "",
   loaiKy: "thang",
   tuNgay: "",
@@ -73,6 +93,12 @@ const emptyKyThuForm: KyThuFormInput = {
 
 export function FinancePage() {
   const { auth } = useAuth();
+  const [searchParams] = useSearchParams();
+
+  const initialHanFilter = searchParams.get("filter");
+  const [hanFilter, setHanFilter] = useState<HanTrangThai | "">(
+    initialHanFilter === "qua_han" || initialHanFilter === "sap_den_han" ? initialHanFilter : "",
+  );
 
   const [khoanThuList, setKhoanThuList] = useState<DanhMucKhoanThuItem[]>(
     [],
@@ -107,6 +133,11 @@ export function FinancePage() {
     JSON.stringify(khoanThuForm) !== JSON.stringify(emptyKhoanThuForm) ||
       JSON.stringify(kyThuForm) !== JSON.stringify(emptyKyThuForm),
   );
+
+  const congNoListLoc = useMemo(() => {
+    if (!hanFilter) return congNoList;
+    return congNoList.filter((item) => getHanTrangThai(item.kyThu?.hanThanhToan) === hanFilter);
+  }, [congNoList, hanFilter]);
 
   async function loadData() {
     setLoading(true);
@@ -225,16 +256,6 @@ export function FinancePage() {
             className="user-create-form"
             onSubmit={handleCreateKhoanThu}
           >
-            <TextField
-              label="Mã khoản thu"
-              value={khoanThuForm.maKhoanThu}
-              required
-              placeholder="VD: HP-THANG"
-              onChange={(value) =>
-                setKhoanThuForm({ ...khoanThuForm, maKhoanThu: value })
-              }
-            />
-
             <TextField
               label="Tên khoản thu"
               value={khoanThuForm.tenKhoanThu}
@@ -370,16 +391,6 @@ export function FinancePage() {
         {showKyThuForm ? (
           <form className="user-create-form" onSubmit={handleCreateKyThu}>
             <TextField
-              label="Mã kỳ thu"
-              value={kyThuForm.maKyThu}
-              required
-              placeholder="VD: HP-T8-2026"
-              onChange={(value) =>
-                setKyThuForm({ ...kyThuForm, maKyThu: value })
-              }
-            />
-
-            <TextField
               label="Tên kỳ thu"
               value={kyThuForm.tenKyThu}
               required
@@ -496,7 +507,18 @@ export function FinancePage() {
       {!isHeThong ? (
         <SectionCard
           title="Công nợ"
-          subtitle={`${congNoList.length} khoản còn phải thu`}
+          subtitle={`${congNoListLoc.length} khoản còn phải thu`}
+          actions={
+            <SelectField
+              value={hanFilter}
+              placeholder="Tất cả"
+              options={[
+                { value: "qua_han", label: "Quá hạn" },
+                { value: "sap_den_han", label: "Sắp đến hạn (7 ngày)" },
+              ]}
+              onChange={(value) => setHanFilter(value as HanTrangThai | "")}
+            />
+          }
         >
           <div className="user-table-wrap">
             <table className="user-table">
@@ -504,46 +526,61 @@ export function FinancePage() {
                 <tr>
                   <th>Học sinh</th>
                   <th>Kỳ thu</th>
+                  <th>Hạn thanh toán</th>
                   <th>Còn lại</th>
                   <th>Trạng thái</th>
                 </tr>
               </thead>
 
               <tbody>
-                {congNoList.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <strong>{item.hocSinh.hoTen}</strong>
-                      <small>{item.hocSinh.maHocSinh}</small>
-                    </td>
-                    <td>
-                      {item.kyThu ? (
-                        <GuardedLink
-                          to={`/finance/ky-thu/${item.kyThu.id}`}
-                          className="text-button"
-                        >
-                          {item.kyThu.tenKyThu}
-                        </GuardedLink>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td>{formatTien(item.conLai)}</td>
-                    <td>
-                      <span
-                        className={`status-badge status-badge--${item.trangThai}`}
-                      >
-                        {item.trangThai === "chua_thu"
-                          ? "Chưa thu"
-                          : "Thu một phần"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {congNoListLoc.map((item) => {
+                  const hanTrangThai = getHanTrangThai(item.kyThu?.hanThanhToan);
 
-                {congNoList.length === 0 ? (
+                  return (
+                    <tr key={item.id}>
+                      <td>
+                        <strong>{item.hocSinh.hoTen}</strong>
+                        <small>{item.hocSinh.maHocSinh}</small>
+                      </td>
+                      <td>
+                        {item.kyThu ? (
+                          <GuardedLink
+                            to={`/finance/ky-thu/${item.kyThu.id}`}
+                            className="text-button"
+                          >
+                            {item.kyThu.tenKyThu}
+                          </GuardedLink>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td>
+                        {item.kyThu?.hanThanhToan ?? "—"}
+                        {hanTrangThai !== "binh_thuong" ? (
+                          <span
+                            className={`status-badge status-badge--inline status-badge--${hanTrangThai}`}
+                          >
+                            {HAN_TRANG_THAI_LABEL[hanTrangThai]}
+                          </span>
+                        ) : null}
+                      </td>
+                      <td>{formatTien(item.conLai)}</td>
+                      <td>
+                        <span
+                          className={`status-badge status-badge--${item.trangThai}`}
+                        >
+                          {item.trangThai === "chua_thu"
+                            ? "Chưa thu"
+                            : "Thu một phần"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {congNoListLoc.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="empty-cell">
+                    <td colSpan={5} className="empty-cell">
                       Không còn khoản nào phải thu.
                     </td>
                   </tr>

@@ -13,10 +13,12 @@ import {
   confirmLeadRegistration,
   createLeadMoi,
   getLeadDetail,
+  getLichHenSapToi,
   listLead,
   markLeadKhongTiepTuc,
   reopenLead,
   updateLeadThongTin,
+  xuLyLichHen,
 } from "../services/lead.service.js";
 
 export const leadRouter = Router();
@@ -71,6 +73,38 @@ leadRouter.post(
       res.status(201).json({ ok: true, data: created });
     } catch (error) {
       handleError(res, error, "Không thể tạo lead.");
+    }
+  },
+);
+
+leadRouter.get(
+  "/lich-hen-sap-toi",
+  requirePermission("tuyen_sinh.xem"),
+  async (req, res) => {
+    const rows = await getLichHenSapToi(req.auth!.currentOrganization!.id);
+
+    res.json({ ok: true, data: rows });
+  },
+);
+
+leadRouter.patch(
+  "/hoat-dong/:id/trang-thai",
+  requirePermission("tuyen_sinh.quan_ly"),
+  async (req, res) => {
+    try {
+      const trangThai = req.body?.trangThai === "da_huy" ? "da_huy" : "da_xu_ly";
+
+      const updated = await xuLyLichHen({
+        donViId: req.auth!.currentOrganization!.id,
+        hoatDongId: Number(req.params.id),
+        trangThai,
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.json({ ok: true, data: updated });
+    } catch (error) {
+      handleError(res, error, "Không thể cập nhật lịch hẹn.");
     }
   },
 );

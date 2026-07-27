@@ -1,5 +1,6 @@
 import {
   and,
+  count,
   eq,
   gte,
   inArray,
@@ -7,14 +8,21 @@ import {
   ne,
   or,
 } from "drizzle-orm";
+import { alias } from "drizzle-orm/mysql-core";
 
 import {
   buoiHoc,
+  donVi,
   giaoVien,
+  hocSinh,
+  hocSinhLopHoc,
   lichHoc,
   lopHoc,
 } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
+
+const enrollmentKhacAlias = alias(hocSinhLopHoc, "enrollmentKhac");
+const lopHocKhacAlias = alias(lopHoc, "lopHocKhac");
 
 const now = () =>
   new Date().toISOString().slice(0, 19).replace("T", " ");
@@ -171,6 +179,71 @@ export async function listBuoiHocByDonVi(input: {
     .orderBy(buoiHoc.ngayHoc, buoiHoc.gioBatDau);
 }
 
+/**
+ * Buổi học hôm nay/trong khoảng ngày trên TOÀN hệ thống, kèm đơn vị sở hữu —
+ * dùng cho "Lịch chung theo đơn vị" ở Bảng điều hành hệ thống. Khác
+ * `listBuoiHocByDonVi` (một đơn vị) — hàm này gộp mọi đơn vị đang hoạt động.
+ */
+export async function listBuoiHocAllDonVi(input: {
+  tuNgay: string;
+  denNgay: string;
+}) {
+  const db = getDb();
+
+  return db
+    .select({
+      buoiHoc,
+      lopHocTenLop: lopHoc.tenLop,
+      lopHocMaLop: lopHoc.maLop,
+      giaoVienHoTen: giaoVien.hoTen,
+      donVi: {
+        id: donVi.id,
+        maDonVi: donVi.maDonVi,
+        tenDonVi: donVi.tenDonVi,
+      },
+    })
+    .from(buoiHoc)
+    .innerJoin(lopHoc, eq(buoiHoc.lopHocId, lopHoc.id))
+    .innerJoin(donVi, eq(lopHoc.donViId, donVi.id))
+    .leftJoin(giaoVien, eq(buoiHoc.giaoVienId, giaoVien.id))
+    .where(
+      and(
+        eq(donVi.trangThai, "hoat_dong"),
+        gte(buoiHoc.ngayHoc, input.tuNgay),
+        lte(buoiHoc.ngayHoc, input.denNgay),
+      ),
+    )
+    .orderBy(donVi.tenDonVi, buoiHoc.gioBatDau);
+}
+
+/**
+ * Buổi học đã báo nghỉ/hủy trong khoảng ngày — đây là các buổi học vụ cần
+ * theo dõi để xếp bù hoặc báo lại cho học sinh/giáo viên. Dùng cho Portal
+ * học vụ (J-học vụ), khác `listBuoiHocByDonVi` (liệt kê toàn bộ buổi).
+ */
+export async function countBuoiHocCanDieuChinh(input: {
+  donViId: number;
+  tuNgay: string;
+  denNgay: string;
+}) {
+  const db = getDb();
+
+  const rows = await db
+    .select({ total: count() })
+    .from(buoiHoc)
+    .innerJoin(lopHoc, eq(buoiHoc.lopHocId, lopHoc.id))
+    .where(
+      and(
+        eq(lopHoc.donViId, input.donViId),
+        gte(buoiHoc.ngayHoc, input.tuNgay),
+        lte(buoiHoc.ngayHoc, input.denNgay),
+        or(eq(buoiHoc.trangThai, "nghi"), eq(buoiHoc.trangThai, "huy")),
+      ),
+    );
+
+  return rows[0]?.total ?? 0;
+}
+
 export async function findBuoiHocById(id: number) {
   const db = getDb();
 
@@ -261,6 +334,59 @@ export async function findConflictingBuoiHoc(input: {
     })
     .from(buoiHoc)
     .innerJoin(lopHoc, eq(buoiHoc.lopHocId, lopHoc.id))
+    .where(and(...conditions));
+}
+
+/**
+ * Trùng lịch HỌC SINH — BPD 7.3 "Kiểm tra xung đột giáo viên, phòng và học
+ * viên" liệt kê học viên ngang hàng giáo viên/phòng, nhưng `findConflictingBuoiHoc`
+ * ở trên chỉ kiểm tra 2 tài nguyên đó. Bổ sung riêng (không gộp vào hàm trên)
+ * vì nguồn xung đột khác hẳn: không phải trùng CHÍNH buổi học đang tạo, mà là
+ * trùng giữa buổi học đang tạo cho lớp này với buổi học của MỘT LỚP KHÁC mà
+ * học sinh trong sĩ số lớp này cũng đang theo học cùng lúc (`HocSinhLopHoc`
+ * đang `dang_hoc` ở lớp khác). Một học sinh học nhiều lớp/kỹ năng cùng lúc là
+ * hợp lệ (VD trung tâm ngoại ngữ) — chỉ chặn khi 2 buổi học chồng giờ thật.
+ */
+export async function findHocSinhConflictingBuoiHoc(input: {
+  lopHocId: number;
+  ngayHoc: string;
+  gioBatDau: string;
+  gioKetThuc: string;
+  excludeId?: number;
+}) {
+  const db = getDb();
+
+  const conditions = [
+    eq(hocSinhLopHoc.lopHocId, input.lopHocId),
+    eq(hocSinhLopHoc.trangThai, "dang_hoc"),
+    ne(enrollmentKhacAlias.lopHocId, input.lopHocId),
+    eq(enrollmentKhacAlias.trangThai, "dang_hoc"),
+    eq(buoiHoc.ngayHoc, input.ngayHoc),
+    ne(buoiHoc.trangThai, "huy"),
+    ne(buoiHoc.trangThai, "nghi"),
+    lte(buoiHoc.gioBatDau, input.gioKetThuc),
+    gte(buoiHoc.gioKetThuc, input.gioBatDau),
+  ];
+
+  if (input.excludeId) {
+    conditions.push(ne(buoiHoc.id, input.excludeId));
+  }
+
+  return db
+    .select({
+      hocSinh: {
+        id: hocSinh.id,
+        maHocSinh: hocSinh.maHocSinh,
+        hoTen: hocSinh.hoTen,
+      },
+      buoiHoc,
+      lopHocTenLop: lopHocKhacAlias.tenLop,
+    })
+    .from(hocSinhLopHoc)
+    .innerJoin(hocSinh, eq(hocSinhLopHoc.hocSinhId, hocSinh.id))
+    .innerJoin(enrollmentKhacAlias, eq(enrollmentKhacAlias.hocSinhId, hocSinhLopHoc.hocSinhId))
+    .innerJoin(buoiHoc, eq(buoiHoc.lopHocId, enrollmentKhacAlias.lopHocId))
+    .innerJoin(lopHocKhacAlias, eq(lopHocKhacAlias.id, enrollmentKhacAlias.lopHocId))
     .where(and(...conditions));
 }
 

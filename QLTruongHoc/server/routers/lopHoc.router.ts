@@ -61,7 +61,6 @@ lopHocRouter.post(
         chuongTrinhDaoTaoId: req.body?.chuongTrinhDaoTaoId
           ? Number(req.body.chuongTrinhDaoTaoId)
           : null,
-        maLop: String(req.body?.maLop ?? ""),
         tenLop: String(req.body?.tenLop ?? ""),
         capDo: req.body?.capDo ? String(req.body.capDo) : null,
         ngayBatDau: req.body?.ngayBatDau
@@ -208,6 +207,16 @@ lopHocRouter.patch(
   },
 );
 
+// BPD 7.2: "Không vượt sĩ số nếu không có quyền phê duyệt" — chỉ quản lý
+// đơn vị/quản trị hệ thống mới vượt được, không mở cho học vụ/giáo vụ
+// thường dù họ có `lop_hoc.quan_ly` (quyền thao tác xếp lớp hằng ngày).
+function coQuyenVuotSiSo(req: import("express").Request) {
+  const permissions = req.auth!.currentOrganization!.quyen;
+  return (
+    permissions.includes("he_thong.quan_tri") || permissions.includes("don_vi.quan_ly")
+  );
+}
+
 lopHocRouter.post(
   "/:id/hoc-sinh",
   requirePermission("lop_hoc.quan_ly"),
@@ -218,6 +227,7 @@ lopHocRouter.post(
         lopHocId: Number(req.params.id),
         hocSinhId: Number(req.body?.hocSinhId),
         ngayVaoLop: String(req.body?.ngayVaoLop ?? ""),
+        coQuyenVuotSiSo: coQuyenVuotSiSo(req),
         actorUserId: req.auth!.user.id,
         ipAddress: req.ip,
       });
@@ -240,6 +250,7 @@ lopHocRouter.post(
         lopHocIdMoi: Number(req.body?.lopHocIdMoi),
         ngayChuyen: String(req.body?.ngayChuyen ?? ""),
         lyDo: req.body?.lyDo ? String(req.body.lyDo) : null,
+        coQuyenVuotSiSo: coQuyenVuotSiSo(req),
         actorUserId: req.auth!.user.id,
         ipAddress: req.ip,
       });

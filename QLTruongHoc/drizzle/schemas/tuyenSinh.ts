@@ -72,12 +72,27 @@ export const leadHoatDong = mysqlTable(
     ketQua: varchar("ketQua", { length: 500 }),
     nguoiThucHienId: bigint("nguoiThucHienId", { mode: "number", unsigned: true }).notNull(),
     thoiGian: datetime("thoiGian", { mode: "string" }).notNull(),
+    // Trước 2026-07-27: mọi hoạt động (kể cả "hẹn lịch") chỉ là log quá khứ —
+    // form không có ô chọn thời gian nên "hẹn lịch" thực chất chỉ ghi lại
+    // NGAY LÚC TẠO, không đặt được lịch tương lai, không có khái niệm "đã
+    // thực hiện/đã huỷ". Thêm `trangThai` để "hẹn lịch" hoạt động như task
+    // thật: tạo ở `cho_xu_ly` khi đặt lịch tương lai, chuyển `da_xu_ly`/
+    // `da_huy` sau khi tư vấn viên xử lý. Các loại hoạt động khác (gọi điện,
+    // nhắn tin...) vốn đã là log việc ĐÃ XẢY RA nên tạo thẳng `da_xu_ly`,
+    // không cần luồng task.
+    trangThai: mysqlEnum("trangThai", ["cho_xu_ly", "da_xu_ly", "da_huy"])
+      .notNull()
+      .default("da_xu_ly"),
     createdAt: datetime("createdAt", { mode: "string" }).notNull()
   },
   (table) => ({
     leadIdx: index("IX_LeadHoatDong_leadId").on(table.leadId),
     thoiGianIdx: index("IX_LeadHoatDong_leadId_thoiGian").on(
       table.leadId,
+      table.thoiGian
+    ),
+    trangThaiThoiGianIdx: index("IX_LeadHoatDong_trangThai_thoiGian").on(
+      table.trangThai,
       table.thoiGian
     )
   })

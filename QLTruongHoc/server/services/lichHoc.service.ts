@@ -7,6 +7,7 @@ import {
   findBuoiHocById,
   findConflictingBuoiHoc,
   findExistingBuoiHocNgay,
+  findHocSinhConflictingBuoiHoc,
   findLichHocById,
   listBuoiHocByDonVi,
   listBuoiHocByLopHoc,
@@ -192,6 +193,18 @@ function moTaXungDot(
     .join("; ");
 }
 
+function moTaXungDotHocSinh(
+  conflicts: Awaited<ReturnType<typeof findHocSinhConflictingBuoiHoc>>,
+  ngayHoc: string,
+) {
+  return conflicts
+    .map(
+      (row) =>
+        `${row.hocSinh.hoTen} (${row.hocSinh.maHocSinh}) đã có lịch ${ngayHoc} ${row.buoiHoc.gioBatDau}-${row.buoiHoc.gioKetThuc} ở lớp ${row.lopHocTenLop}`,
+    )
+    .join("; ");
+}
+
 export async function sinhBuoiHoc(input: {
   donViId: number;
   lichHocId: number;
@@ -253,25 +266,44 @@ export async function sinhBuoiHoc(input: {
   }
 
   const xungDotList: string[] = [];
+  const xungDotHocSinhList: string[] = [];
 
   for (const ngayHoc of toCreate) {
-    const conflicts = await findConflictingBuoiHoc({
-      donViId: input.donViId,
-      ngayHoc,
-      gioBatDau: rule.gioBatDau,
-      gioKetThuc: rule.gioKetThuc,
-      phongHoc: rule.phongHoc,
-      giaoVienId: rule.giaoVienId,
-    });
+    const [conflicts, hocSinhConflicts] = await Promise.all([
+      findConflictingBuoiHoc({
+        donViId: input.donViId,
+        ngayHoc,
+        gioBatDau: rule.gioBatDau,
+        gioKetThuc: rule.gioKetThuc,
+        phongHoc: rule.phongHoc,
+        giaoVienId: rule.giaoVienId,
+      }),
+      findHocSinhConflictingBuoiHoc({
+        lopHocId: rule.lopHocId,
+        ngayHoc,
+        gioBatDau: rule.gioBatDau,
+        gioKetThuc: rule.gioKetThuc,
+      }),
+    ]);
 
     if (conflicts.length > 0) {
       xungDotList.push(moTaXungDot(conflicts, ngayHoc));
+    }
+
+    if (hocSinhConflicts.length > 0) {
+      xungDotHocSinhList.push(moTaXungDotHocSinh(hocSinhConflicts, ngayHoc));
     }
   }
 
   if (xungDotList.length > 0) {
     throw new Error(
       `Không thể sinh buổi học vì trùng phòng/giáo viên: ${xungDotList.join("; ")}.`,
+    );
+  }
+
+  if (xungDotHocSinhList.length > 0) {
+    throw new Error(
+      `Không thể sinh buổi học vì trùng lịch học sinh: ${xungDotHocSinhList.join("; ")}.`,
     );
   }
 
@@ -325,18 +357,32 @@ export async function taoBuoiHocBu(input: {
   const phongHoc = input.phongHoc?.trim() || null;
   const giaoVienId = input.giaoVienId ?? null;
 
-  const conflicts = await findConflictingBuoiHoc({
-    donViId: input.donViId,
-    ngayHoc: input.ngayHoc,
-    gioBatDau: input.gioBatDau,
-    gioKetThuc: input.gioKetThuc,
-    phongHoc,
-    giaoVienId,
-  });
+  const [conflicts, hocSinhConflicts] = await Promise.all([
+    findConflictingBuoiHoc({
+      donViId: input.donViId,
+      ngayHoc: input.ngayHoc,
+      gioBatDau: input.gioBatDau,
+      gioKetThuc: input.gioKetThuc,
+      phongHoc,
+      giaoVienId,
+    }),
+    findHocSinhConflictingBuoiHoc({
+      lopHocId: input.lopHocId,
+      ngayHoc: input.ngayHoc,
+      gioBatDau: input.gioBatDau,
+      gioKetThuc: input.gioKetThuc,
+    }),
+  ]);
 
   if (conflicts.length > 0) {
     throw new Error(
       `Không thể tạo buổi học bù vì trùng phòng/giáo viên: ${moTaXungDot(conflicts, input.ngayHoc)}.`,
+    );
+  }
+
+  if (hocSinhConflicts.length > 0) {
+    throw new Error(
+      `Không thể tạo buổi học bù vì trùng lịch học sinh: ${moTaXungDotHocSinh(hocSinhConflicts, input.ngayHoc)}.`,
     );
   }
 
@@ -458,19 +504,34 @@ export async function suaBuoiHoc(input: {
   const phongHoc = input.phongHoc?.trim() || null;
   const giaoVienId = input.giaoVienId ?? null;
 
-  const conflicts = await findConflictingBuoiHoc({
-    donViId: input.donViId,
-    ngayHoc: found.buoiHoc.ngayHoc,
-    gioBatDau: input.gioBatDau,
-    gioKetThuc: input.gioKetThuc,
-    phongHoc,
-    giaoVienId,
-    excludeId: input.id,
-  });
+  const [conflicts, hocSinhConflicts] = await Promise.all([
+    findConflictingBuoiHoc({
+      donViId: input.donViId,
+      ngayHoc: found.buoiHoc.ngayHoc,
+      gioBatDau: input.gioBatDau,
+      gioKetThuc: input.gioKetThuc,
+      phongHoc,
+      giaoVienId,
+      excludeId: input.id,
+    }),
+    findHocSinhConflictingBuoiHoc({
+      lopHocId: found.buoiHoc.lopHocId,
+      ngayHoc: found.buoiHoc.ngayHoc,
+      gioBatDau: input.gioBatDau,
+      gioKetThuc: input.gioKetThuc,
+      excludeId: input.id,
+    }),
+  ]);
 
   if (conflicts.length > 0) {
     throw new Error(
       `Không thể lưu vì trùng phòng/giáo viên: ${moTaXungDot(conflicts, found.buoiHoc.ngayHoc)}.`,
+    );
+  }
+
+  if (hocSinhConflicts.length > 0) {
+    throw new Error(
+      `Không thể lưu vì trùng lịch học sinh: ${moTaXungDotHocSinh(hocSinhConflicts, found.buoiHoc.ngayHoc)}.`,
     );
   }
 

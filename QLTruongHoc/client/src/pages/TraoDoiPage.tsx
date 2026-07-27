@@ -79,9 +79,8 @@ export function TraoDoiPage() {
 
     return (
       permissions.includes("he_thong.quan_tri") ||
-      permissions.includes("hoc_sinh.quan_ly") ||
       permissions.includes("lop_hoc.quan_ly") ||
-      permissions.includes("tuyen_sinh.quan_ly")
+      permissions.includes("hoc_tap.ghi_nhan")
     );
   }, [auth]);
 

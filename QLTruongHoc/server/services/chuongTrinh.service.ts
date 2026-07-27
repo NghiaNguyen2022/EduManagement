@@ -2,8 +2,8 @@ import {
   createAuditLog,
 } from "../db/audit.repository.js";
 import {
+  countChuongTrinhTheoMaPrefix,
   createChuongTrinh,
-  findChuongTrinhByMa,
   findChuongTrinhById,
   listChuongTrinhAllDonVi,
   listChuongTrinhByDonVi,
@@ -11,6 +11,11 @@ import {
   updateChuongTrinh,
 } from "../db/chuongTrinh.repository.js";
 import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
+
+async function sinhMaChuongTrinh(donViId: number) {
+  const total = await countChuongTrinhTheoMaPrefix(donViId, "CT");
+  return `CT${String(total + 1).padStart(3, "0")}`;
+}
 
 export async function listChuongTrinh(donViId: number, loaiDonVi?: string) {
   if (loaiDonVi === "he_thong") {
@@ -32,7 +37,6 @@ export async function getChuongTrinhDetail(donViId: number, id: number) {
 
 export async function createChuongTrinhMoi(input: {
   donViId: number;
-  maChuongTrinh: string;
   tenChuongTrinh: string;
   capDo?: string | null;
   tongSoBuoi?: number | null;
@@ -43,25 +47,14 @@ export async function createChuongTrinhMoi(input: {
 }) {
   await assertDonViChoPhepNghiepVu(input.donViId);
 
-  const maChuongTrinh = input.maChuongTrinh.trim().toUpperCase();
   const tenChuongTrinh = input.tenChuongTrinh.trim();
-
-  if (!maChuongTrinh) {
-    throw new Error("Vui lòng nhập mã chương trình.");
-  }
 
   if (!tenChuongTrinh) {
     throw new Error("Vui lòng nhập tên chương trình.");
   }
 
-  const existed = await findChuongTrinhByMa(
-    input.donViId,
-    maChuongTrinh,
-  );
-
-  if (existed) {
-    throw new Error("Mã chương trình đã tồn tại.");
-  }
+  // Mã do hệ thống tự sinh (CT<số thứ tự>) — người dùng không nhập tay.
+  const maChuongTrinh = await sinhMaChuongTrinh(input.donViId);
 
   const created = await createChuongTrinh({
     donViId: input.donViId,

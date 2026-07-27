@@ -1,4 +1,4 @@
-import { and, count, desc, eq, like } from "drizzle-orm";
+import { and, count, desc, eq, gte, like, lte, notInArray } from "drizzle-orm";
 
 import { donVi, lead, leadHoatDong } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
@@ -33,6 +33,60 @@ export async function listLeadAllDonVi() {
     .innerJoin(donVi, eq(lead.donViId, donVi.id))
     .where(eq(donVi.trangThai, "hoat_dong"))
     .orderBy(donVi.tenDonVi, desc(lead.createdAt));
+}
+
+/** Lead chưa chốt (chưa đăng ký, chưa dừng chăm sóc) — dùng cho Portal tuyển sinh (J01). */
+export async function countLeadDangXuLy(donViId: number) {
+  const db = getDb();
+
+  const rows = await db
+    .select({ total: count() })
+    .from(lead)
+    .where(
+      and(
+        eq(lead.donViId, donViId),
+        notInArray(lead.trangThai, ["da_dang_ky", "khong_tiep_tuc"]),
+      ),
+    );
+
+  return rows[0]?.total ?? 0;
+}
+
+/** Số lịch hẹn tư vấn (loaiHoatDong = hen_lich) diễn ra trong ngày, còn chờ xử lý — dùng cho Portal tuyển sinh. */
+export async function countLichHenTuVanHomNay(donViId: number, homNay: string) {
+  const db = getDb();
+
+  const rows = await db
+    .select({ total: count() })
+    .from(leadHoatDong)
+    .innerJoin(lead, eq(leadHoatDong.leadId, lead.id))
+    .where(
+      and(
+        eq(lead.donViId, donViId),
+        eq(leadHoatDong.loaiHoatDong, "hen_lich"),
+        eq(leadHoatDong.trangThai, "cho_xu_ly"),
+        gte(leadHoatDong.thoiGian, `${homNay} 00:00:00`),
+        lte(leadHoatDong.thoiGian, `${homNay} 23:59:59`),
+      ),
+    );
+
+  return rows[0]?.total ?? 0;
+}
+
+/** Tỷ lệ chuyển đổi lead thành học sinh (đã đăng ký / tổng lead) — dùng cho Portal tuyển sinh. */
+export async function layTyLeChuyenDoiLead(donViId: number) {
+  const db = getDb();
+
+  const rows = await db
+    .select({ trangThai: lead.trangThai, total: count() })
+    .from(lead)
+    .where(eq(lead.donViId, donViId))
+    .groupBy(lead.trangThai);
+
+  const tongLead = rows.reduce((sum, row) => sum + row.total, 0);
+  const daDangKy = rows.find((row) => row.trangThai === "da_dang_ky")?.total ?? 0;
+
+  return { daDangKy, tongLead };
 }
 
 export async function findLeadById(
@@ -260,6 +314,7 @@ export async function createLeadHoatDong(input: {
   ketQua: string | null;
   nguoiThucHienId: number;
   thoiGian: string;
+  trangThai: "cho_xu_ly" | "da_xu_ly" | "da_huy";
 }) {
   const db = getDb();
 
@@ -270,6 +325,7 @@ export async function createLeadHoatDong(input: {
     ketQua: input.ketQua,
     nguoiThucHienId: input.nguoiThucHienId,
     thoiGian: input.thoiGian,
+    trangThai: input.trangThai,
     createdAt: now(),
   });
 
@@ -281,4 +337,67 @@ export async function createLeadHoatDong(input: {
     .limit(1);
 
   return rows[0] ?? null;
+}
+
+export async function findLeadHoatDongById(id: number) {
+  const db = getDb();
+
+  const rows = await db
+    .select({ hoatDong: leadHoatDong, donViId: lead.donViId })
+    .from(leadHoatDong)
+    .innerJoin(lead, eq(leadHoatDong.leadId, lead.id))
+    .where(eq(leadHoatDong.id, id))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function updateLeadHoatDongTrangThai(input: {
+  id: number;
+  trangThai: "da_xu_ly" | "da_huy";
+}) {
+  const db = getDb();
+
+  await db
+    .update(leadHoatDong)
+    .set({ trangThai: input.trangThai })
+    .where(eq(leadHoatDong.id, input.id));
+
+  const rows = await db
+    .select()
+    .from(leadHoatDong)
+    .where(eq(leadHoatDong.id, input.id))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+/**
+ * Lịch hẹn (loaiHoatDong = hen_lich) còn CHỜ XỬ LÝ — dùng cho "Lịch hẹn sắp
+ * tới" ở `LeadsPage`. Không lọc theo ngày (khác `countLichHenTuVanHomNay`
+ * chỉ đếm hôm nay) — tư vấn viên cần thấy cả lịch hẹn quá hạn chưa xử lý.
+ */
+export async function listLichHenSapToi(donViId: number) {
+  const db = getDb();
+
+  return db
+    .select({
+      hoatDong: leadHoatDong,
+      lead: {
+        id: lead.id,
+        maLead: lead.maLead,
+        hoTen: lead.hoTen,
+        soDienThoai: lead.soDienThoai,
+      },
+    })
+    .from(leadHoatDong)
+    .innerJoin(lead, eq(leadHoatDong.leadId, lead.id))
+    .where(
+      and(
+        eq(lead.donViId, donViId),
+        eq(leadHoatDong.loaiHoatDong, "hen_lich"),
+        eq(leadHoatDong.trangThai, "cho_xu_ly"),
+      ),
+    )
+    .orderBy(leadHoatDong.thoiGian);
 }

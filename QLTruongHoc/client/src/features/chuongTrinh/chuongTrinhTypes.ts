@@ -12,7 +12,6 @@ export type ChuongTrinhItem = {
 };
 
 export type ChuongTrinhFormInput = {
-  maChuongTrinh: string;
   tenChuongTrinh: string;
   capDo: string;
   tongSoBuoi: number | null;

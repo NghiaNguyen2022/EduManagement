@@ -146,6 +146,89 @@
 > ẩn "Trao đổi phụ huynh" khỏi menu ở hệ thống và chuyển hẳn UI ghi/xem vào trong từng lớp
 > (`ClassDetailPage.tsx`), giữ nguyên `/communications` cho nhu cầu xem gộp. Xem
 > `docs/analysis/QUAN_TRI_HE_THONG_UX.md`.
+>
+> Cập nhật 2026-07-27 (Portal quản lý đơn vị): bổ sung Portal riêng cho vai trò `quan_ly_don_vi`
+> (mục B02) — trước đó vai trò này chưa có Portal, tạm dùng `/dashboard` dùng chung với quản trị
+> hệ thống (ghi nhận ở `docs/worklog/ROLE_PORTAL_AUDIT_2026-07-25.md`). Portal mới ở
+> `/portal/quan-ly-don-vi`, tái dùng nguyên `DashboardSummary` đã có sẵn (không thêm truy vấn DB
+> mới) và bổ sung khối "Cần chú ý" gộp tín hiệu tài chính/đào tạo/tuyển sinh. Đồng thời rà soát
+> và viết đề xuất tính năng/thông số báo cáo/quản trị phạm vi đơn vị cho vai trò này — phần chưa
+> làm (L02/L03, biểu đồ xu hướng doanh thu, sửa thông tin đơn vị, nhật ký theo đơn vị) đã ghi rõ
+> lý do hoãn, không phải bỏ sót. Xem `docs/analysis/QUAN_LY_DON_VI_PORTAL.md`.
+>
+> Cập nhật 2026-07-27 (vòng 2, sau phản hồi qua ảnh chụp UI thật): sửa 2 lỗi hiển thị — sidebar
+> tô sáng nhiều mục cùng lúc (NavLink prefix-match mặc định, sửa bằng cách tái dùng
+> `findRouteByPath`) và layout "Cần chú ý"/"Tuyển sinh trong tháng" lệch cân đối (class
+> `section-card--wide` hoá ra không có CSS nào cả — sửa bằng cách bỏ wrapper grid, để full-width
+> độc lập). Thêm "Xem chi tiết →" vào các dòng "Cần chú ý" (Portal quản lý đơn vị + kế toán).
+> Đồng thời rà soát và đề xuất quyền duyệt (ngân sách/chi/giảm giá/chương trình dạy) + báo cáo mở
+> rộng (ngân sách/học sinh/chất lượng học tập) — xác nhận `quan_ly_don_vi` đã duyệt được hoàn
+> phí/chuyển phí/bảo lưu từ trước (CSDL thật có `tai_chinh.duyet`, seed SQL tĩnh bị lệch chưa cập
+> nhật), phần còn lại đều là module mới cần quyết định thiết kế trước khi code. Xem
+> `docs/analysis/QUAN_LY_DON_VI_UX_VONG_2.md`.
+>
+> Cập nhật 2026-07-27 (tiếp, Chi phí qua duyệt): người dùng chỉ ra lý do hoãn "duyệt chi" ở bản ghi
+> trên bị sai — chi phí (dịch vụ, mua sắm...) không liên quan "đảo ngược khoản thu" như code cũ so
+> sánh, mà là tiền CHI RA nên cần duyệt TRƯỚC khi ghi nhận. Đã làm ngay: `ChiPhi` thêm
+> `trangThai`/`nguoiDuyetId`/`ghiChuDuyet`/`duyetAt` (tái dùng khuôn H08, quyền `tai_chinh.duyet`
+> có sẵn, không tạo quyền mới); "Tổng chi"/"Lãi lỗ ròng" ở báo cáo tài chính chỉ tính chi phí đã
+> duyệt; `ChiPhiPage.tsx` đổi thành luồng đề xuất/duyệt; Portal quản lý đơn vị thêm dòng "Đề xuất
+> chi chờ duyệt". Nhân tiện ghi lại `database/028_add_chi_phi.sql` — migration còn thiếu từ trước
+> cho cả bảng `ChiPhi`/`DanhMucChiPhi` gốc (đã có trong CSDL dev qua `drizzle-kit push`, chưa từng
+> thành file SQL). Test tay qua API thật: tạo đề xuất → `cho_duyet`, tự duyệt bị chặn đúng thông
+> báo, duyệt bởi tài khoản khác → `da_duyet`, báo cáo tài chính tính lại đúng. Xem
+> `docs/analysis/QUAN_LY_DON_VI_UX_VONG_2.md` mục 3.2.
+>
+> Cập nhật 2026-07-27 (rà soát full quy trình đối chiếu BPD): theo yêu cầu đi lại toàn bộ quy
+> trình 3 luồng kế toán/tuyển sinh/đào tạo-giáo vụ tại đơn vị, đối chiếu từng "Quy tắc trọng yếu"
+> trong `extracted.txt` (trích BPD gốc) với code thật. Phát hiện và sửa 2 sai lệch: (1) E03 chặn
+> cứng vượt sĩ số với MỌI vai trò — BPD ngụ ý phải có đường phê duyệt, sửa cho quản lý đơn
+> vị/quản trị hệ thống vượt được, học vụ thường vẫn bị chặn; (2) E06 kiểm tra trùng lịch thiếu hẳn
+> chiều học sinh (chỉ có phòng/giáo viên) — BPD 7.3 liệt kê ngang hàng cả 3, thêm kiểm tra học
+> sinh học 2 lớp bị chồng giờ. Cả 2 đã test tay qua service layer thật (dựng tình huống thật, dọn
+> sạch dữ liệu sau test). Còn 3 đề xuất phạm vi lớn hơn (công nợ theo lớp, tách quyền người thu,
+> đặt cọc khi xác nhận đăng ký) — ghi nhận, chưa code, cần xác nhận thiết kế. Xem
+> `docs/analysis/RA_SOAT_QUY_TRINH_DON_VI.md`.
+>
+> Cập nhật 2026-07-27 (tiếp, chốt 2 đề xuất còn treo): người dùng xác nhận kế toán mỗi đơn vị chỉ
+> cần một vai trò (lập+thu chung) — đóng đề xuất 3.2 (tách quyền người thu), không làm. Với câu
+> hỏi "người lập có nên là tuyển sinh/tư vấn" — chốt hướng: không mở quyền tài chính cho tuyển
+> sinh, thay vào đó hệ thống tự đếm và nhắc kế toán "học sinh mới chưa từng có khoản phải thu"
+> (`countHocSinhChuaCoKhoanPhaiThu`, không dùng mốc ngày để tránh lệch), hiện ở "Cần chú ý" của cả
+> Portal kế toán và quản lý đơn vị. Không thêm bảng/quyền mới, không đổi luồng xác nhận đăng ký
+> hiện có. Test tay qua UI thật với `demo_ketoan_nn`/`demo_quanly_nn` — cả 2 Portal hiện đúng số
+> liệu thật. Xem `docs/analysis/RA_SOAT_QUY_TRINH_DON_VI.md` mục 3.2-3.3.
+>
+> Cập nhật 2026-07-27 (2 phản hồi tiếp — Trao đổi phụ huynh và Lịch hẹn tuyển sinh): (1) menu
+> "Trao đổi phụ huynh" trước đây hiện sai cho kế toán/tuyển sinh/tư vấn (trang vỡ vì thiếu
+> `lop_hoc.xem`) trong khi giáo viên — actor chính — lại không ghi được (thiếu quyền "quan_ly").
+> Tách quyền xem/ghi đúng theo vai trò thật, không tạo quyền mới. (2) Hoạt động chăm sóc lead
+> chỉ ghi được đúng lúc đang gõ, không đặt lịch hẹn tương lai được, không phân biệt đã xử lý hay
+> chưa. Thêm `LeadHoatDong.trangThai` (task thật cho "hẹn lịch"), ô chọn thời gian (dùng
+> `DateTimeField` có sẵn nhưng chưa từng dùng), khối "Lịch hẹn sắp tới" ở trang Tuyển sinh. Cả 2
+> đã test qua service/API thật. Xem `docs/analysis/TRAO_DOI_PHU_HUYNH_QUYEN.md` và
+> `docs/analysis/LEAD_HOAT_DONG_TASK.md`.
+>
+> Cập nhật 2026-07-27 (cấu hình duyệt chi theo đơn vị): làm rõ qua hỏi đáp trước khi code — "danh
+> mục chi cố định" chính là danh mục chi phí hiện có, "chi đột xuất" không phải luồng riêng mà chỉ
+> là nhãn phân loại khi tạo đề xuất chi, cấu hình là 3 công tắc độc lập (không phải 1 công tắc
+> chung). Đã làm: bảng `CauHinhTaiChinhDonVi` (3 công tắc/đơn vị, mặc định cần duyệt cả 3, chỉ
+> quản lý đơn vị/quản trị hệ thống sửa được); `DanhMucChiPhi` thêm luồng duyệt riêng
+> (`trangThaiDuyet`, tách khỏi bật/tắt sử dụng); `ChiPhi` thêm `loaiDeXuat` (định kỳ/đột xuất) để
+> tra đúng công tắc khi quyết định có cần duyệt hay tạo thẳng đã duyệt. Test tay qua API/service
+> thật: tắt duyệt định kỳ → đề xuất định kỳ tạo thẳng đã duyệt, đề xuất đột xuất vẫn chờ duyệt
+> (đúng độc lập); danh mục mới vẫn đúng luồng chờ duyệt/chặn tự duyệt/duyệt bởi người khác. Xem
+> `docs/analysis/CHI_PHI_CAU_HINH_DUYET.md`.
+>
+> Cập nhật 2026-07-27 (mã tự sinh, bỏ nhập tay): theo yêu cầu "rà soát lại các data, mã sẽ tự
+> sinh, người dùng không nhập mã" — rà soát toàn bộ form tạo mới, tìm ra 5 danh mục còn cho gõ tay
+> mã nội bộ (danh mục khoản thu, kỳ thu, chương trình đào tạo, lớp học, danh mục chi phí), sửa cả
+> 5 sang tự sinh theo mẫu `sinhMaLead`/`sinhMaGiaoVien` đã có sẵn (đếm theo tiền tố trong đơn vị:
+> `KT001`, `KY20260001`, `CT001`, `LOP0001`, `CP001`). Cố ý giữ nguyên `DonVi.maDonVi` nhập tay
+> (mã duy nhất toàn hệ thống, có ý nghĩa gợi nhớ do người dùng đặt, tần suất tạo rất thấp — khác
+> bản chất 5 mã tuần tự còn lại); "Mã số thuế"/"Mã giấy phép" cũng ngoài phạm vi vì là mã do nhà
+> nước cấp. Test qua service thật (tạo rồi dọn dữ liệu), `tsc --noEmit` sạch cả client/server. Xem
+> `docs/analysis/MA_TU_SINH.md`.
 
 ## A. Nền tảng và đa đơn vị
 - [x] A01 Tạo Danh mục đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)
@@ -164,7 +247,14 @@
       tài chính đã xem gộp sẵn), ở đơn vị con tạo được mọi vai trò vận hành; không đơn vị nào
       cho tạo `phu_huynh` qua màn hình này (chặn cả client lẫn server), chỉ xem/reset mật khẩu
       tài khoản phụ huynh sẵn có. Xem `docs/analysis/QUAN_TRI_HE_THONG_UX.md`.)
-- [x] B02 Quản lý đơn vị. (Vai trò `quan_ly_don_vi` gán được qua Quản lý người dùng.)
+- [x] B02 Quản lý đơn vị. (Vai trò `quan_ly_don_vi` gán được qua Quản lý người dùng. 2026-07-27:
+      thêm Portal riêng `/portal/quan-ly-don-vi` — trước đây dùng tạm `/dashboard` dùng chung với
+      quản trị hệ thống. Portal mới tái dùng nguyên `DashboardSummary` đã có (không thêm truy vấn
+      DB mới), thêm khối "Cần chú ý" gộp tín hiệu từ cả 3 mảng tài chính/đào tạo/tuyển sinh — khối
+      duy nhất khác biệt so với các Portal chuyên môn khác vì đây là vai trò duy nhất cần nhìn cả
+      đơn vị cùng lúc. Xem `docs/analysis/QUAN_LY_DON_VI_PORTAL.md` — doc này cũng đề xuất thông
+      số báo cáo (L02/L03 còn thiếu, xu hướng doanh thu theo thời gian) và quản trị phạm vi đơn vị
+      (sửa thông tin đơn vị, nhật ký theo đơn vị) để lại làm sau, có lý do rõ ràng.)
 - [x] B03 Tuyển sinh/tư vấn. (Có màn hình Lead/CRM đầy đủ từ 2026-07-21 — xem mục C.)
 - [x] B04 Kế toán. (Vai trò đã seed; màn hình nghiệp vụ tài chính đầy đủ H01-H09 — xem mục H.
       Checklist trước để sót, chưa tick lại khi H hoàn tất.)
@@ -179,7 +269,7 @@
 ## C. Tuyển sinh
 - [x] C01 Tiếp nhận khách hàng tiềm năng. (2026-07-21: API `/api/leads` + trang `/admissions`. Mã lead tự sinh. Xem `docs/analysis/C01_C03_C06_lead_tuyen_sinh.md`.)
 - [x] C02 Ghi nhận nhu cầu khóa học/lớp. (Trường `nhuCau`, `doTuoiHoacTrinhDo` trên Lead — ghi chú tự do, chưa gắn cứng vào chương trình đào tạo vì Sprint 2 chưa làm.)
-- [x] C03 Lịch sử tư vấn và chăm sóc. (`LeadHoatDong` append-only, có thể kèm đổi trạng thái lead cùng lúc.)
+- [x] C03 Lịch sử tư vấn và chăm sóc. (`LeadHoatDong` append-only, có thể kèm đổi trạng thái lead cùng lúc. 2026-07-27: thêm `trangThai` — "hẹn lịch" giờ là task thật (chờ xử lý/đã xử lý/đã huỷ) với ô chọn thời gian đặt trước được, khối "Lịch hẹn sắp tới" ở `/admissions`. Xem `docs/analysis/LEAD_HOAT_DONG_TASK.md`.)
 - [x] C04 Hồ sơ đăng ký nhập học. (Qua form "Xác nhận đăng ký" trong trang chi tiết lead.)
 - [ ] C05 Kiểm tra đầu vào/xếp trình độ cho trung tâm ngoại ngữ. (Để Sprint 7. **Phân bổ luồng/layout dự kiến**: luồng — Lead → (tuỳ chọn) tạo bản ghi kiểm tra đầu vào → nhập kết quả/trình độ → dùng kết quả này khi xác nhận đăng ký C04 để gợi ý chương trình/lớp phù hợp. Layout — không cần route riêng, thêm 1 `SectionCard` "Kiểm tra đầu vào" ngay trong `LeadDetailPage`, chỉ hiện khi đơn vị có `loaiHinhDaoTao = ngoai_ngu`.)
 - [x] C06 Xác nhận nhập học và sinh mã học sinh. (Tái sử dụng `createHocSinhMoi`/`addGuardianToStudent`; một lead chỉ chuyển đổi đúng một lần.)
@@ -197,10 +287,10 @@
 ## E. Lớp học và lịch học
 - [x] E01 Tạo chương trình/khóa học. (2026-07-21: API `/api/chuong-trinh` + section trong `/classes`. Mã tự đặt (không tự sinh). Xem `docs/analysis/E01_E04_chuong_trinh_lop_hoc.md`.)
 - [x] E02 Tạo lớp học. (API `/api/lop-hoc` + trang `/classes`, `/classes/:id`. Bao gồm hồ sơ giáo viên `/api/giao-vien` + trang `/teachers`.)
-- [x] E03 Xếp học sinh vào lớp. (Chặn vượt sĩ số, chặn học sinh ngừng học/hoàn thành, chuyển lớp giữ lịch sử — không ghi đè.)
+- [x] E03 Xếp học sinh vào lớp. (Chặn vượt sĩ số, chặn học sinh ngừng học/hoàn thành, chuyển lớp giữ lịch sử — không ghi đè. 2026-07-27: đối chiếu BPD 7.2 "Không vượt sĩ số nếu không có quyền phê duyệt" — trước đó chặn cứng với mọi vai trò, không đúng quy tắc gốc. Sửa: quản lý đơn vị/quản trị hệ thống (`don_vi.quan_ly`/`he_thong.quan_tri`) vượt được sĩ số, học vụ/giáo vụ thường (`lop_hoc.quan_ly`) vẫn bị chặn — audit log ghi rõ khi có vượt. Xem `docs/analysis/RA_SOAT_QUY_TRINH_DON_VI.md`.)
 - [x] E04 Phân công giáo viên. (Chỉ một giáo viên chính hoạt động một lúc cho một lớp; giáo viên hỗ trợ không giới hạn.)
 - [x] E05 Tạo lịch học lặp lại. (2026-07-21: `LichHoc` (quy tắc theo tuần) + sinh `BuoiHoc` theo khoảng ngày, tách 2 bước lưu quy tắc/sinh buổi. Xem `docs/analysis/E05_E08_lich_hoc.md`.)
-- [x] E06 Kiểm tra trùng giáo viên/phòng/lớp. (Chặn cứng toàn bộ khi sinh buổi/tạo buổi bù nếu trùng phòng hoặc giáo viên trong cùng đơn vị.)
+- [x] E06 Kiểm tra trùng giáo viên/phòng/lớp/học sinh. (Chặn cứng toàn bộ khi sinh buổi/tạo buổi bù/sửa buổi nếu trùng phòng hoặc giáo viên trong cùng đơn vị. 2026-07-27: đối chiếu BPD 7.3 "Kiểm tra xung đột giáo viên, phòng và học viên" — trước đó thiếu hẳn chiều học viên (một học sinh học 2 lớp có thể bị xếp lịch chồng giờ mà hệ thống không báo). Thêm `findHocSinhConflictingBuoiHoc` kiểm tra học sinh trong sĩ số lớp đang lên lịch có buổi học chồng giờ ở MỘT lớp khác họ cũng đang theo học hay không — học nhiều lớp/kỹ năng cùng lúc vẫn hợp lệ (đúng BPD 7.2), chỉ chặn khi thật sự chồng giờ. Test tay qua service layer thật: dựng tình huống 1 học sinh học 2 lớp trùng giờ → bị chặn đúng thông báo nêu tên học sinh + lớp gây trùng; trường hợp không trùng giờ vẫn tạo bình thường. Xem `docs/analysis/RA_SOAT_QUY_TRINH_DON_VI.md`.)
 - [x] E07 Lịch nghỉ và học bù. (Đánh dấu `nghi` (mở lại được), tạo `BuoiHoc` độc lập `loaiBuoi=bu`.)
 - [x] E08 Thời khóa biểu giáo viên, học sinh, phụ huynh. (Theo lớp trong `ClassDetailPage`, theo giáo viên/đơn vị ở trang `/schedule`. **Chưa** làm theo học sinh/phụ huynh — thuộc Portal, module J.)
 
@@ -268,7 +358,7 @@
 - [x] I01 Thông báo toàn trường/theo lớp/cá nhân. (2026-07-22: API `/api/thong-bao` + trang `/notifications`, lưu phạm vi `toan_truong` / `theo_lop` / `ca_nhan`, đơn vị hệ thống xem gộp theo đơn vị đang hoạt động. I02-I05 còn để sau.)
 - [x] I02 Đính kèm tài liệu/hình ảnh. (2026-07-22: thêm một slot đính kèm duy nhất cho thông báo nội bộ — tên + liên kết; chưa làm upload đa tệp riêng.)
 - [x] I03 Xác nhận đã đọc. (2026-07-22: thêm bảng `ThongBaoDaDoc` theo từng người dùng, nút "Xác nhận đã đọc" ngay trên trang `/thong-bao`, badge trạng thái theo từng dòng.)
-- [x] I04 Trao đổi phụ huynh – giáo viên theo học sinh/lớp. (2026-07-22: API `/api/trao-doi` + trang `/communications`, ghi nhận trao đổi theo học sinh/lớp, xem gộp đơn vị hệ thống và lưu `trao_doi.create` vào nhật ký hệ thống.)
+- [x] I04 Trao đổi phụ huynh – giáo viên theo học sinh/lớp. (2026-07-22: API `/api/trao-doi` + trang `/communications`, ghi nhận trao đổi theo học sinh/lớp, xem gộp đơn vị hệ thống và lưu `trao_doi.create` vào nhật ký hệ thống. 2026-07-27: sửa quyền — trước đây kế toán/tuyển sinh/tư vấn thấy menu nhưng trang vỡ (thiếu `lop_hoc.xem`), trong khi giáo viên (actor chính của mục này) lại KHÔNG ghi được (thiếu quyền "quan_ly"). Tách quyền xem (`lop_hoc.xem`/`quan_ly`) khỏi quyền ghi (`lop_hoc.quan_ly`/`hoc_tap.ghi_nhan`), không tạo quyền mới. Xem `docs/analysis/TRAO_DOI_PHU_HUYNH_QUYEN.md`.)
 - [x] I05 Kiểm soát phạm vi và lưu lịch sử. (2026-07-25: thêm `lopHocId`/`hocSinhId`
   có cấu trúc cho thông báo; Portal phụ huynh lọc và xác nhận đã đọc theo đúng
   đơn vị/lớp/con, không suy đoán từ tên tự do. Dữ liệu cũ thiếu ID được ẩn an toàn.)

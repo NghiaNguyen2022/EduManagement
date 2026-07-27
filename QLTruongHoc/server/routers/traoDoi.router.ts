@@ -9,13 +9,15 @@ import { createTraoDoiMoi, listTraoDoi } from "../services/traoDoi.service.js";
 
 export const traoDoiRouter = Router();
 
-const TRAO_DOI_QUYEN = [
-  "hoc_sinh.xem",
-  "lop_hoc.xem",
-  "hoc_sinh.quan_ly",
-  "lop_hoc.quan_ly",
-  "tuyen_sinh.quan_ly",
-];
+// Trao đổi phụ huynh gắn với lớp/học sinh trong lớp — chỉ vai trò thấy được
+// lớp (giáo viên, học vụ, quản lý đơn vị) mới nên thấy/ghi mục này. Trước
+// đây dùng `hoc_sinh.xem`/`tuyen_sinh.quan_ly` khiến kế toán/tuyển sinh/tư
+// vấn cũng thấy menu dù trang cần `lop_hoc.xem` để tải danh sách lớp (sẽ vỡ
+// khi họ mở) — đồng thời quyền GHI cũ chỉ gồm các mã "quan_ly" khiến giáo
+// viên (chỉ có `lop_hoc.xem`) không ghi được dù đây là tính năng làm riêng
+// cho giáo viên (xem `docs/analysis/TRAO_DOI_PHU_HUYNH_QUYEN.md`).
+const TRAO_DOI_XEM_QUYEN = ["lop_hoc.xem", "lop_hoc.quan_ly"];
+const TRAO_DOI_GHI_QUYEN = ["lop_hoc.quan_ly", "hoc_tap.ghi_nhan"];
 
 traoDoiRouter.use(requireAuth, requireCurrentOrganization);
 
@@ -30,7 +32,7 @@ function handleError(res: import("express").Response, error: unknown, fallback: 
 // Trao đổi phụ huynh - giáo viên
 // ---------------------------------------------------------------
 
-traoDoiRouter.get("/", requireAnyPermission(TRAO_DOI_QUYEN), async (req, res) => {
+traoDoiRouter.get("/", requireAnyPermission(TRAO_DOI_XEM_QUYEN), async (req, res) => {
   try {
     const rows = await listTraoDoi(
       req.auth!.currentOrganization!.id,
@@ -49,7 +51,7 @@ traoDoiRouter.get("/", requireAnyPermission(TRAO_DOI_QUYEN), async (req, res) =>
 
 traoDoiRouter.post(
   "/",
-  requireAnyPermission(["hoc_sinh.quan_ly", "lop_hoc.quan_ly", "tuyen_sinh.quan_ly"]),
+  requireAnyPermission(TRAO_DOI_GHI_QUYEN),
   async (req, res) => {
     try {
       const created = await createTraoDoiMoi({

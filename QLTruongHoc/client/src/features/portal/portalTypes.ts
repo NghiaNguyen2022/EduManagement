@@ -141,4 +141,7 @@ export type TeacherPortalOverview = {
     };
   }>;
   sessions: import("../lichHoc/lichHocTypes").ThoiKhoaBieuItem[];
+  sessionsHomNay: number;
+  baoGiangChoNhap: number;
+  traoDoiGanDay: number;
 };

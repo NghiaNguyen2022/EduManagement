@@ -8,6 +8,7 @@ import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
 import {
   closeEnrollment,
   countHocSinhDangHocTrongLop,
+  countLopHocTheoMaPrefix,
   createEnrollment,
   createLopHoc,
   createPhanCongGiaoVien,
@@ -15,7 +16,6 @@ import {
   findEnrollmentById,
   findEnrollmentDangHoc,
   findGiaoVienChinhDangHoatDong,
-  findLopHocByMa,
   findLopHocById,
   findPhanCongGiaoVienById,
   listHocSinhTrongLop,
@@ -25,6 +25,11 @@ import {
   setLopHocTrangThai,
   updateLopHoc,
 } from "../db/lopHoc.repository.js";
+
+async function sinhMaLopHoc(donViId: number) {
+  const total = await countLopHocTheoMaPrefix(donViId, "LOP");
+  return `LOP${String(total + 1).padStart(4, "0")}`;
+}
 
 type TrangThaiLopHoc =
   | "chuan_bi"
@@ -89,7 +94,6 @@ export async function getLopHocDetail(
 export async function createLopHocMoi(input: {
   donViId: number;
   chuongTrinhDaoTaoId?: number | null;
-  maLop: string;
   tenLop: string;
   capDo?: string | null;
   ngayBatDau?: string | null;
@@ -101,12 +105,7 @@ export async function createLopHocMoi(input: {
 }) {
   await assertDonViChoPhepNghiepVu(input.donViId);
 
-  const maLop = input.maLop.trim().toUpperCase();
   const tenLop = input.tenLop.trim();
-
-  if (!maLop) {
-    throw new Error("Vui lòng nhập mã lớp.");
-  }
 
   if (!tenLop) {
     throw new Error("Vui lòng nhập tên lớp.");
@@ -120,11 +119,8 @@ export async function createLopHocMoi(input: {
     throw new Error("Sĩ số tối đa phải lớn hơn 0.");
   }
 
-  const existed = await findLopHocByMa(input.donViId, maLop);
-
-  if (existed) {
-    throw new Error("Mã lớp đã tồn tại.");
-  }
+  // Mã do hệ thống tự sinh (LOP<số thứ tự>) — người dùng không nhập tay.
+  const maLop = await sinhMaLopHoc(input.donViId);
 
   if (input.chuongTrinhDaoTaoId) {
     const chuongTrinh = await findChuongTrinhById(
@@ -376,11 +372,21 @@ export async function endGiaoVienAssignment(input: {
   });
 }
 
+/**
+ * BPD 7.2 "Không vượt sĩ số nếu không có quyền phê duyệt" — trước đây chặn
+ * cứng với mọi vai trò (kể cả quản lý đơn vị/quản trị hệ thống), không đúng
+ * quy tắc gốc vốn ngụ ý phải có đường "phê duyệt vượt sĩ số" cho vai trò đủ
+ * thẩm quyền. `coQuyenVuotSiSo` do router truyền xuống theo đúng quyền
+ * `don_vi.quan_ly`/`he_thong.quan_tri` của actor — không mở cho học vụ/giáo
+ * vụ thường (`lop_hoc.quan_ly`), giữ đúng tinh thần "phê duyệt", không phải
+ * "ai xếp lớp cũng vượt được".
+ */
 async function validateXepLop(input: {
   donViId: number;
   hocSinhId: number;
   lopHocId: number;
   ngayVaoLop: string;
+  coQuyenVuotSiSo?: boolean;
 }) {
   const [student, lop] = await Promise.all([
     findHocSinhById(input.donViId, input.hocSinhId),
@@ -426,15 +432,21 @@ async function validateXepLop(input: {
     throw new Error("Học sinh đã ở trong lớp này.");
   }
 
+  let vuotSiSo = false;
+
   if (lop.siSoToiDa) {
     const total = await countHocSinhDangHocTrongLop(input.lopHocId);
 
     if (total >= lop.siSoToiDa) {
-      throw new Error("Lớp đã đủ sĩ số tối đa.");
+      if (!input.coQuyenVuotSiSo) {
+        throw new Error("Lớp đã đủ sĩ số tối đa.");
+      }
+
+      vuotSiSo = true;
     }
   }
 
-  return { student, lop };
+  return { student, lop, vuotSiSo };
 }
 
 export async function xepHocSinhVaoLop(input: {
@@ -442,10 +454,11 @@ export async function xepHocSinhVaoLop(input: {
   hocSinhId: number;
   lopHocId: number;
   ngayVaoLop: string;
+  coQuyenVuotSiSo?: boolean;
   actorUserId: number;
   ipAddress?: string;
 }) {
-  const { student, lop } = await validateXepLop(input);
+  const { student, lop, vuotSiSo } = await validateXepLop(input);
 
   const created = await createEnrollment({
     hocSinhId: input.hocSinhId,
@@ -459,7 +472,9 @@ export async function xepHocSinhVaoLop(input: {
     action: "lop_hoc.enroll_student",
     objectType: "HocSinhLopHoc",
     objectId: created ? String(created.id) : null,
-    content: `Xếp học sinh ${student.hoTen} (${student.maHocSinh}) vào lớp ${lop.tenLop}.`,
+    content: `Xếp học sinh ${student.hoTen} (${student.maHocSinh}) vào lớp ${lop.tenLop}${
+      vuotSiSo ? " (vượt sĩ số tối đa, được duyệt bởi vai trò quản lý)" : ""
+    }.`,
     ipAddress: input.ipAddress,
   });
 
@@ -472,6 +487,7 @@ export async function chuyenLopHocSinh(input: {
   lopHocIdMoi: number;
   ngayChuyen: string;
   lyDo?: string | null;
+  coQuyenVuotSiSo?: boolean;
   actorUserId: number;
   ipAddress?: string;
 }) {
@@ -485,11 +501,12 @@ export async function chuyenLopHocSinh(input: {
     throw new Error("Hồ sơ xếp lớp này đã kết thúc.");
   }
 
-  const { student, lop } = await validateXepLop({
+  const { student, lop, vuotSiSo } = await validateXepLop({
     donViId: input.donViId,
     hocSinhId: found.enrollment.hocSinhId,
     lopHocId: input.lopHocIdMoi,
     ngayVaoLop: input.ngayChuyen,
+    coQuyenVuotSiSo: input.coQuyenVuotSiSo,
   });
 
   await closeEnrollment({
@@ -511,7 +528,9 @@ export async function chuyenLopHocSinh(input: {
     action: "lop_hoc.transfer_student",
     objectType: "HocSinhLopHoc",
     objectId: created ? String(created.id) : null,
-    content: `Chuyển học sinh ${student.hoTen} (${student.maHocSinh}) sang lớp ${lop.tenLop}.`,
+    content: `Chuyển học sinh ${student.hoTen} (${student.maHocSinh}) sang lớp ${lop.tenLop}${
+      vuotSiSo ? " (vượt sĩ số tối đa, được duyệt bởi vai trò quản lý)" : ""
+    }.`,
     ipAddress: input.ipAddress,
   });
 

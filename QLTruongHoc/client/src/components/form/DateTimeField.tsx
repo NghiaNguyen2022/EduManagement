@@ -7,6 +7,7 @@ type DateTimeFieldProps = {
   required?: boolean;
   disabled?: boolean;
   error?: string;
+  helpText?: string;
   min?: string;
   max?: string;
 };
@@ -18,6 +19,7 @@ export function DateTimeField({
   required = false,
   disabled = false,
   error,
+  helpText,
   min,
   max,
 }: DateTimeFieldProps) {
@@ -26,6 +28,7 @@ export function DateTimeField({
       label={label}
       required={required}
       error={error}
+      helpText={helpText}
     >
       <input
         className="form-control"

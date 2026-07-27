@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 import {
   SelectField,
@@ -11,10 +12,13 @@ import { useAuth } from "../features/auth/AuthContext";
 import {
   createLeadApi,
   listLeadApi,
+  listLichHenSapToiApi,
+  xuLyLichHenApi,
 } from "../features/lead/leadApi";
 import type {
   LeadFormInput,
   LeadItem,
+  LichHenSapToiItem,
 } from "../features/lead/leadTypes";
 import { useUnsavedChangesGuard } from "../features/navigation/UnsavedChangesContext";
 
@@ -44,6 +48,14 @@ const emptyForm: LeadFormInput = {
   nhuCau: "",
 };
 
+function formatThoiGian(value: string) {
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(new Date(value.replace(" ", "T")));
+}
+
 export function LeadsPage() {
   const { auth } = useAuth();
 
@@ -55,6 +67,8 @@ export function LeadsPage() {
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [form, setForm] = useState<LeadFormInput>(emptyForm);
+  const [lichHen, setLichHen] = useState<LichHenSapToiItem[]>([]);
+  const [xuLyId, setXuLyId] = useState<number | null>(null);
 
   const isHeThong =
     auth?.currentOrganization?.loaiDonVi === "he_thong";
@@ -111,6 +125,51 @@ export function LeadsPage() {
     void loadData();
   }, [auth?.currentOrganization?.id]);
 
+  async function loadLichHen() {
+    try {
+      const rows = await listLichHenSapToiApi();
+      setLichHen(rows);
+    } catch {
+      setLichHen([]);
+    }
+  }
+
+  useEffect(() => {
+    if (isHeThong) {
+      setLichHen([]);
+      return;
+    }
+
+    void loadLichHen();
+  }, [auth?.currentOrganization?.id, isHeThong]);
+
+  async function handleXuLyLichHen(
+    hoatDongId: number,
+    trangThai: "da_xu_ly" | "da_huy",
+  ) {
+    setError("");
+    setNotice("");
+    setXuLyId(hoatDongId);
+
+    try {
+      await xuLyLichHenApi(hoatDongId, trangThai);
+      setNotice(
+        trangThai === "da_xu_ly"
+          ? "Đã đánh dấu lịch hẹn hoàn thành."
+          : "Đã huỷ lịch hẹn.",
+      );
+      await loadLichHen();
+    } catch (xuLyError) {
+      setError(
+        xuLyError instanceof Error
+          ? xuLyError.message
+          : "Không thể cập nhật lịch hẹn.",
+      );
+    } finally {
+      setXuLyId(null);
+    }
+  }
+
   async function handleCreate(
     event: React.FormEvent<HTMLFormElement>,
   ) {
@@ -148,6 +207,77 @@ export function LeadsPage() {
 
       {error ? <div className="form-error">{error}</div> : null}
       {notice ? <div className="form-success">{notice}</div> : null}
+
+      {!isHeThong ? (
+        <SectionCard
+          title="Lịch hẹn sắp tới"
+          subtitle="Cuộc gọi/gặp gỡ đã đặt lịch, còn chờ xử lý — kể cả lịch hẹn đã quá giờ chưa xử lý"
+        >
+          <div className="user-table-wrap">
+            <table className="user-table">
+              <thead>
+                <tr>
+                  <th>Thời gian</th>
+                  <th>Lead</th>
+                  <th>Số điện thoại</th>
+                  <th>Nội dung</th>
+                  {canManage ? <th>Thao tác</th> : null}
+                </tr>
+              </thead>
+
+              <tbody>
+                {lichHen.map((item) => (
+                  <tr key={item.hoatDong.id}>
+                    <td>{formatThoiGian(item.hoatDong.thoiGian)}</td>
+                    <td>
+                      <Link to={`/admissions/${item.lead.id}`}>
+                        <strong>{item.lead.hoTen}</strong>
+                      </Link>
+                      <small>{item.lead.maLead}</small>
+                    </td>
+                    <td>{item.lead.soDienThoai}</td>
+                    <td>{item.hoatDong.noiDung}</td>
+                    {canManage ? (
+                      <td>
+                        <div className="section-card-actions">
+                          <button
+                            type="button"
+                            className="text-button"
+                            disabled={xuLyId === item.hoatDong.id}
+                            onClick={() =>
+                              void handleXuLyLichHen(item.hoatDong.id, "da_xu_ly")
+                            }
+                          >
+                            Đã thực hiện
+                          </button>
+                          <button
+                            type="button"
+                            className="text-button"
+                            disabled={xuLyId === item.hoatDong.id}
+                            onClick={() =>
+                              void handleXuLyLichHen(item.hoatDong.id, "da_huy")
+                            }
+                          >
+                            Huỷ
+                          </button>
+                        </div>
+                      </td>
+                    ) : null}
+                  </tr>
+                ))}
+
+                {lichHen.length === 0 ? (
+                  <tr>
+                    <td colSpan={canManage ? 5 : 4} className="empty-cell">
+                      Không có lịch hẹn nào đang chờ xử lý.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
+      ) : null}
 
       {canManage ? (
         <SectionCard

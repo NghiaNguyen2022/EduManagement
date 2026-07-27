@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray } from "drizzle-orm";
 
 import { donVi, hocSinh, lopHoc, nguoiDung, traoDoiHocSinh } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
@@ -112,6 +112,24 @@ function mapRow(row: {
         }
       : undefined,
   };
+}
+
+/** Số trao đổi ghi nhận gần đây trên các lớp chỉ định — dùng cho Portal giáo viên. */
+export async function countTraoDoiGanDayTheoLop(lopHocIds: number[], tuNgay: string) {
+  const db = getDb();
+
+  if (lopHocIds.length === 0) {
+    return 0;
+  }
+
+  const rows = await db
+    .select({ total: count() })
+    .from(traoDoiHocSinh)
+    .where(
+      and(inArray(traoDoiHocSinh.lopHocId, lopHocIds), gte(traoDoiHocSinh.createdAt, tuNgay)),
+    );
+
+  return rows[0]?.total ?? 0;
 }
 
 export async function listTraoDoiByDonVi(donViId: number, filters: TraoDoiFilter = {}) {

@@ -21,6 +21,8 @@ export type LoaiHoatDong =
   | "hoc_thu"
   | "khac";
 
+export type TrangThaiHoatDong = "cho_xu_ly" | "da_xu_ly" | "da_huy";
+
 export type LeadItem = {
   id: number;
   donViId: number;
@@ -46,6 +48,12 @@ export type LeadHoatDongItem = {
   ketQua: string | null;
   nguoiThucHienId: number;
   thoiGian: string;
+  trangThai: TrangThaiHoatDong;
+};
+
+export type LichHenSapToiItem = {
+  hoatDong: LeadHoatDongItem;
+  lead: { id: number; maLead: string; hoTen: string; soDienThoai: string };
 };
 
 export type LeadDetail = {
@@ -66,6 +74,7 @@ export type LeadActivityFormInput = {
   loaiHoatDong: LoaiHoatDong | "";
   noiDung: string;
   ketQua: string;
+  thoiGian: string;
   trangThaiMoi: TrangThaiLead | "";
 };
 

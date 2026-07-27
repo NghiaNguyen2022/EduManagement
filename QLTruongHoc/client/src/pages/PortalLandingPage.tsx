@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
 import { DateField, SelectField, TextAreaField } from "../components/form";
+import { EntityLink } from "../components/shared/EntityLink";
+import { GuardedLink } from "../components/shared/GuardedLink";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
 import { StatCard } from "../components/shared/StatCard";
@@ -22,6 +24,7 @@ import {
   getDefaultLandingPath,
   getDefaultPortalPath,
   getPortalContext,
+  getPortalNextSteps,
 } from "../config/portal";
 import {
   loadParentPortalOverviewApi,
@@ -61,6 +64,55 @@ function formatDateTime(value: string) {
 
 function formatTien(value: string) {
   return `${Number(value).toLocaleString("vi-VN")} ₫`;
+}
+
+function formatTyLeChuyenDoi(daDangKy: number, tongLead: number) {
+  if (tongLead === 0) return "0%";
+  return `${Math.round((daDangKy / tongLead) * 100)}%`;
+}
+
+/**
+ * Kế toán tổng (đứng ở đơn vị hệ thống) chỉ có vaiTro/quyền tại đúng đơn vị
+ * hệ thống — không lan xuống đơn vị con như quyền quản trị hệ thống — nên
+ * không thể click vào chi tiết kỳ thu ở từng trường/trung tâm (sẽ bị chặn
+ * "Bạn không có quyền truy cập đơn vị này"). Vì vậy gộp `theoKyThu` (đã có
+ * sẵn đơn vị sở hữu) thành báo cáo theo đơn vị, chỉ xem — không dẫn link.
+ */
+function groupBaoCaoKyThuTheoDonVi(
+  items: Array<{
+    kyThu: { trangThai: string };
+    donVi?: { id: number; maDonVi: string; tenDonVi: string };
+    phaiThu: string;
+    daThu: string;
+    conLai: string;
+  }>,
+) {
+  const map = new Map<
+    number,
+    { donVi: { id: number; maDonVi: string; tenDonVi: string }; soLuong: number; phaiThu: number; daThu: number; conLai: number }
+  >();
+
+  for (const item of items) {
+    if (item.kyThu.trangThai !== "da_mo" || !item.donVi) continue;
+
+    const existing = map.get(item.donVi.id) ?? {
+      donVi: item.donVi,
+      soLuong: 0,
+      phaiThu: 0,
+      daThu: 0,
+      conLai: 0,
+    };
+
+    existing.soLuong += 1;
+    existing.phaiThu += Number(item.phaiThu);
+    existing.daThu += Number(item.daThu);
+    existing.conLai += Number(item.conLai);
+    map.set(item.donVi.id, existing);
+  }
+
+  return Array.from(map.values()).sort((left, right) =>
+    left.donVi.tenDonVi.localeCompare(right.donVi.tenDonVi),
+  );
 }
 
 const KHOAN_PHAI_THU_TRANG_THAI_LABEL: Record<string, string> = {
@@ -373,7 +425,6 @@ export function PortalLandingPage() {
           subtitle={
             parentOverview ? `Xin chào, ${parentOverview.parent.hoTen}` : portalRole.subtitle
           }
-          action={<span className="text-button">{portalRole.highlight}</span>}
         />
 
         {parentError ? <div className="form-error">{parentError}</div> : null}
@@ -659,7 +710,11 @@ export function PortalLandingPage() {
         return { ...stat, value: formatTien(financeOverview.report.tongCongNo) };
       }
       if (index === 2) {
-        return { ...stat, value: financeOverview.report.soPhieuThu };
+        return {
+          ...stat,
+          value: formatTien(financeOverview.report.tongThu),
+          note: `${financeOverview.report.soPhieuThu} phiếu thu, từ đầu tháng tới hôm nay`,
+        };
       }
       if (index === 3) {
         return { ...stat, value: formatTien(financeOverview.report.tongThuRong) };
@@ -670,18 +725,39 @@ export function PortalLandingPage() {
 
     if (portalRole.slug === "tuyen-sinh") {
       if (index === 0) return { ...stat, value: workspaceSummary.leadMoiThangNay };
-      if (index === 1) return { ...stat, value: workspaceSummary.hocSinhDangHoc };
+      if (index === 1) return { ...stat, value: workspaceSummary.leadDangXuLy };
+      if (index === 2) return { ...stat, value: workspaceSummary.lichHenTuVanHomNay };
+      if (index === 3) {
+        return {
+          ...stat,
+          value: formatTyLeChuyenDoi(
+            workspaceSummary.tyLeChuyenDoiLead.daDangKy,
+            workspaceSummary.tyLeChuyenDoiLead.tongLead,
+          ),
+          note: `${workspaceSummary.tyLeChuyenDoiLead.daDangKy}/${workspaceSummary.tyLeChuyenDoiLead.tongLead} lead đã đăng ký`,
+        };
+      }
     }
 
     if (portalRole.slug === "hoc-vu") {
       if (index === 0) return { ...stat, value: workspaceSummary.lopDangHoc };
-      if (index === 1) return { ...stat, value: workspaceSummary.lichHocHomNay.length };
-      if (index === 2) return { ...stat, value: workspaceSummary.hocSinhDangHoc };
+      if (index === 1) return { ...stat, value: workspaceSummary.buoiHocCanDieuChinh };
+      if (index === 2) return { ...stat, value: workspaceSummary.hocSinhBaoLuu };
+      if (index === 3) return { ...stat, value: workspaceSummary.donXinPhepChoDuyet };
+    }
+
+    if (portalRole.slug === "quan-ly-don-vi") {
+      if (index === 0) return { ...stat, value: workspaceSummary.hocSinhDangHoc };
+      if (index === 1) return { ...stat, value: workspaceSummary.lopDangHoc };
+      if (index === 2) return { ...stat, value: formatTien(workspaceSummary.congNoHienTai) };
+      if (index === 3) return { ...stat, value: workspaceSummary.leadMoiThangNay };
     }
 
     if (portalRole.slug === "giao-vien" && teacherOverview) {
       if (index === 0) return { ...stat, value: teacherOverview.classes.length };
-      if (index === 1) return { ...stat, value: teacherOverview.sessions.length };
+      if (index === 1) return { ...stat, value: teacherOverview.sessionsHomNay };
+      if (index === 2) return { ...stat, value: teacherOverview.baoGiangChoNhap };
+      if (index === 3) return { ...stat, value: teacherOverview.traoDoiGanDay };
     }
 
     return stat;
@@ -691,14 +767,14 @@ export function PortalLandingPage() {
     organizationLevel: auth.currentOrganization.loaiDonVi,
     educationType: auth.currentOrganization.loaiHinhDaoTao,
   });
+  const portalNextSteps = getPortalNextSteps({
+    slug: portalRole.slug,
+    organizationLevel: auth.currentOrganization.loaiDonVi,
+  });
 
   return (
     <>
-      <PageHeader
-        title={portalRole.title}
-        subtitle={portalRole.subtitle}
-        action={<span className="text-button">{portalRole.highlight}</span>}
-      />
+      <PageHeader title={portalRole.title} subtitle={portalRole.subtitle} />
 
       <section className="summary-grid">
         {workspaceStats.map((stat) => (
@@ -734,6 +810,282 @@ export function PortalLandingPage() {
 
       {portalRole.slug === "ke-toan" && financeError ? (
         <div className="form-error">{financeError}</div>
+      ) : null}
+
+      {portalRole.slug === "ke-toan" ? (
+        <section className="dashboard-grid">
+          <SectionCard title="Cần chú ý">
+            <div>
+              {auth.currentOrganization.loaiDonVi === "he_thong" ? (
+                <div className="attention-row">
+                  <div>
+                    <div className="attention-row__label">Khoản thu sắp đến hạn</div>
+                    <div className="attention-row__detail">Hạn thanh toán trong 7 ngày tới</div>
+                  </div>
+                  <div className="attention-row__value">
+                    {workspaceSummary?.khoanThuTheoHan.sapDenHan.soLuong ?? 0} khoản ·{" "}
+                    {formatTien(workspaceSummary?.khoanThuTheoHan.sapDenHan.tongTien ?? "0")}
+                  </div>
+                </div>
+              ) : (
+                <GuardedLink
+                  to="/finance?filter=sap_den_han"
+                  className="attention-row attention-row--link"
+                >
+                  <div>
+                    <div className="attention-row__label">Khoản thu sắp đến hạn</div>
+                    <div className="attention-row__detail">Hạn thanh toán trong 7 ngày tới</div>
+                  </div>
+                  <div className="attention-row__value">
+                    <span>
+                      {workspaceSummary?.khoanThuTheoHan.sapDenHan.soLuong ?? 0} khoản ·{" "}
+                      {formatTien(workspaceSummary?.khoanThuTheoHan.sapDenHan.tongTien ?? "0")}
+                    </span>
+                    <small className="attention-row__action">Xem chi tiết →</small>
+                  </div>
+                </GuardedLink>
+              )}
+
+              {auth.currentOrganization.loaiDonVi === "he_thong" ? (
+                <div className="attention-row">
+                  <div>
+                    <div className="attention-row__label">Khoản thu quá hạn</div>
+                    <div className="attention-row__detail">Đã qua hạn thanh toán, chưa thu đủ</div>
+                  </div>
+                  <div className="attention-row__value">
+                    {workspaceSummary?.khoanThuTheoHan.quaHan.soLuong ?? 0} khoản ·{" "}
+                    {formatTien(workspaceSummary?.khoanThuTheoHan.quaHan.tongTien ?? "0")}
+                  </div>
+                </div>
+              ) : (
+                <GuardedLink to="/finance?filter=qua_han" className="attention-row attention-row--link">
+                  <div>
+                    <div className="attention-row__label">Khoản thu quá hạn</div>
+                    <div className="attention-row__detail">Đã qua hạn thanh toán, chưa thu đủ</div>
+                  </div>
+                  <div className="attention-row__value">
+                    <span>
+                      {workspaceSummary?.khoanThuTheoHan.quaHan.soLuong ?? 0} khoản ·{" "}
+                      {formatTien(workspaceSummary?.khoanThuTheoHan.quaHan.tongTien ?? "0")}
+                    </span>
+                    <small className="attention-row__action">Xem chi tiết →</small>
+                  </div>
+                </GuardedLink>
+              )}
+
+              <GuardedLink to="/finance/dieu-chinh" className="attention-row attention-row--link">
+                <div>
+                  <div className="attention-row__label">Yêu cầu điều chỉnh chờ duyệt</div>
+                  <div className="attention-row__detail">Hoàn phí / chuyển phí / bảo lưu đang chờ xử lý</div>
+                </div>
+                <div className="attention-row__value">
+                  <span>{workspaceSummary?.dieuChinhChoDuyet ?? 0} yêu cầu</span>
+                  <small className="attention-row__action">Xem chi tiết →</small>
+                </div>
+              </GuardedLink>
+
+              <GuardedLink to="/students" className="attention-row attention-row--link">
+                <div>
+                  <div className="attention-row__label">Học sinh mới chưa lập khoản phải thu</div>
+                  <div className="attention-row__detail">Đã xác nhận đăng ký nhưng chưa từng có khoản phải thu/đặt cọc nào</div>
+                </div>
+                <div className="attention-row__value">
+                  <span>{workspaceSummary?.hocSinhChuaCoKhoanPhaiThu ?? 0} học sinh</span>
+                  <small className="attention-row__action">Xem chi tiết →</small>
+                </div>
+              </GuardedLink>
+            </div>
+          </SectionCard>
+
+          {auth.currentOrganization.loaiDonVi === "he_thong" ? (
+            <SectionCard
+              title="Kỳ thu đang mở theo đơn vị"
+              subtitle="Kế toán tổng chỉ xem gộp — vào từng đơn vị để thao tác chi tiết"
+            >
+              <div className="user-table-wrap">
+                <table className="user-table">
+                  <thead>
+                    <tr>
+                      <th>Đơn vị</th>
+                      <th>Kỳ đang mở</th>
+                      <th>Phải thu</th>
+                      <th>Đã thu</th>
+                      <th>Còn lại</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {groupBaoCaoKyThuTheoDonVi(financeOverview?.report.theoKyThu ?? []).map((row) => (
+                      <tr key={row.donVi.id}>
+                        <td>{row.donVi.tenDonVi}</td>
+                        <td>{row.soLuong}</td>
+                        <td>{formatTien(row.phaiThu.toFixed(2))}</td>
+                        <td>{formatTien(row.daThu.toFixed(2))}</td>
+                        <td>{formatTien(row.conLai.toFixed(2))}</td>
+                      </tr>
+                    ))}
+                    {groupBaoCaoKyThuTheoDonVi(financeOverview?.report.theoKyThu ?? []).length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="empty-cell">
+                          Không có kỳ thu nào đang mở.
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
+            </SectionCard>
+          ) : (
+            <SectionCard
+              title="Kỳ thu đang mở"
+              subtitle={`${financeOverview?.periods.filter((period) => period.trangThai === "da_mo").length ?? 0} kỳ đang mở`}
+            >
+              <div className="portal-action-grid">
+                {(financeOverview?.periods ?? [])
+                  .filter((period) => period.trangThai === "da_mo")
+                  .map((period) => (
+                    <EntityLink
+                      key={period.id}
+                      to={`/finance/ky-thu/${period.id}`}
+                      donVi={period.donVi}
+                      className="section-link-card"
+                    >
+                      <strong>{period.tenKyThu}</strong>
+                      <span>
+                        {period.hanThanhToan ? `Hạn thanh toán: ${period.hanThanhToan}` : period.maKyThu}
+                      </span>
+                      <small>Đi tới →</small>
+                    </EntityLink>
+                  ))}
+                {(financeOverview?.periods ?? []).filter((period) => period.trangThai === "da_mo")
+                  .length === 0 ? (
+                  <div className="empty-cell">Không có kỳ thu nào đang mở.</div>
+                ) : null}
+              </div>
+            </SectionCard>
+          )}
+        </section>
+      ) : null}
+
+      {portalRole.slug === "quan-ly-don-vi" ? (
+        <>
+          <SectionCard
+            title="Cần chú ý"
+            subtitle="Việc đang chờ xử lý trên cả 3 mảng nghiệp vụ trong đơn vị"
+          >
+            <div>
+              <GuardedLink to="/finance?filter=qua_han" className="attention-row attention-row--link">
+                <div>
+                  <div className="attention-row__label">Khoản thu quá hạn</div>
+                  <div className="attention-row__detail">Đã qua hạn thanh toán, chưa thu đủ</div>
+                </div>
+                <div className="attention-row__value">
+                  <span>
+                    {workspaceSummary?.khoanThuTheoHan.quaHan.soLuong ?? 0} khoản ·{" "}
+                    {formatTien(workspaceSummary?.khoanThuTheoHan.quaHan.tongTien ?? "0")}
+                  </span>
+                  <small className="attention-row__action">Xem chi tiết →</small>
+                </div>
+              </GuardedLink>
+
+              <GuardedLink to="/attendance/xin-phep" className="attention-row attention-row--link">
+                <div>
+                  <div className="attention-row__label">Đơn xin phép chờ duyệt</div>
+                  <div className="attention-row__detail">Đơn xin nghỉ của học sinh chưa xử lý</div>
+                </div>
+                <div className="attention-row__value">
+                  <span>{workspaceSummary?.donXinPhepChoDuyet ?? 0} đơn</span>
+                  <small className="attention-row__action">Xem chi tiết →</small>
+                </div>
+              </GuardedLink>
+
+              <GuardedLink to="/finance/dieu-chinh" className="attention-row attention-row--link">
+                <div>
+                  <div className="attention-row__label">Yêu cầu điều chỉnh chờ duyệt</div>
+                  <div className="attention-row__detail">Hoàn phí / chuyển phí / bảo lưu đang chờ xử lý</div>
+                </div>
+                <div className="attention-row__value">
+                  <span>{workspaceSummary?.dieuChinhChoDuyet ?? 0} yêu cầu</span>
+                  <small className="attention-row__action">Xem chi tiết →</small>
+                </div>
+              </GuardedLink>
+
+              <GuardedLink to="/finance/chi-phi" className="attention-row attention-row--link">
+                <div>
+                  <div className="attention-row__label">Đề xuất chi chờ duyệt</div>
+                  <div className="attention-row__detail">Chi phí dịch vụ, mua sắm... đang chờ duyệt trước khi ghi nhận</div>
+                </div>
+                <div className="attention-row__value">
+                  <span>{workspaceSummary?.chiPhiChoDuyet ?? 0} đề xuất</span>
+                  <small className="attention-row__action">Xem chi tiết →</small>
+                </div>
+              </GuardedLink>
+
+              <GuardedLink to="/schedule" className="attention-row attention-row--link">
+                <div>
+                  <div className="attention-row__label">Buổi học cần điều chỉnh</div>
+                  <div className="attention-row__detail">Buổi nghỉ/hủy trong 7 ngày tới chưa xếp bù</div>
+                </div>
+                <div className="attention-row__value">
+                  <span>{workspaceSummary?.buoiHocCanDieuChinh ?? 0} buổi</span>
+                  <small className="attention-row__action">Xem chi tiết →</small>
+                </div>
+              </GuardedLink>
+
+              <GuardedLink to="/students" className="attention-row attention-row--link">
+                <div>
+                  <div className="attention-row__label">Học sinh đang bảo lưu</div>
+                  <div className="attention-row__detail">Cần theo dõi để hỗ trợ quay lại học hoặc kết thúc bảo lưu</div>
+                </div>
+                <div className="attention-row__value">
+                  <span>{workspaceSummary?.hocSinhBaoLuu ?? 0} học sinh</span>
+                  <small className="attention-row__action">Xem chi tiết →</small>
+                </div>
+              </GuardedLink>
+
+              <GuardedLink to="/students" className="attention-row attention-row--link">
+                <div>
+                  <div className="attention-row__label">Học sinh mới chưa lập khoản phải thu</div>
+                  <div className="attention-row__detail">Đã xác nhận đăng ký nhưng chưa từng có khoản phải thu/đặt cọc nào</div>
+                </div>
+                <div className="attention-row__value">
+                  <span>{workspaceSummary?.hocSinhChuaCoKhoanPhaiThu ?? 0} học sinh</span>
+                  <small className="attention-row__action">Xem chi tiết →</small>
+                </div>
+              </GuardedLink>
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Tuyển sinh trong tháng"
+            subtitle="Phễu tuyển sinh của đơn vị, tính từ đầu tháng tới hôm nay"
+          >
+            <div className="summary-grid summary-grid--compact">
+              <StatCard
+                title="Lead đang chăm sóc"
+                value={workspaceSummary?.leadDangXuLy ?? 0}
+                note="Chưa đăng ký, chưa dừng chăm sóc"
+                icon="📋"
+                tone="warning"
+              />
+              <StatCard
+                title="Lịch hẹn tư vấn hôm nay"
+                value={workspaceSummary?.lichHenTuVanHomNay ?? 0}
+                icon="📅"
+                tone="info"
+              />
+              <StatCard
+                title="Tỷ lệ chuyển đổi"
+                value={formatTyLeChuyenDoi(
+                  workspaceSummary?.tyLeChuyenDoiLead.daDangKy ?? 0,
+                  workspaceSummary?.tyLeChuyenDoiLead.tongLead ?? 0,
+                )}
+                note={`${workspaceSummary?.tyLeChuyenDoiLead.daDangKy ?? 0}/${workspaceSummary?.tyLeChuyenDoiLead.tongLead ?? 0} lead đã đăng ký`}
+                icon="📈"
+                tone="success"
+              />
+            </div>
+          </SectionCard>
+        </>
       ) : null}
 
       {portalRole.slug === "giao-vien" && teacherOverview ? (
@@ -805,7 +1157,7 @@ export function PortalLandingPage() {
           subtitle="Những bước nên làm tiếp trong bản khung này."
         >
           <div className="portal-step-list">
-            {portalRole.nextSteps.map((step, index) => (
+            {portalNextSteps.map((step, index) => (
               <article className="portal-step" key={step.title}>
                 <span className="portal-step__index">0{index + 1}</span>
                 <div>

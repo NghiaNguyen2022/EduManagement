@@ -1,6 +1,6 @@
 import { hash } from "bcryptjs";
 
-import { findChuongTrinhByMa } from "../db/chuongTrinh.repository.js";
+import { listChuongTrinhByDonVi } from "../db/chuongTrinh.repository.js";
 import { closeDbConnection } from "../db/connection.js";
 import { findDonViByCode } from "../db/donVi.repository.js";
 import { findRoleByCode } from "../db/role.repository.js";
@@ -78,7 +78,8 @@ async function main() {
     );
   }
 
-  const existed = await findChuongTrinhByMa(ttnn.id, "IELTS-CB");
+  const existingChuongTrinhTtnn = await listChuongTrinhByDonVi(ttnn.id);
+  const existed = existingChuongTrinhTtnn.find((item) => item.tenChuongTrinh === "IELTS Cơ bản");
 
   if (existed) {
     console.log(
@@ -91,7 +92,6 @@ async function main() {
 
   const ct1 = await createChuongTrinhMoi({
     donViId: ttnn.id,
-    maChuongTrinh: "IELTS-CB",
     tenChuongTrinh: "IELTS Cơ bản",
     capDo: "5.5",
     tongSoBuoi: 30,
@@ -102,7 +102,6 @@ async function main() {
 
   const ct2 = await createChuongTrinhMoi({
     donViId: ttnn.id,
-    maChuongTrinh: "GT-CB",
     tenChuongTrinh: "Giao tiếp cơ bản",
     capDo: "A2",
     tongSoBuoi: 24,
@@ -134,7 +133,6 @@ async function main() {
   const lop1 = await createLopHocMoi({
     donViId: ttnn.id,
     chuongTrinhDaoTaoId: ct1.id,
-    maLop: "IELTS-S246",
     tenLop: "IELTS Sáng Thứ 2-4-6",
     capDo: "5.5",
     ngayBatDau: "2026-08-03",
@@ -147,7 +145,6 @@ async function main() {
   const lop2 = await createLopHocMoi({
     donViId: ttnn.id,
     chuongTrinhDaoTaoId: ct2.id,
-    maLop: "GT-T357",
     tenLop: "Giao tiếp Tối Thứ 3-5-7",
     capDo: "A2",
     ngayBatDau: "2026-08-04",
@@ -338,7 +335,6 @@ async function main() {
 
   const ctMam = await createChuongTrinhMoi({
     donViId: mamNon.id,
-    maChuongTrinh: "MAM-LA",
     tenChuongTrinh: "Chương trình lớp Lá",
     capDo: "5-6 tuổi",
     moTa: "Chương trình phát triển toàn diện cho trẻ 5-6 tuổi.",
@@ -358,7 +354,6 @@ async function main() {
   const lopMam = await createLopHocMoi({
     donViId: mamNon.id,
     chuongTrinhDaoTaoId: ctMam.id,
-    maLop: "LA-1",
     tenLop: "Lá 1",
     capDo: "5-6 tuổi",
     ngayBatDau: "2026-08-01",

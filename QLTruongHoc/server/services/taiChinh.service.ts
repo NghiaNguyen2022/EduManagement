@@ -1,23 +1,27 @@
 import { createAuditLog } from "../db/audit.repository.js";
+import { sumChiPhi } from "./chiPhi.service.js";
 import {
   createDanhMucKhoanThu,
   createDieuChinh,
   createKhoanPhaiThu,
   createKyThu,
   createPhieuThu,
+  countDanhMucKhoanThuTheoMaPrefix,
+  countKyThuTheoMaPrefix,
   countPhieuThuTheoPrefix,
   findDanhMucKhoanThuById,
-  findDanhMucKhoanThuByMa,
   findDieuChinhById,
   findKhoanPhaiThuByKyThuHocSinh,
   findKhoanPhaiThuById,
   findKyThuById,
-  findKyThuByMa,
   findPhieuThuById,
+  getCauHinhTaiChinhDonVi,
   listCongNoByDonVi,
   listDanhMucKhoanThuAllDonVi,
   listDanhMucKhoanThuByDonVi,
+  listDieuChinhAllDonVi,
   listDieuChinhByKhoanPhaiThu,
+  listDieuChinhTheoDonVi,
   listHocSinhDangHocTrongLop,
   listKhoanPhaiThuByKyThu,
   listKyThuAllDonVi,
@@ -40,6 +44,7 @@ import {
   updateKhoanPhaiThuDaThu,
   updateKhoanPhaiThuGiamTru,
   updateKyThu,
+  upsertCauHinhTaiChinhDonVi,
 } from "../db/taiChinh.repository.js";
 import { findLopHocById } from "../db/lopHoc.repository.js";
 import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
@@ -49,6 +54,18 @@ const LOAI_KHOAN_THU_HOP_LE: LoaiKhoanThu[] = ["hoc_phi", "tien_an", "dich_vu", 
 
 type LoaiKy = "thang" | "khoa_hoc" | "hoc_ky" | "dot";
 const LOAI_KY_HOP_LE: LoaiKy[] = ["thang", "khoa_hoc", "hoc_ky", "dot"];
+
+async function sinhMaKhoanThu(donViId: number) {
+  const total = await countDanhMucKhoanThuTheoMaPrefix(donViId, "KT");
+  return `KT${String(total + 1).padStart(3, "0")}`;
+}
+
+async function sinhMaKyThu(donViId: number) {
+  const nam = new Date().getFullYear();
+  const prefix = `KY${nam}`;
+  const total = await countKyThuTheoMaPrefix(donViId, prefix);
+  return `${prefix}${String(total + 1).padStart(4, "0")}`;
+}
 
 function chuanHoaSoTien(value: number | null): string | null {
   if (value === null || value === undefined) return null;
@@ -74,7 +91,6 @@ export async function listDanhMucKhoanThu(donViId: number, loaiDonVi?: string) {
 
 export async function createDanhMucKhoanThuMoi(input: {
   donViId: number;
-  maKhoanThu: string;
   tenKhoanThu: string;
   loaiKhoanThu: string;
   soTienMacDinh: number | null;
@@ -84,12 +100,7 @@ export async function createDanhMucKhoanThuMoi(input: {
 }) {
   await assertDonViChoPhepNghiepVu(input.donViId);
 
-  const maKhoanThu = input.maKhoanThu.trim().toUpperCase();
   const tenKhoanThu = input.tenKhoanThu.trim();
-
-  if (!maKhoanThu) {
-    throw new Error("Vui lòng nhập mã khoản thu.");
-  }
 
   if (!tenKhoanThu) {
     throw new Error("Vui lòng nhập tên khoản thu.");
@@ -99,11 +110,9 @@ export async function createDanhMucKhoanThuMoi(input: {
     throw new Error("Loại khoản thu không hợp lệ.");
   }
 
-  const existed = await findDanhMucKhoanThuByMa(input.donViId, maKhoanThu);
-
-  if (existed) {
-    throw new Error("Mã khoản thu đã tồn tại.");
-  }
+  // Mã do hệ thống tự sinh (KT<số thứ tự>) — người dùng không nhập tay, tránh
+  // trùng/đặt mã tuỳ tiện. Xem docs/analysis/MA_TU_SINH.md.
+  const maKhoanThu = await sinhMaKhoanThu(input.donViId);
 
   const created = await createDanhMucKhoanThu({
     donViId: input.donViId,
@@ -272,7 +281,6 @@ function validateKhoangNgay(tuNgay: string, denNgay: string) {
 
 export async function createKyThuMoi(input: {
   donViId: number;
-  maKyThu: string;
   tenKyThu: string;
   loaiKy: string;
   tuNgay: string;
@@ -283,12 +291,7 @@ export async function createKyThuMoi(input: {
 }) {
   await assertDonViChoPhepNghiepVu(input.donViId);
 
-  const maKyThu = input.maKyThu.trim().toUpperCase();
   const tenKyThu = input.tenKyThu.trim();
-
-  if (!maKyThu) {
-    throw new Error("Vui lòng nhập mã kỳ thu.");
-  }
 
   if (!tenKyThu) {
     throw new Error("Vui lòng nhập tên kỳ thu.");
@@ -300,11 +303,9 @@ export async function createKyThuMoi(input: {
 
   validateKhoangNgay(input.tuNgay, input.denNgay);
 
-  const existed = await findKyThuByMa(input.donViId, maKyThu);
-
-  if (existed) {
-    throw new Error("Mã kỳ thu đã tồn tại.");
-  }
+  // Mã do hệ thống tự sinh (KY<năm><số thứ tự>) — người dùng không nhập tay.
+  // Xem docs/analysis/MA_TU_SINH.md.
+  const maKyThu = await sinhMaKyThu(input.donViId);
 
   const created = await createKyThu({
     donViId: input.donViId,
@@ -815,6 +816,7 @@ export async function listCongNoToanDonVi(donViId: number) {
       id: row.kyThu.id,
       maKyThu: row.kyThu.maKyThu,
       tenKyThu: row.kyThu.tenKyThu,
+      hanThanhToan: row.kyThu.hanThanhToan,
     },
   }));
 }
@@ -832,7 +834,7 @@ export async function getBaoCaoTaiChinh(input: {
   validateKhoangNgay(input.tuNgay, input.denNgay);
 
   const isSystem = input.loaiDonVi === "he_thong";
-  const [tongThu, tongHoanPhi, tongCongNo, theoKyThuRaw] = await Promise.all([
+  const [tongThu, tongHoanPhi, tongCongNo, theoKyThuRaw, tongChiPhi] = await Promise.all([
     isSystem
       ? sumPhieuThuAllDonViTrongKhoang(input.tuNgay, input.denNgay)
       : sumPhieuThuTrongKhoang(input.donViId, input.tuNgay, input.denNgay),
@@ -843,6 +845,12 @@ export async function getBaoCaoTaiChinh(input: {
     input.loaiDonVi === "he_thong"
       ? listKyThuBaoCaoAllDonVi()
       : listKyThuBaoCaoByDonVi(input.donViId),
+    sumChiPhi({
+      donViId: input.donViId,
+      loaiDonVi: input.loaiDonVi,
+      tuNgay: input.tuNgay,
+      denNgay: input.denNgay,
+    }),
   ]);
 
   const theoKyThu = theoKyThuRaw.map((row) => {
@@ -863,12 +871,16 @@ export async function getBaoCaoTaiChinh(input: {
     };
   });
 
+  const thuRong = Number(tongThu.tongThu) - Number(tongHoanPhi.tongHoanPhi);
+
   return {
     tongThu: tongThu.tongThu,
     tongHoanPhi: tongHoanPhi.tongHoanPhi,
-    tongThuRong: (Number(tongThu.tongThu) - Number(tongHoanPhi.tongHoanPhi)).toFixed(2),
+    tongThuRong: thuRong.toFixed(2),
     soPhieuThu: tongThu.soPhieuThu,
     tongCongNo: tongCongNo.tongCongNo,
+    tongChiPhi: tongChiPhi.tongChi,
+    laiLoRong: (thuRong - Number(tongChiPhi.tongChi)).toFixed(2),
     theoKyThu,
   };
 }
@@ -1027,6 +1039,22 @@ export async function listDieuChinhTheoKhoanPhaiThu(donViId: number, khoanPhaiTh
 }
 
 /**
+ * Danh sách yêu cầu điều chỉnh cho trang "Yêu cầu điều chỉnh" — trước đây
+ * chỉ xem được từng yêu cầu bên trong 1 khoản phải thu cụ thể, không có nơi
+ * theo dõi tổng thể. Đơn vị hệ thống xem gộp (giống các màn "xem gộp" khác),
+ * kèm đơn vị sở hữu để biết đơn vị nào đang tồn đọng.
+ */
+export async function listYeuCauDieuChinh(input: {
+  donViId: number;
+  loaiDonVi?: string;
+  trangThai?: "cho_duyet" | "da_duyet" | "tu_choi";
+}) {
+  return input.loaiDonVi === "he_thong"
+    ? listDieuChinhAllDonVi(input.trangThai)
+    : listDieuChinhTheoDonVi(input.donViId, input.trangThai);
+}
+
+/**
  * Duyệt/từ chối một yêu cầu điều chỉnh. Người duyệt bắt buộc khác người lập
  * (tách vai trò lập/duyệt thật sự, không chỉ dựa vào mã quyền — một tài
  * khoản có thể có cả hai quyền cùng lúc do được gán tuỳ ý).
@@ -1150,6 +1178,44 @@ export async function duyetDieuChinh(input: {
     objectType: "DieuChinhKhoanPhaiThu",
     objectId: String(input.dieuChinhId),
     content: `${input.quyetDinh === "duyet" ? "Duyệt" : "Từ chối"} yêu cầu ${found.loaiDieuChinh} cho khoản phải thu #${found.khoanPhaiThuId}.`,
+    ipAddress: input.ipAddress,
+  });
+
+  return updated;
+}
+
+/**
+ * Cấu hình duyệt chi theo đơn vị — chỉ quản lý đơn vị/quản trị hệ thống
+ * chỉnh được (kiểm tra quyền ở router, giống các cấu hình khác). Kế toán chỉ
+ * xem, không sửa được — tránh tự cấp quyền tự chủ cho chính mình.
+ */
+export async function getCauHinhTaiChinh(donViId: number) {
+  return getCauHinhTaiChinhDonVi(donViId);
+}
+
+export async function updateCauHinhTaiChinh(input: {
+  donViId: number;
+  duyetDanhMucChiPhi: boolean;
+  duyetChiDinhKy: boolean;
+  duyetChiDotXuat: boolean;
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  const updated = await upsertCauHinhTaiChinhDonVi({
+    donViId: input.donViId,
+    duyetDanhMucChiPhi: input.duyetDanhMucChiPhi,
+    duyetChiDinhKy: input.duyetChiDinhKy,
+    duyetChiDotXuat: input.duyetChiDotXuat,
+    capNhatBoiId: input.actorUserId,
+  });
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "cau_hinh_tai_chinh.update",
+    objectType: "CauHinhTaiChinhDonVi",
+    objectId: String(input.donViId),
+    content: `Cập nhật cấu hình duyệt chi: danh mục=${input.duyetDanhMucChiPhi ? "cần duyệt" : "không cần"}, định kỳ=${input.duyetChiDinhKy ? "cần duyệt" : "không cần"}, đột xuất=${input.duyetChiDotXuat ? "cần duyệt" : "không cần"}.`,
     ipAddress: input.ipAddress,
   });
 

@@ -2,9 +2,21 @@ import { Router } from "express";
 
 import { requireAuth } from "../middleware/auth.middleware.js";
 import {
+  requireAnyPermission,
   requireCurrentOrganization,
   requirePermission,
 } from "../middleware/permission.middleware.js";
+import {
+  createDanhMucChiPhiMoi,
+  duyetChiPhi,
+  duyetDanhMucChiPhi,
+  getCountDanhMucChiPhiChoDuyet,
+  getDanhMucChiPhiChoDuyet,
+  ghiNhanChiPhi,
+  listChiPhi,
+  listDanhMucChiPhi,
+  setDanhMucChiPhiStatus,
+} from "../services/chiPhi.service.js";
 import {
   capNhatGiamTru,
   capNhatKhoanApDungKyThu,
@@ -12,6 +24,7 @@ import {
   createKyThuMoi,
   dongKyThu,
   duyetDieuChinh,
+  getCauHinhTaiChinh,
   getKyThuDetail,
   getBaoCaoTaiChinh,
   ghiNhanThuTien,
@@ -21,11 +34,13 @@ import {
   listKhoanPhaiThuTheoKyThu,
   listKyThu,
   listPhieuThuTheoKhoanPhaiThu,
+  listYeuCauDieuChinh,
   moKyThu,
   getPhieuThuDetail,
   setDanhMucKhoanThuStatus,
   sinhKhoanPhaiThuChoLop,
   taoYeuCauDieuChinh,
+  updateCauHinhTaiChinh,
   updateDanhMucKhoanThuThongTin,
   updateKyThuThongTin,
 } from "../services/taiChinh.service.js";
@@ -62,7 +77,6 @@ taiChinhRouter.post("/khoan-thu", requirePermission("tai_chinh.quan_ly"), async 
   try {
     const created = await createDanhMucKhoanThuMoi({
       donViId: req.auth!.currentOrganization!.id,
-      maKhoanThu: String(req.body?.maKhoanThu ?? ""),
       tenKhoanThu: String(req.body?.tenKhoanThu ?? ""),
       loaiKhoanThu: String(req.body?.loaiKhoanThu ?? ""),
       soTienMacDinh:
@@ -157,7 +171,6 @@ taiChinhRouter.post("/ky-thu", requirePermission("tai_chinh.quan_ly"), async (re
   try {
     const created = await createKyThuMoi({
       donViId: req.auth!.currentOrganization!.id,
-      maKyThu: String(req.body?.maKyThu ?? ""),
       tenKyThu: String(req.body?.tenKyThu ?? ""),
       loaiKy: String(req.body?.loaiKy ?? ""),
       tuNgay: String(req.body?.tuNgay ?? ""),
@@ -355,6 +368,24 @@ taiChinhRouter.get(
   },
 );
 
+taiChinhRouter.get("/dieu-chinh", requirePermission("tai_chinh.xem"), async (req, res) => {
+  try {
+    const trangThai = ["cho_duyet", "da_duyet", "tu_choi"].includes(String(req.query.trangThai))
+      ? (req.query.trangThai as "cho_duyet" | "da_duyet" | "tu_choi")
+      : undefined;
+
+    const rows = await listYeuCauDieuChinh({
+      donViId: req.auth!.currentOrganization!.id,
+      loaiDonVi: req.auth!.currentOrganization!.loaiDonVi,
+      trangThai,
+    });
+
+    res.json({ ok: true, data: rows });
+  } catch (error) {
+    handleError(res, error, "Không thể tải danh sách yêu cầu điều chỉnh.");
+  }
+});
+
 taiChinhRouter.post(
   "/khoan-phai-thu/:id/dieu-chinh",
   requirePermission("tai_chinh.quan_ly"),
@@ -463,3 +494,201 @@ taiChinhRouter.get("/phieu-thu/:id", requirePermission("tai_chinh.xem"), async (
     handleError(res, error, "Không thể tải chi tiết phiếu thu.");
   }
 });
+
+// ---------------------------------------------------------------
+// Cấu hình duyệt chi theo đơn vị
+// ---------------------------------------------------------------
+
+taiChinhRouter.get(
+  "/cau-hinh-don-vi",
+  requirePermission("tai_chinh.xem"),
+  async (req, res) => {
+    try {
+      const cauHinh = await getCauHinhTaiChinh(req.auth!.currentOrganization!.id);
+
+      res.json({ ok: true, data: cauHinh });
+    } catch (error) {
+      handleError(res, error, "Không thể tải cấu hình duyệt chi.");
+    }
+  },
+);
+
+taiChinhRouter.patch(
+  "/cau-hinh-don-vi",
+  requireAnyPermission(["he_thong.quan_tri", "don_vi.quan_ly"]),
+  async (req, res) => {
+    try {
+      const updated = await updateCauHinhTaiChinh({
+        donViId: req.auth!.currentOrganization!.id,
+        duyetDanhMucChiPhi: Boolean(req.body?.duyetDanhMucChiPhi),
+        duyetChiDinhKy: Boolean(req.body?.duyetChiDinhKy),
+        duyetChiDotXuat: Boolean(req.body?.duyetChiDotXuat),
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.json({ ok: true, data: updated });
+    } catch (error) {
+      handleError(res, error, "Không thể cập nhật cấu hình duyệt chi.");
+    }
+  },
+);
+
+// ---------------------------------------------------------------
+// Chi phí
+// ---------------------------------------------------------------
+
+taiChinhRouter.get(
+  "/danh-muc-chi-phi",
+  requirePermission("tai_chinh.xem"),
+  async (req, res) => {
+    try {
+      const rows = await listDanhMucChiPhi(req.auth!.currentOrganization!.id);
+
+      res.json({ ok: true, data: rows });
+    } catch (error) {
+      handleError(res, error, "Không thể tải danh mục chi phí.");
+    }
+  },
+);
+
+taiChinhRouter.post(
+  "/danh-muc-chi-phi",
+  requirePermission("tai_chinh.quan_ly"),
+  async (req, res) => {
+    try {
+      const created = await createDanhMucChiPhiMoi({
+        donViId: req.auth!.currentOrganization!.id,
+        tenChiPhi: String(req.body?.tenChiPhi ?? ""),
+        loaiChiPhi: String(req.body?.loaiChiPhi ?? ""),
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.status(201).json({ ok: true, data: created });
+    } catch (error) {
+      handleError(res, error, "Không thể tạo danh mục chi phí.");
+    }
+  },
+);
+
+taiChinhRouter.post(
+  "/danh-muc-chi-phi/:id/trang-thai",
+  requirePermission("tai_chinh.quan_ly"),
+  async (req, res) => {
+    try {
+      const trangThai = req.body?.trangThai === "ngung_ap_dung" ? "ngung_ap_dung" : "hoat_dong";
+
+      const updated = await setDanhMucChiPhiStatus({
+        donViId: req.auth!.currentOrganization!.id,
+        id: Number(req.params.id),
+        trangThai,
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.json({ ok: true, data: updated });
+    } catch (error) {
+      handleError(res, error, "Không thể đổi trạng thái danh mục chi phí.");
+    }
+  },
+);
+
+taiChinhRouter.get(
+  "/danh-muc-chi-phi/cho-duyet",
+  requirePermission("tai_chinh.duyet"),
+  async (req, res) => {
+    try {
+      const rows = await getDanhMucChiPhiChoDuyet(req.auth!.currentOrganization!.id);
+
+      res.json({ ok: true, data: rows });
+    } catch (error) {
+      handleError(res, error, "Không thể tải danh mục chi phí chờ duyệt.");
+    }
+  },
+);
+
+taiChinhRouter.post(
+  "/danh-muc-chi-phi/:id/duyet",
+  requirePermission("tai_chinh.duyet"),
+  async (req, res) => {
+    try {
+      const quyetDinh = req.body?.quyetDinh === "tu_choi" ? "tu_choi" : "duyet";
+
+      const updated = await duyetDanhMucChiPhi({
+        donViId: req.auth!.currentOrganization!.id,
+        id: Number(req.params.id),
+        quyetDinh,
+        ghiChuDuyet: req.body?.ghiChuDuyet ? String(req.body.ghiChuDuyet) : null,
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.json({ ok: true, data: updated });
+    } catch (error) {
+      handleError(res, error, "Không thể duyệt danh mục chi phí.");
+    }
+  },
+);
+
+taiChinhRouter.get("/chi-phi", requirePermission("tai_chinh.xem"), async (req, res) => {
+  try {
+    const trangThai = ["cho_duyet", "da_duyet", "tu_choi"].includes(String(req.query.trangThai))
+      ? (req.query.trangThai as "cho_duyet" | "da_duyet" | "tu_choi")
+      : undefined;
+
+    const rows = await listChiPhi({
+      donViId: req.auth!.currentOrganization!.id,
+      loaiDonVi: req.auth!.currentOrganization!.loaiDonVi,
+      tuNgay: req.query.tuNgay ? String(req.query.tuNgay) : undefined,
+      denNgay: req.query.denNgay ? String(req.query.denNgay) : undefined,
+      trangThai,
+    });
+
+    res.json({ ok: true, data: rows });
+  } catch (error) {
+    handleError(res, error, "Không thể tải danh sách chi phí.");
+  }
+});
+
+taiChinhRouter.post("/chi-phi", requirePermission("tai_chinh.quan_ly"), async (req, res) => {
+  try {
+    const created = await ghiNhanChiPhi({
+      donViId: req.auth!.currentOrganization!.id,
+      danhMucChiPhiId: Number(req.body?.danhMucChiPhiId),
+      soTien: Number(req.body?.soTien),
+      ngayChi: String(req.body?.ngayChi ?? ""),
+      moTa: req.body?.moTa ? String(req.body.moTa) : null,
+      loaiDeXuat: req.body?.loaiDeXuat ? String(req.body.loaiDeXuat) : null,
+      actorUserId: req.auth!.user.id,
+      ipAddress: req.ip,
+    });
+
+    res.status(201).json({ ok: true, data: created });
+  } catch (error) {
+    handleError(res, error, "Không thể tạo đề xuất chi.");
+  }
+});
+
+taiChinhRouter.post(
+  "/chi-phi/:id/duyet",
+  requirePermission("tai_chinh.duyet"),
+  async (req, res) => {
+    try {
+      const quyetDinh = req.body?.quyetDinh === "tu_choi" ? "tu_choi" : "duyet";
+
+      const updated = await duyetChiPhi({
+        donViId: req.auth!.currentOrganization!.id,
+        chiPhiId: Number(req.params.id),
+        quyetDinh,
+        ghiChuDuyet: req.body?.ghiChuDuyet ? String(req.body.ghiChuDuyet) : null,
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.json({ ok: true, data: updated });
+    } catch (error) {
+      handleError(res, error, "Không thể duyệt đề xuất chi.");
+    }
+  },
+);

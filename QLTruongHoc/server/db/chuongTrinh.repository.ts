@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, like } from "drizzle-orm";
 
 import { chuongTrinhDaoTao, donVi } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
@@ -73,6 +73,22 @@ export async function findChuongTrinhByMa(
     .limit(1);
 
   return rows[0] ?? null;
+}
+
+export async function countChuongTrinhTheoMaPrefix(donViId: number, prefix: string) {
+  const db = getDb();
+
+  const rows = await db
+    .select({ total: count() })
+    .from(chuongTrinhDaoTao)
+    .where(
+      and(
+        eq(chuongTrinhDaoTao.donViId, donViId),
+        like(chuongTrinhDaoTao.maChuongTrinh, `${prefix}%`),
+      ),
+    );
+
+  return rows[0]?.total ?? 0;
 }
 
 export async function createChuongTrinh(input: {

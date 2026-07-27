@@ -76,6 +76,13 @@
   display: block;
 }
 
+.user-table__total-row td {
+  border-bottom: none;
+  border-top: 2px solid var(--edu-color-border-strong);
+  color: var(--edu-color-text);
+  font-weight: 750;
+}
+
 .user-table td small {
   margin-top: 3px;
   color: var(--edu-color-text-muted);
@@ -107,9 +114,27 @@
   color: var(--edu-color-warning);
 }
 
-.status-badge--da_mo {
+.status-badge--da_mo,
+.status-badge--da_duyet {
   background: var(--edu-color-success-soft);
   color: var(--edu-color-success);
+}
+
+.status-badge--qua_han,
+.status-badge--tu_choi {
+  background: var(--edu-color-danger-soft);
+  color: var(--edu-color-danger);
+}
+
+.status-badge--sap_den_han,
+.status-badge--cho_duyet {
+  background: var(--edu-color-warning-soft);
+  color: var(--edu-color-warning);
+}
+
+.status-badge--inline {
+  display: inline-block;
+  margin-left: 8px;
 }
 
 .row-actions {

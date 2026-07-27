@@ -33,7 +33,6 @@ async function request<T>(
 
 function toApiInput(input: ChuongTrinhFormInput) {
   return {
-    maChuongTrinh: input.maChuongTrinh,
     tenChuongTrinh: input.tenChuongTrinh,
     capDo: input.capDo,
     tongSoBuoi: input.tongSoBuoi,
@@ -69,13 +68,10 @@ export function createChuongTrinhApi(input: ChuongTrinhFormInput) {
   });
 }
 
-export function updateChuongTrinhApi(
-  id: number,
-  input: Omit<ChuongTrinhFormInput, "maChuongTrinh">,
-) {
+export function updateChuongTrinhApi(id: number, input: ChuongTrinhFormInput) {
   return request<ChuongTrinhItem>(`/api/chuong-trinh/${id}`, {
     method: "PATCH",
-    body: JSON.stringify(toApiInput({ ...input, maChuongTrinh: "" })),
+    body: JSON.stringify(toApiInput(input)),
   });
 }
 

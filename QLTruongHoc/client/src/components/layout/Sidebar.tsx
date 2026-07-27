@@ -11,6 +11,7 @@ import {
 } from "../../features/auth/AuthContext";
 import {
   appRoutes,
+  findRouteByPath,
   type AppRouteDefinition,
 } from "../../routes/appRoutes";
 import {
@@ -50,6 +51,14 @@ export function Sidebar({
 
   const isParent =
     auth?.currentOrganization?.vaiTro.includes("phu_huynh") ?? false;
+
+  // `NavLink` mặc định coi `to` là active khi pathname hiện tại chỉ CHỨA nó
+  // làm tiền tố (không truyền `end`), nên đứng ở "/finance/bao-cao" vẫn làm
+  // "Học phí · Công nợ" (/finance) sáng cùng lúc với "Báo cáo tài chính"
+  // (/finance/bao-cao) — 2 mục cùng "dính" active. Dùng lại đúng thuật toán
+  // khớp tiền tố dài nhất mà `AppShell`/tiêu đề tab đã dùng
+  // (`findRouteByPath`) để chỉ đúng MỘT mục khớp sâu nhất được sáng.
+  const activeRouteId = findRouteByPath(location.pathname).id;
 
   const parentRoutes: AppRouteDefinition[] = [
     {
@@ -209,7 +218,7 @@ export function Sidebar({
                             ? route.label
                             : undefined
                       }
-                      className={({ isActive }) =>
+                      className={() =>
                         [
                           "sidebar-item",
                           (route.path.includes("#")
@@ -217,7 +226,7 @@ export function Sidebar({
                                 location.hash ||
                                 (route.id === "parent-overview" ? "#tong-quan" : "")
                               }` === route.path
-                            : isActive)
+                            : route.id === activeRouteId)
                             ? "sidebar-item--active"
                             : "",
                           route.comingSoon

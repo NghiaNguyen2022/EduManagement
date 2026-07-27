@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { useAuth } from "../../features/auth/AuthContext";
 import { GuardedLink } from "./GuardedLink";
 
 export type DonViRef = {
@@ -15,6 +16,22 @@ function buildOrgTabHref(donViId: number, to: string) {
   });
 
   return `/mo-don-vi?${params.toString()}`;
+}
+
+/**
+ * `quyền` lan xuống mọi đơn vị con cho quản trị hệ thống (xem
+ * `getOrganizationsForUser`), nhưng KHÔNG lan cho các vai trò khác (VD kế
+ * toán tổng chỉ có vaiTro/quyền đúng tại đơn vị được gán) — nên
+ * `auth.organizations` (danh sách đơn vị user thực sự truy cập được) là nơi
+ * duy nhất biết chắc link chéo đơn vị có mở được hay không, tránh việc dẫn
+ * link rồi vào tới nơi mới báo "không có quyền truy cập".
+ */
+function useCoTheTruyCap(donViId: number | undefined) {
+  const { auth } = useAuth();
+
+  if (donViId === undefined) return true;
+
+  return auth?.organizations.some((item) => item.id === donViId) ?? false;
 }
 
 type EntityLinkProps = {
@@ -38,6 +55,19 @@ export function EntityLink({
   className = "text-button",
   children,
 }: EntityLinkProps) {
+  const coTheTruyCap = useCoTheTruyCap(donVi?.id);
+
+  if (donVi && !coTheTruyCap) {
+    return (
+      <span
+        className={className}
+        title={`Không có quyền truy cập đơn vị ${donVi.tenDonVi}`}
+      >
+        {children}
+      </span>
+    );
+  }
+
   if (donVi) {
     return (
       <a
@@ -67,7 +97,13 @@ type OrgLinkProps = {
 
 /** Ô "Đơn vị" trong bảng xem gộp — mở tab mới và chuyển hẳn sang đơn vị đó. */
 export function OrgLink({ donVi, to = "/dashboard" }: OrgLinkProps) {
+  const coTheTruyCap = useCoTheTruyCap(donVi?.id);
+
   if (!donVi) return <>—</>;
+
+  if (!coTheTruyCap) {
+    return <span title="Không có quyền truy cập đơn vị này">{donVi.tenDonVi}</span>;
+  }
 
   return (
     <a

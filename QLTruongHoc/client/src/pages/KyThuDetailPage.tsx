@@ -567,7 +567,7 @@ export function KyThuDetailPage() {
         subtitle={dangNhap ? undefined : "Kỳ thu đã mở/đóng, không thể sửa thông tin."}
       >
         <form className="user-create-form" onSubmit={handleSaveInfo}>
-          <TextField label="Mã kỳ thu" value={infoForm.maKyThu} disabled onChange={() => {}} />
+          <TextField label="Mã kỳ thu" value={detail.kyThu.maKyThu} disabled onChange={() => {}} />
 
           <TextField
             label="Tên kỳ thu"

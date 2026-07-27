@@ -8,9 +8,12 @@ import {
   createLead,
   createLeadHoatDong,
   findLeadById,
+  findLeadHoatDongById,
   listLeadAllDonVi,
   listLeadByDonVi,
   listLeadHoatDong,
+  listLichHenSapToi,
+  updateLeadHoatDongTrangThai,
   updateLeadInfo,
   updateLeadTrangThai,
 } from "../db/lead.repository.js";
@@ -314,6 +317,11 @@ export async function addLeadHoatDongMoi(input: {
     throw new Error("Vui lòng nhập nội dung hoạt động.");
   }
 
+  // "Hẹn lịch" là task thật — tạo ở chờ xử lý để hiện trong "Lịch hẹn sắp
+  // tới" và cần tư vấn viên chủ động đánh dấu đã thực hiện/huỷ sau. Các loại
+  // hoạt động khác là log việc đã xảy ra, không cần luồng task.
+  const trangThai = input.loaiHoatDong === "hen_lich" ? "cho_xu_ly" : "da_xu_ly";
+
   const activity = await createLeadHoatDong({
     leadId: input.leadId,
     loaiHoatDong: input.loaiHoatDong as LoaiHoatDong,
@@ -321,6 +329,7 @@ export async function addLeadHoatDongMoi(input: {
     ketQua: input.ketQua?.trim() || null,
     nguoiThucHienId: input.actorUserId,
     thoiGian: input.thoiGian || nowDateTime(),
+    trangThai,
   });
 
   await createAuditLog({
@@ -373,6 +382,51 @@ export async function addLeadHoatDongMoi(input: {
   }
 
   return { activity, lead: existing };
+}
+
+/** Lịch hẹn (hen_lich) còn chờ xử lý — dùng cho "Lịch hẹn sắp tới" ở LeadsPage. */
+export async function getLichHenSapToi(donViId: number) {
+  return listLichHenSapToi(donViId);
+}
+
+/** Đánh dấu một lịch hẹn đã thực hiện hoặc huỷ — chuyển task khỏi "sắp tới". */
+export async function xuLyLichHen(input: {
+  donViId: number;
+  hoatDongId: number;
+  trangThai: "da_xu_ly" | "da_huy";
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  const found = await findLeadHoatDongById(input.hoatDongId);
+
+  if (!found || found.donViId !== input.donViId) {
+    throw new Error("Không tìm thấy hoạt động chăm sóc.");
+  }
+
+  if (found.hoatDong.loaiHoatDong !== "hen_lich") {
+    throw new Error("Chỉ xử lý được với hoạt động loại hẹn lịch.");
+  }
+
+  if (found.hoatDong.trangThai !== "cho_xu_ly") {
+    throw new Error("Lịch hẹn này đã được xử lý.");
+  }
+
+  const updated = await updateLeadHoatDongTrangThai({
+    id: input.hoatDongId,
+    trangThai: input.trangThai,
+  });
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: input.trangThai === "da_xu_ly" ? "lead.hen_lich.done" : "lead.hen_lich.huy",
+    objectType: "LeadHoatDong",
+    objectId: String(input.hoatDongId),
+    content: `${input.trangThai === "da_xu_ly" ? "Đánh dấu đã thực hiện" : "Huỷ"} lịch hẹn #${input.hoatDongId}.`,
+    ipAddress: input.ipAddress,
+  });
+
+  return updated;
 }
 
 export async function markLeadKhongTiepTuc(input: {

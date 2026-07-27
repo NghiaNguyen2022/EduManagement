@@ -241,9 +241,8 @@ export function ClassDetailPage() {
     const permissions = auth?.currentOrganization?.quyen ?? [];
     return (
       permissions.includes("he_thong.quan_tri") ||
-      permissions.includes("hoc_sinh.quan_ly") ||
       permissions.includes("lop_hoc.quan_ly") ||
-      permissions.includes("tuyen_sinh.quan_ly")
+      permissions.includes("hoc_tap.ghi_nhan")
     );
   }, [auth]);
 
@@ -316,7 +315,6 @@ export function ClassDetailPage() {
 
       setInfoForm({
         chuongTrinhDaoTaoId: data.lopHoc.chuongTrinhDaoTaoId,
-        maLop: data.lopHoc.maLop,
         tenLop: data.lopHoc.tenLop,
         capDo: data.lopHoc.capDo ?? "",
         ngayBatDau: data.lopHoc.ngayBatDau ?? "",

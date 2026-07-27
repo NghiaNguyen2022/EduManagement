@@ -4,6 +4,8 @@ import type {
   LeadDetail,
   LeadFormInput,
   LeadItem,
+  LichHenSapToiItem,
+  TrangThaiHoatDong,
 } from "./leadTypes";
 
 type ApiResponse<T> = {
@@ -74,7 +76,22 @@ export function addLeadActivityApi(
 ) {
   return request(`/api/leads/${id}/hoat-dong`, {
     method: "POST",
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      ...input,
+      // `datetime-local` trả "YYYY-MM-DDTHH:mm" — đổi sang "YYYY-MM-DD HH:mm:ss" khớp cột DATETIME.
+      thoiGian: input.thoiGian ? `${input.thoiGian.replace("T", " ")}:00` : null,
+    }),
+  });
+}
+
+export function listLichHenSapToiApi() {
+  return request<LichHenSapToiItem[]>("/api/leads/lich-hen-sap-toi");
+}
+
+export function xuLyLichHenApi(hoatDongId: number, trangThai: TrangThaiHoatDong) {
+  return request(`/api/leads/hoat-dong/${hoatDongId}/trang-thai`, {
+    method: "PATCH",
+    body: JSON.stringify({ trangThai }),
   });
 }
 
