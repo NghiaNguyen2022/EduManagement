@@ -203,12 +203,15 @@ export const appRoutes: AppRouteDefinition[] = [
             path: "/notifications",
             label: "Thông báo nội bộ",
             group: "Tổng quan",
-            permissions: [
-                  "don_vi.quan_ly",
-                  "tuyen_sinh.quan_ly",
-                  "hoc_sinh.quan_ly",
-                  "lop_hoc.quan_ly",
-                  "tai_chinh.quan_ly",
+            roles: [
+                  "quan_tri_he_thong",
+                  "quan_ly_don_vi",
+                  "tuyen_sinh",
+                  "tu_van",
+                  "hoc_vu",
+                  "ke_toan",
+                  "giao_vien",
+                  "phu_huynh",
             ],
       },
       {

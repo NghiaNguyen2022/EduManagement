@@ -465,7 +465,13 @@ export function UserManagementPage() {
               value={form.roleId}
               required
               placeholder="Chọn vai trò"
-              options={roles.map(
+              options={roles
+                .filter(
+                  (role) =>
+                    role.maVaiTro !==
+                    "giao_vien",
+                )
+                .map(
                 (role) => ({
                   value: role.id,
                   label:

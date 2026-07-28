@@ -5,10 +5,12 @@ import {
   giaoVien,
   hocSinh,
   hocSinhLopHoc,
+  hocSinhLopHocDanhGia,
   lichHoc,
   lopHocGiaoVien,
   nguoiDung,
   nguoiDungVaiTroDonVi,
+  thongBao,
 } from "../../drizzle/schema.js";
 import { listChuongTrinhByDonVi } from "../db/chuongTrinh.repository.js";
 import { closeDbConnection, getDb } from "../db/connection.js";
@@ -17,6 +19,10 @@ import { updateGiaoVienNguoiDungId } from "../db/giaoVien.repository.js";
 import { listBuoiHocByLopHoc } from "../db/lichHoc.repository.js";
 import { listLopHocByDonVi } from "../db/lopHoc.repository.js";
 import { findRoleByCode } from "../db/role.repository.js";
+import {
+  findGuardianLink,
+  findPhuHuynhByPhoneGlobal,
+} from "../db/phuHuynh.repository.js";
 import {
   listDanhMucKhoanThuByDonVi,
   listKyThuByDonVi,
@@ -29,6 +35,7 @@ import {
 import { createChuongTrinhMoi } from "../services/chuongTrinh.service.js";
 import { getDiemDanhRoster } from "../services/diemDanh.service.js";
 import { createGiaoVienMoi } from "../services/giaoVien.service.js";
+import { addDanhGia } from "../services/danhGia.service.js";
 import {
   createHocSinhMoi,
   setHocSinhTrangThai,
@@ -43,7 +50,12 @@ import {
   sinhBuoiHoc,
   taoQuyTacLichHoc,
 } from "../services/lichHoc.service.js";
+import {
+  addGuardianToStudent,
+  createGuardianAccount,
+} from "../services/phuHuynh.service.js";
 import { getTeacherPortalOverview } from "../services/portal.service.js";
+import { createThongBaoMoi } from "../services/thongBao.service.js";
 import {
   capNhatKhoanApDungKyThu,
   createDanhMucKhoanThuMoi,
@@ -59,6 +71,9 @@ import {
 } from "../utils/dateTime.js";
 
 const TEMPORARY_PASSWORD = "Edu@123Qaz";
+const PARENT_PHONE = "0988002026";
+const PARENT_USERNAME = PARENT_PHONE;
+const PARENT_NAME = "Nguyễn Minh Anh";
 const isEnglishCenter = process.argv.includes("--ngoai-ngu");
 const config = isEnglishCenter
   ? {
@@ -74,6 +89,8 @@ const config = isEnglishCenter
       teacherUsername: "demo_giaovien_nn",
       operationsUsername: "demo_hocvu_nn",
       operationsName: "Học vụ Test Ngoại ngữ",
+      admissionsUsername: "demo_tuyensinh_nn",
+      admissionsName: "Tuyển sinh Test Ngoại ngữ",
       accountingUsername: "demo_ketoan_nn",
       managerUsername: "demo_quanly_nn",
       managerName: "Quản lý Test Ngoại ngữ",
@@ -113,6 +130,8 @@ const config = isEnglishCenter
       teacherUsername: "demo_giaovien_mn",
       operationsUsername: "demo_hocvu_mn",
       operationsName: "Học vụ Test Mầm non",
+      admissionsUsername: "demo_tuyensinh_mn",
+      admissionsName: "Tuyển sinh Test Mầm non",
       accountingUsername: "demo_ketoan_mn",
       managerUsername: "demo_quanly_mn",
       managerName: "Quản lý Test Mầm non",
@@ -153,16 +172,17 @@ async function main() {
   const today = todayInBusinessTimeZone();
   const scheduleEnd = addDaysIso(today, 28);
 
-  const [admin, organization, teacherRole, operationsRole, accountingRole, managerRole] = await Promise.all([
+  const [admin, organization, teacherRole, operationsRole, admissionsRole, accountingRole, managerRole] = await Promise.all([
     findUserByUsername("admin"),
     findDonViByCode(config.organizationCode),
     findRoleByCode("giao_vien"),
     findRoleByCode("hoc_vu"),
+    findRoleByCode("tuyen_sinh"),
     findRoleByCode("ke_toan"),
     findRoleByCode("quan_ly_don_vi"),
   ]);
 
-  if (!admin || !organization || !teacherRole || !operationsRole || !accountingRole || !managerRole) {
+  if (!admin || !organization || !teacherRole || !operationsRole || !admissionsRole || !accountingRole || !managerRole) {
     throw new Error(
       `Thiếu admin, đơn vị ${config.organizationCode} hoặc vai trò giao_vien. Hãy chạy pnpm db:seed:auth trước.`,
     );
@@ -311,6 +331,53 @@ async function main() {
       updatedAt: toDatabaseDateTime(),
     })
     .where(eq(nguoiDung.id, operationsUser.id));
+
+  let admissionsUser = await findUserByUsername(config.admissionsUsername);
+  if (!admissionsUser) {
+    admissionsUser = await createUserWithRole({
+      username: config.admissionsUsername,
+      passwordHash,
+      fullName: config.admissionsName,
+      roleId: admissionsRole.id,
+      organizationId: organization.id,
+    });
+  } else {
+    const assignment = (
+      await db
+        .select()
+        .from(nguoiDungVaiTroDonVi)
+        .where(
+          and(
+            eq(nguoiDungVaiTroDonVi.nguoiDungId, admissionsUser.id),
+            eq(nguoiDungVaiTroDonVi.vaiTroId, admissionsRole.id),
+            eq(nguoiDungVaiTroDonVi.donViId, organization.id),
+          ),
+        )
+        .limit(1)
+    )[0];
+    if (!assignment) {
+      const now = toDatabaseDateTime();
+      await db.insert(nguoiDungVaiTroDonVi).values({
+        nguoiDungId: admissionsUser.id,
+        vaiTroId: admissionsRole.id,
+        donViId: organization.id,
+        dangHoatDong: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+  await resetUserPassword({ userId: admissionsUser.id, passwordHash });
+  await db
+    .update(nguoiDung)
+    .set({
+      batBuocDoiMatKhau: false,
+      trangThai: "hoat_dong",
+      soLanDangNhapSaiLienTiep: 0,
+      khoaDangNhapDenLuc: null,
+      updatedAt: toDatabaseDateTime(),
+    })
+    .where(eq(nguoiDung.id, admissionsUser.id));
 
   let accountingUser = await findUserByUsername(config.accountingUsername);
   if (!accountingUser) {
@@ -540,6 +607,136 @@ async function main() {
     }
   }
 
+  const enrollmentsForGuide = await db
+    .select()
+    .from(hocSinhLopHoc)
+    .where(
+      and(
+        eq(hocSinhLopHoc.lopHocId, classItem.id),
+        eq(hocSinhLopHoc.trangThai, "dang_hoc"),
+      ),
+    );
+  const firstEnrollment = enrollmentsForGuide[0];
+  const firstStudent = firstEnrollment
+    ? (
+        await db
+          .select()
+          .from(hocSinh)
+          .where(eq(hocSinh.id, firstEnrollment.hocSinhId))
+          .limit(1)
+      )[0]
+    : null;
+
+  let parentUsername: string | null = null;
+  if (firstStudent) {
+    let guardian = await findPhuHuynhByPhoneGlobal(PARENT_PHONE);
+    let guardianLink = guardian
+      ? await findGuardianLink(firstStudent.id, guardian.id)
+      : null;
+
+    if (!guardianLink) {
+      const linked = await addGuardianToStudent({
+        donViId: organization.id,
+        hocSinhId: firstStudent.id,
+        dienThoai: PARENT_PHONE,
+        hoTen: PARENT_NAME,
+        email: "phuhuynh.demo@example.com",
+        ngheNghiep: "Nhân viên văn phòng",
+        diaChi: "Quận 8, Thành phố Hồ Chí Minh",
+        moiQuanHe: "me",
+        laLienHeChinh: true,
+        duocDonTre: true,
+        nhanThongBao: true,
+        nhanThongTinHocPhi: true,
+        confirmCrossOrgReuse: Boolean(guardian && guardian.donViId !== organization.id),
+        actorUserId,
+      });
+      guardian = linked.guardian;
+      guardianLink = linked.link;
+    }
+
+    if (guardianLink) {
+      const account = await createGuardianAccount({
+        donViId: organization.id,
+        linkId: guardianLink.id,
+        actorUserId,
+      });
+      parentUsername = account.tenDangNhap ?? PARENT_USERNAME;
+      const parentUser = await findUserByUsername(parentUsername);
+      if (parentUser) {
+        await resetUserPassword({ userId: parentUser.id, passwordHash });
+        await db
+          .update(nguoiDung)
+          .set({
+            batBuocDoiMatKhau: false,
+            trangThai: "hoat_dong",
+            soLanDangNhapSaiLienTiep: 0,
+            khoaDangNhapDenLuc: null,
+            updatedAt: toDatabaseDateTime(),
+          })
+          .where(eq(nguoiDung.id, parentUser.id));
+      }
+    }
+
+    const existingEvaluation = (
+      await db
+        .select()
+        .from(hocSinhLopHocDanhGia)
+        .where(
+          and(
+            eq(hocSinhLopHocDanhGia.enrollmentId, firstEnrollment.id),
+            eq(hocSinhLopHocDanhGia.loaiDanhGia, "theo_thang"),
+          ),
+        )
+        .limit(1)
+    )[0];
+
+    if (!existingEvaluation) {
+      await addDanhGia({
+        donViId: organization.id,
+        hocSinhId: firstStudent.id,
+        enrollmentId: firstEnrollment.id,
+        loaiDanhGia: "theo_thang",
+        linhVucPhatTrien: isEnglishCenter ? null : "ngon_ngu",
+        diemSo: isEnglishCenter ? "8.5" : null,
+        xepLoai: isEnglishCenter ? "Đạt" : "Tiến bộ tốt",
+        nhanXet: isEnglishCenter
+          ? "Học viên chủ động giao tiếp và hoàn thành tốt hoạt động trên lớp."
+          : "Trẻ diễn đạt rõ ý, biết lắng nghe và tự tin trao đổi cùng cô và các bạn.",
+        ngayDanhGia: today,
+        actorUserId: teacherUser.id,
+      });
+    }
+  }
+
+  const notificationTitle = isEnglishCenter
+    ? `Thông báo lịch học tháng ${today.slice(5, 7)}`
+    : `Thông báo sinh hoạt tháng ${today.slice(5, 7)}`;
+  const existingNotification = (
+    await db
+      .select()
+      .from(thongBao)
+      .where(
+        and(
+          eq(thongBao.donViId, organization.id),
+          eq(thongBao.tieuDe, notificationTitle),
+        ),
+      )
+      .limit(1)
+  )[0];
+  if (!existingNotification) {
+    await createThongBaoMoi({
+      donViId: organization.id,
+      tieuDe: notificationTitle,
+      noiDung: isEnglishCenter
+        ? "Trung tâm thông báo lịch học và hoạt động bổ trợ trong tháng. Phụ huynh vui lòng theo dõi lịch trên Portal."
+        : "Nhà trường thông báo kế hoạch chăm sóc, giáo dục và hoạt động trải nghiệm trong tháng. Phụ huynh vui lòng theo dõi trên Portal.",
+      phamVi: "toan_truong",
+      doiTuong: "Phụ huynh và học sinh toàn đơn vị",
+      actorUserId: operationsUser.id,
+    });
+  }
+
   const existingRules = await db
     .select()
     .from(lichHoc)
@@ -698,8 +895,10 @@ async function main() {
     organization: `${organization.maDonVi} - ${organization.tenDonVi}`,
     username: config.teacherUsername,
     operationsUsername: config.operationsUsername,
+    admissionsUsername: config.admissionsUsername,
     accountingUsername: config.accountingUsername,
     managerUsername: config.managerUsername,
+    parentUsername,
     temporaryPassword: TEMPORARY_PASSWORD,
     teacherId: teacher.id,
     classId: classItem.id,
