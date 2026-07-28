@@ -1,4 +1,6 @@
 import type {
+  DanhGiaFormInput,
+  DanhGiaItem,
   GhiDanhTrucTiepFormInput,
   GuardianFormInput,
   GuardianLinkItem,
@@ -6,6 +8,8 @@ import type {
   HocSinhFormInput,
   HocSinhItem,
   PhuHuynhItem,
+  ThanhTichFormInput,
+  ThanhTichItem,
   TrangThaiHocSinh,
 } from "./hocSinhTypes";
 
@@ -172,6 +176,65 @@ export function createGuardianAccountApi(hocSinhId: number, linkId: number) {
     tenDangNhap: string | null;
     temporaryPassword: string | null;
   }>(`/api/hoc-sinh/${hocSinhId}/phu-huynh/${linkId}/tai-khoan`, { method: "POST" });
+}
+
+export function listThanhTichApi(hocSinhId: number) {
+  return request<ThanhTichItem[]>(`/api/hoc-sinh/${hocSinhId}/thanh-tich`);
+}
+
+export function addThanhTichApi(hocSinhId: number, input: ThanhTichFormInput) {
+  return request<ThanhTichItem>(`/api/hoc-sinh/${hocSinhId}/thanh-tich`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function removeThanhTichApi(thanhTichId: number) {
+  const response = await fetch(`/api/hoc-sinh/thanh-tich/${thanhTichId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  const payload = (await response.json()) as ApiResponse<unknown>;
+
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.error || "Không thể xoá thành tích.");
+  }
+}
+
+export async function listDanhGiaApi(hocSinhId: number) {
+  const rows = await request<
+    {
+      danhGia: Omit<DanhGiaItem, "lopHoc">;
+      enrollmentId: number;
+      lopHoc: DanhGiaItem["lopHoc"];
+    }[]
+  >(`/api/hoc-sinh/${hocSinhId}/danh-gia`);
+
+  return rows.map((row) => ({ ...row.danhGia, lopHoc: row.lopHoc }));
+}
+
+export function addDanhGiaApi(hocSinhId: number, input: DanhGiaFormInput) {
+  return request<DanhGiaItem>(`/api/hoc-sinh/${hocSinhId}/danh-gia`, {
+    method: "POST",
+    body: JSON.stringify({
+      ...input,
+      diemSo: input.diemSo !== null ? String(input.diemSo) : null,
+    }),
+  });
+}
+
+export async function removeDanhGiaApi(danhGiaId: number) {
+  const response = await fetch(`/api/hoc-sinh/danh-gia/${danhGiaId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  const payload = (await response.json()) as ApiResponse<unknown>;
+
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.error || "Không thể xoá kết quả học tập.");
+  }
 }
 
 export async function removeGuardianApi(hocSinhId: number, linkId: number) {

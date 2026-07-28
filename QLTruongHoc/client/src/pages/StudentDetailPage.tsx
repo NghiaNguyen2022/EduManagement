@@ -15,21 +15,32 @@ import { SectionCard } from "../components/shared/SectionCard";
 import { TabBar } from "../components/shared/TabBar";
 import { useAuth } from "../features/auth/AuthContext";
 import {
+  addDanhGiaApi,
   addGuardianApi,
+  addThanhTichApi,
   createGuardianAccountApi,
   CrossOrgGuardianConfirmError,
   getHocSinhDetailApi,
+  listDanhGiaApi,
+  listThanhTichApi,
+  removeDanhGiaApi,
   removeGuardianApi,
+  removeThanhTichApi,
   setHocSinhTrangThaiApi,
   updateGuardianApi,
   updateHocSinhApi,
 } from "../features/hocSinh/hocSinhApi";
 import type { CrossOrgGuardianInfo } from "../features/hocSinh/hocSinhApi";
 import type {
+  DanhGiaFormInput,
+  DanhGiaItem,
   GuardianFormInput,
   GuardianLinkItem,
   HocSinhDetail,
   HocSinhFormInput,
+  LoaiDanhGia,
+  ThanhTichFormInput,
+  ThanhTichItem,
   TrangThaiHocSinh,
 } from "../features/hocSinh/hocSinhTypes";
 
@@ -77,7 +88,31 @@ const emptyGuardianForm: GuardianFormInput = {
   nhanThongTinHocPhi: true,
 };
 
-type TabId = "thong-tin" | "phu-huynh" | "lich-su";
+const emptyThanhTichForm: ThanhTichFormInput = {
+  tenThanhTich: "",
+  ketQua: "",
+  ngayDat: "",
+  noiCap: "",
+  tepMinhChungUrl: null,
+  ghiChu: "",
+};
+
+const emptyDanhGiaForm: DanhGiaFormInput = {
+  enrollmentId: "",
+  loaiDanhGia: "",
+  diemSo: null,
+  xepLoai: "",
+  nhanXet: "",
+  ngayDanhGia: todayIso(),
+};
+
+const LOAI_DANH_GIA_LABEL: Record<LoaiDanhGia, string> = {
+  giua_ky: "Giữa kỳ",
+  cuoi_ky: "Cuối kỳ",
+  khac: "Khác",
+};
+
+type TabId = "thong-tin" | "phu-huynh" | "lich-su" | "thanh-tich";
 
 export function StudentDetailPage() {
   const { id } = useParams();
@@ -108,9 +143,26 @@ export function StudentDetailPage() {
   const [removeBusy, setRemoveBusy] = useState(false);
   const [creatingAccountLinkId, setCreatingAccountLinkId] = useState<number | null>(null);
 
+  const [thanhTichList, setThanhTichList] = useState<ThanhTichItem[]>([]);
+  const [thanhTichForm, setThanhTichForm] = useState<ThanhTichFormInput>(emptyThanhTichForm);
+  const [savingThanhTich, setSavingThanhTich] = useState(false);
+  const [removingThanhTichId, setRemovingThanhTichId] = useState<number | null>(null);
+
+  const [danhGiaList, setDanhGiaList] = useState<DanhGiaItem[]>([]);
+  const [danhGiaForm, setDanhGiaForm] = useState<DanhGiaFormInput>(emptyDanhGiaForm);
+  const [savingDanhGia, setSavingDanhGia] = useState(false);
+  const [removingDanhGiaId, setRemovingDanhGiaId] = useState<number | null>(null);
+
   const canManage = useMemo(() => {
     const permissions = auth?.currentOrganization?.quyen ?? [];
     return permissions.includes("he_thong.quan_tri") || permissions.includes("hoc_sinh.quan_ly");
+  }, [auth]);
+
+  const canGhiNhanHocTap = useMemo(() => {
+    const permissions = auth?.currentOrganization?.quyen ?? [];
+    return (
+      permissions.includes("he_thong.quan_tri") || permissions.includes("hoc_tap.ghi_nhan")
+    );
   }, [auth]);
 
   const timelineEvents = useMemo(() => {
@@ -212,6 +264,29 @@ export function StudentDetailPage() {
   useEffect(() => {
     if (Number.isInteger(studentId) && studentId > 0) {
       void loadDetail();
+    }
+  }, [studentId, auth?.currentOrganization?.id]);
+
+  async function loadThanhTichVaDanhGia() {
+    try {
+      const [thanhTichRows, danhGiaRows] = await Promise.all([
+        listThanhTichApi(studentId),
+        listDanhGiaApi(studentId),
+      ]);
+      setThanhTichList(thanhTichRows);
+      setDanhGiaList(danhGiaRows);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Không thể tải thành tích/kết quả học tập.",
+      );
+    }
+  }
+
+  useEffect(() => {
+    if (Number.isInteger(studentId) && studentId > 0) {
+      void loadThanhTichVaDanhGia();
     }
   }, [studentId, auth?.currentOrganization?.id]);
 
@@ -372,6 +447,81 @@ export function StudentDetailPage() {
     }
   }
 
+  async function handleAddThanhTich(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    setSavingThanhTich(true);
+
+    try {
+      await addThanhTichApi(studentId, thanhTichForm);
+      setNotice("Đã ghi nhận thành tích.");
+      setThanhTichForm(emptyThanhTichForm);
+      await loadThanhTichVaDanhGia();
+    } catch (addError) {
+      setError(addError instanceof Error ? addError.message : "Không thể ghi nhận thành tích.");
+    } finally {
+      setSavingThanhTich(false);
+    }
+  }
+
+  async function handleRemoveThanhTich(item: ThanhTichItem) {
+    setError("");
+    setNotice("");
+    setRemovingThanhTichId(item.id);
+
+    try {
+      await removeThanhTichApi(item.id);
+      setNotice(`Đã xoá thành tích "${item.tenThanhTich}".`);
+      await loadThanhTichVaDanhGia();
+    } catch (removeError) {
+      setError(removeError instanceof Error ? removeError.message : "Không thể xoá thành tích.");
+    } finally {
+      setRemovingThanhTichId(null);
+    }
+  }
+
+  async function handleAddDanhGia(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!danhGiaForm.enrollmentId || !danhGiaForm.loaiDanhGia) return;
+
+    setError("");
+    setNotice("");
+    setSavingDanhGia(true);
+
+    try {
+      await addDanhGiaApi(studentId, danhGiaForm);
+      setNotice("Đã ghi nhận kết quả học tập.");
+      setDanhGiaForm(emptyDanhGiaForm);
+      await loadThanhTichVaDanhGia();
+    } catch (addError) {
+      setError(
+        addError instanceof Error ? addError.message : "Không thể ghi nhận kết quả học tập.",
+      );
+    } finally {
+      setSavingDanhGia(false);
+    }
+  }
+
+  async function handleRemoveDanhGia(item: DanhGiaItem) {
+    setError("");
+    setNotice("");
+    setRemovingDanhGiaId(item.id);
+
+    try {
+      await removeDanhGiaApi(item.id);
+      setNotice("Đã xoá kết quả học tập.");
+      await loadThanhTichVaDanhGia();
+    } catch (removeError) {
+      setError(
+        removeError instanceof Error ? removeError.message : "Không thể xoá kết quả học tập.",
+      );
+    } finally {
+      setRemovingDanhGiaId(null);
+    }
+  }
+
   if (loading || !detail || !infoForm) {
     return (
       <div className="page-stack">
@@ -412,6 +562,11 @@ export function StudentDetailPage() {
           { id: "thong-tin", label: "Thông tin" },
           { id: "phu-huynh", label: "Phụ huynh", badge: detail.phuHuynh.length },
           { id: "lich-su", label: "Lịch sử học tập", badge: timelineEvents.length },
+          {
+            id: "thanh-tich",
+            label: "Thành tích",
+            badge: thanhTichList.length + danhGiaList.length,
+          },
         ]}
         activeId={activeTab}
         onChange={(tabId) => setActiveTab(tabId as TabId)}
@@ -920,6 +1075,260 @@ export function StudentDetailPage() {
           </ul>
         )}
       </SectionCard>
+      ) : null}
+
+      {activeTab === "thanh-tich" ? (
+      <>
+      <SectionCard
+        title="Chứng chỉ / Thành tích"
+        subtitle={`${thanhTichList.length} mục — VD: IELTS 8.0, TOEIC 900, giải thưởng cuộc thi...`}
+      >
+        <div className="user-table-wrap">
+          <table className="user-table">
+            <thead>
+              <tr>
+                <th>Tên</th>
+                <th>Kết quả</th>
+                <th>Ngày đạt</th>
+                <th>Nơi cấp</th>
+                <th>Minh chứng</th>
+                {canGhiNhanHocTap ? <th>Thao tác</th> : null}
+              </tr>
+            </thead>
+
+            <tbody>
+              {thanhTichList.map((item) => (
+                <tr key={item.id}>
+                  <td>
+                    <strong>{item.tenThanhTich}</strong>
+                    {item.ghiChu ? <small>{item.ghiChu}</small> : null}
+                  </td>
+                  <td>{item.ketQua || "—"}</td>
+                  <td>{item.ngayDat || "—"}</td>
+                  <td>{item.noiCap || "—"}</td>
+                  <td>
+                    {item.tepMinhChungUrl ? (
+                      <a
+                        href={item.tepMinhChungUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-button"
+                      >
+                        Xem tệp
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  {canGhiNhanHocTap ? (
+                    <td>
+                      <button
+                        type="button"
+                        className="text-button"
+                        disabled={removingThanhTichId === item.id}
+                        onClick={() => void handleRemoveThanhTich(item)}
+                      >
+                        {removingThanhTichId === item.id ? "Đang xoá..." : "Xoá"}
+                      </button>
+                    </td>
+                  ) : null}
+                </tr>
+              ))}
+
+              {thanhTichList.length === 0 ? (
+                <tr>
+                  <td colSpan={canGhiNhanHocTap ? 6 : 5} className="empty-cell">
+                    Chưa có chứng chỉ/thành tích nào.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+
+        {canGhiNhanHocTap ? (
+          <form className="user-create-form" onSubmit={handleAddThanhTich}>
+            <TextField
+              label="Tên chứng chỉ/thành tích"
+              value={thanhTichForm.tenThanhTich}
+              required
+              placeholder="VD: IELTS, TOEIC, HSK, giải thưởng..."
+              onChange={(value) =>
+                setThanhTichForm({ ...thanhTichForm, tenThanhTich: value })
+              }
+            />
+
+            <TextField
+              label="Kết quả"
+              value={thanhTichForm.ketQua}
+              placeholder="VD: 8.0, 900/990, Giải nhất"
+              onChange={(value) => setThanhTichForm({ ...thanhTichForm, ketQua: value })}
+            />
+
+            <DateField
+              label="Ngày đạt"
+              value={thanhTichForm.ngayDat}
+              onChange={(value) => setThanhTichForm({ ...thanhTichForm, ngayDat: value })}
+            />
+
+            <TextField
+              label="Nơi cấp"
+              value={thanhTichForm.noiCap}
+              placeholder="VD: IDP Việt Nam, Nội bộ trung tâm"
+              onChange={(value) => setThanhTichForm({ ...thanhTichForm, noiCap: value })}
+            />
+
+            <FileUploadField
+              label="Minh chứng (ảnh/PDF)"
+              value={thanhTichForm.tepMinhChungUrl}
+              accept="image/*,application/pdf"
+              previewAsImage={false}
+              onChange={(value) =>
+                setThanhTichForm({ ...thanhTichForm, tepMinhChungUrl: value })
+              }
+            />
+
+            <TextAreaField
+              label="Ghi chú"
+              value={thanhTichForm.ghiChu}
+              rows={2}
+              className="field-span-full"
+              onChange={(value) => setThanhTichForm({ ...thanhTichForm, ghiChu: value })}
+            />
+
+            <button type="submit" className="primary-button" disabled={savingThanhTich}>
+              {savingThanhTich ? "Đang lưu..." : "Ghi nhận thành tích"}
+            </button>
+          </form>
+        ) : null}
+      </SectionCard>
+
+      <SectionCard
+        title="Kết quả học tập theo lớp"
+        subtitle={`${danhGiaList.length} lần đánh giá — giữa kỳ/cuối kỳ theo từng lượt xếp lớp`}
+      >
+        <div className="user-table-wrap">
+          <table className="user-table">
+            <thead>
+              <tr>
+                <th>Lớp</th>
+                <th>Loại đánh giá</th>
+                <th>Điểm</th>
+                <th>Xếp loại</th>
+                <th>Nhận xét</th>
+                <th>Ngày</th>
+                {canGhiNhanHocTap ? <th>Thao tác</th> : null}
+              </tr>
+            </thead>
+
+            <tbody>
+              {danhGiaList.map((item) => (
+                <tr key={item.id}>
+                  <td>
+                    <strong>{item.lopHoc.tenLop}</strong>
+                    <small>{item.lopHoc.maLop}</small>
+                  </td>
+                  <td>{LOAI_DANH_GIA_LABEL[item.loaiDanhGia]}</td>
+                  <td>{item.diemSo ?? "—"}</td>
+                  <td>{item.xepLoai || "—"}</td>
+                  <td>{item.nhanXet || "—"}</td>
+                  <td>{item.ngayDanhGia}</td>
+                  {canGhiNhanHocTap ? (
+                    <td>
+                      <button
+                        type="button"
+                        className="text-button"
+                        disabled={removingDanhGiaId === item.id}
+                        onClick={() => void handleRemoveDanhGia(item)}
+                      >
+                        {removingDanhGiaId === item.id ? "Đang xoá..." : "Xoá"}
+                      </button>
+                    </td>
+                  ) : null}
+                </tr>
+              ))}
+
+              {danhGiaList.length === 0 ? (
+                <tr>
+                  <td colSpan={canGhiNhanHocTap ? 7 : 6} className="empty-cell">
+                    Chưa có kết quả học tập nào.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+
+        {canGhiNhanHocTap ? (
+          <form className="user-create-form" onSubmit={handleAddDanhGia}>
+            <SelectField
+              label="Lớp"
+              value={danhGiaForm.enrollmentId}
+              required
+              placeholder="Chọn lượt xếp lớp"
+              options={detail.lopHoc.map((item) => ({
+                value: String(item.enrollmentId),
+                label: `${item.lopHoc.tenLop} (${item.lopHoc.maLop}) — ${item.ngayVaoLop}`,
+              }))}
+              onChange={(value) =>
+                setDanhGiaForm({ ...danhGiaForm, enrollmentId: value })
+              }
+            />
+
+            <SelectField
+              label="Loại đánh giá"
+              value={danhGiaForm.loaiDanhGia}
+              required
+              placeholder="Chọn loại đánh giá"
+              options={Object.entries(LOAI_DANH_GIA_LABEL).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              onChange={(value) =>
+                setDanhGiaForm({
+                  ...danhGiaForm,
+                  loaiDanhGia: value as DanhGiaFormInput["loaiDanhGia"],
+                })
+              }
+            />
+
+            <NumberInput
+              label="Điểm số"
+              value={danhGiaForm.diemSo}
+              allowDecimal
+              min={0}
+              onChange={(value) => setDanhGiaForm({ ...danhGiaForm, diemSo: value })}
+            />
+
+            <TextField
+              label="Xếp loại"
+              value={danhGiaForm.xepLoai}
+              placeholder="VD: Giỏi, Khá, Đạt"
+              onChange={(value) => setDanhGiaForm({ ...danhGiaForm, xepLoai: value })}
+            />
+
+            <DateField
+              label="Ngày đánh giá"
+              value={danhGiaForm.ngayDanhGia}
+              required
+              onChange={(value) => setDanhGiaForm({ ...danhGiaForm, ngayDanhGia: value })}
+            />
+
+            <TextAreaField
+              label="Nhận xét"
+              value={danhGiaForm.nhanXet}
+              rows={2}
+              className="field-span-full"
+              onChange={(value) => setDanhGiaForm({ ...danhGiaForm, nhanXet: value })}
+            />
+
+            <button type="submit" className="primary-button" disabled={savingDanhGia}>
+              {savingDanhGia ? "Đang lưu..." : "Ghi nhận kết quả"}
+            </button>
+          </form>
+        ) : null}
+      </SectionCard>
+      </>
       ) : null}
 
       <ConfirmDialog

@@ -99,6 +99,53 @@ export type HocSinhDetail = {
   lopHoc: EnrollmentSummaryItem[];
 };
 
+export type ThanhTichItem = {
+  id: number;
+  hocSinhId: number;
+  tenThanhTich: string;
+  ketQua: string | null;
+  ngayDat: string | null;
+  noiCap: string | null;
+  tepMinhChungUrl: string | null;
+  ghiChu: string | null;
+  createdAt: string;
+};
+
+export type ThanhTichFormInput = {
+  tenThanhTich: string;
+  ketQua: string;
+  ngayDat: string;
+  noiCap: string;
+  tepMinhChungUrl: string | null;
+  ghiChu: string;
+};
+
+export type LoaiDanhGia = "giua_ky" | "cuoi_ky" | "khac";
+
+export type DanhGiaItem = {
+  id: number;
+  enrollmentId: number;
+  loaiDanhGia: LoaiDanhGia;
+  diemSo: string | null;
+  xepLoai: string | null;
+  nhanXet: string | null;
+  ngayDanhGia: string;
+  lopHoc: {
+    id: number;
+    maLop: string;
+    tenLop: string;
+  };
+};
+
+export type DanhGiaFormInput = {
+  enrollmentId: string;
+  loaiDanhGia: LoaiDanhGia | "";
+  diemSo: number | null;
+  xepLoai: string;
+  nhanXet: string;
+  ngayDanhGia: string;
+};
+
 export type HocSinhFormInput = {
   hoTen: string;
   tenThuongGoi: string;

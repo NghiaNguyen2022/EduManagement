@@ -162,3 +162,27 @@ export const hocSinhLopHoc = mysqlTable(
     )
   })
 );
+
+// Kết quả học tập theo từng lượt xếp lớp — cho phép nhiều lần đánh giá/lượt
+// xếp lớp (giữa kỳ, cuối kỳ...), khác `HocSinhThanhTich` (chứng chỉ/thành
+// tích không gắn với 1 lớp cụ thể của trung tâm).
+export const hocSinhLopHocDanhGia = mysqlTable(
+  "HocSinhLopHocDanhGia",
+  {
+    id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
+    enrollmentId: bigint("enrollmentId", { mode: "number", unsigned: true }).notNull(),
+    loaiDanhGia: mysqlEnum("loaiDanhGia", ["giua_ky", "cuoi_ky", "khac"])
+      .notNull()
+      .default("khac"),
+    diemSo: decimal("diemSo", { precision: 5, scale: 1 }),
+    xepLoai: varchar("xepLoai", { length: 50 }),
+    nhanXet: text("nhanXet"),
+    ngayDanhGia: date("ngayDanhGia", { mode: "string" }).notNull(),
+    actorUserId: bigint("actorUserId", { mode: "number", unsigned: true }),
+    createdAt: datetime("createdAt", { mode: "string" }).notNull(),
+    updatedAt: datetime("updatedAt", { mode: "string" }).notNull()
+  },
+  (table) => ({
+    enrollmentIdx: index("IX_HocSinhLopHocDanhGia_enrollmentId").on(table.enrollmentId)
+  })
+);

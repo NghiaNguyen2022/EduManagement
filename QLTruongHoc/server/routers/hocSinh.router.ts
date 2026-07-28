@@ -6,6 +6,7 @@ import {
   requireCurrentOrganization,
   requirePermission,
 } from "../middleware/permission.middleware.js";
+import { addDanhGia, listDanhGia, removeDanhGia } from "../services/danhGia.service.js";
 import {
   createHocSinhMoi,
   getHocSinhChoXepLop,
@@ -23,6 +24,7 @@ import {
   removeGuardianLink,
   updateGuardianLinkInfo,
 } from "../services/phuHuynh.service.js";
+import { addThanhTich, listThanhTich, removeThanhTich } from "../services/thanhTich.service.js";
 
 export const hocSinhRouter = Router();
 
@@ -209,6 +211,151 @@ hocSinhRouter.patch("/:id/trang-thai", requirePermission("hoc_sinh.quan_ly"), as
     });
   }
 });
+
+// Chứng chỉ/thành tích — dùng quyền hoc_tap.xem/hoc_tap.ghi_nhan sẵn có
+// (giáo viên + học vụ), không cần quyền mới. Không có workflow duyệt.
+hocSinhRouter.get(
+  "/:id/thanh-tich",
+  requirePermission("hoc_tap.xem"),
+  async (req, res) => {
+    try {
+      const rows = await listThanhTich(
+        req.auth!.currentOrganization!.id,
+        Number(req.params.id),
+      );
+
+      res.json({ ok: true, data: rows });
+    } catch (error) {
+      res.status(404).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Không thể tải thành tích.",
+      });
+    }
+  },
+);
+
+hocSinhRouter.post(
+  "/:id/thanh-tich",
+  requirePermission("hoc_tap.ghi_nhan"),
+  async (req, res) => {
+    try {
+      const created = await addThanhTich({
+        donViId: req.auth!.currentOrganization!.id,
+        hocSinhId: Number(req.params.id),
+        tenThanhTich: String(req.body?.tenThanhTich ?? ""),
+        ketQua: req.body?.ketQua ? String(req.body.ketQua) : null,
+        ngayDat: req.body?.ngayDat ? String(req.body.ngayDat) : null,
+        noiCap: req.body?.noiCap ? String(req.body.noiCap) : null,
+        tepMinhChungUrl: req.body?.tepMinhChungUrl
+          ? String(req.body.tepMinhChungUrl)
+          : null,
+        ghiChu: req.body?.ghiChu ? String(req.body.ghiChu) : null,
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.status(201).json({ ok: true, data: created });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Không thể ghi nhận thành tích.",
+      });
+    }
+  },
+);
+
+hocSinhRouter.delete(
+  "/thanh-tich/:thanhTichId",
+  requirePermission("hoc_tap.ghi_nhan"),
+  async (req, res) => {
+    try {
+      await removeThanhTich({
+        donViId: req.auth!.currentOrganization!.id,
+        id: Number(req.params.thanhTichId),
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Không thể xoá thành tích.",
+      });
+    }
+  },
+);
+
+// Kết quả học tập theo lượt xếp lớp — cùng quyền hoc_tap.xem/hoc_tap.ghi_nhan.
+hocSinhRouter.get(
+  "/:id/danh-gia",
+  requirePermission("hoc_tap.xem"),
+  async (req, res) => {
+    try {
+      const rows = await listDanhGia(
+        req.auth!.currentOrganization!.id,
+        Number(req.params.id),
+      );
+
+      res.json({ ok: true, data: rows });
+    } catch (error) {
+      res.status(404).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Không thể tải kết quả học tập.",
+      });
+    }
+  },
+);
+
+hocSinhRouter.post(
+  "/:id/danh-gia",
+  requirePermission("hoc_tap.ghi_nhan"),
+  async (req, res) => {
+    try {
+      const created = await addDanhGia({
+        donViId: req.auth!.currentOrganization!.id,
+        hocSinhId: Number(req.params.id),
+        enrollmentId: Number(req.body?.enrollmentId),
+        loaiDanhGia: String(req.body?.loaiDanhGia ?? ""),
+        diemSo: req.body?.diemSo ? String(req.body.diemSo) : null,
+        xepLoai: req.body?.xepLoai ? String(req.body.xepLoai) : null,
+        nhanXet: req.body?.nhanXet ? String(req.body.nhanXet) : null,
+        ngayDanhGia: String(req.body?.ngayDanhGia ?? ""),
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.status(201).json({ ok: true, data: created });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Không thể ghi nhận kết quả học tập.",
+      });
+    }
+  },
+);
+
+hocSinhRouter.delete(
+  "/danh-gia/:danhGiaId",
+  requirePermission("hoc_tap.ghi_nhan"),
+  async (req, res) => {
+    try {
+      await removeDanhGia({
+        donViId: req.auth!.currentOrganization!.id,
+        id: Number(req.params.danhGiaId),
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Không thể xoá kết quả học tập.",
+      });
+    }
+  },
+);
 
 hocSinhRouter.post("/:id/phu-huynh", requirePermission("hoc_sinh.quan_ly"), async (req, res) => {
   try {

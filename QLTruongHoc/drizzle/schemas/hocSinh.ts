@@ -162,3 +162,25 @@ export const hocSinhPhuHuynh = mysqlTable(
     phuHuynhIdx: index("IX_HocSinhPhuHuynh_phuHuynhId").on(table.phuHuynhId)
   })
 );
+
+// Chứng chỉ/thành tích học sinh đạt được (vd IELTS 8.0) — không gắn với 1
+// lượt xếp lớp cụ thể, không có workflow duyệt (ghi là hiển thị ngay).
+export const hocSinhThanhTich = mysqlTable(
+  "HocSinhThanhTich",
+  {
+    id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
+    hocSinhId: bigint("hocSinhId", { mode: "number", unsigned: true }).notNull(),
+    tenThanhTich: varchar("tenThanhTich", { length: 255 }).notNull(),
+    ketQua: varchar("ketQua", { length: 100 }),
+    ngayDat: date("ngayDat", { mode: "string" }),
+    noiCap: varchar("noiCap", { length: 255 }),
+    tepMinhChungUrl: varchar("tepMinhChungUrl", { length: 500 }),
+    ghiChu: text("ghiChu"),
+    actorUserId: bigint("actorUserId", { mode: "number", unsigned: true }),
+    createdAt: datetime("createdAt", { mode: "string" }).notNull(),
+    updatedAt: datetime("updatedAt", { mode: "string" }).notNull()
+  },
+  (table) => ({
+    hocSinhIdx: index("IX_HocSinhThanhTich_hocSinhId").on(table.hocSinhId)
+  })
+);
