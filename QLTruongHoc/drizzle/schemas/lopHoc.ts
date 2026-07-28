@@ -171,9 +171,29 @@ export const hocSinhLopHocDanhGia = mysqlTable(
   {
     id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
     enrollmentId: bigint("enrollmentId", { mode: "number", unsigned: true }).notNull(),
-    loaiDanhGia: mysqlEnum("loaiDanhGia", ["giua_ky", "cuoi_ky", "khac"])
+    // Mở rộng từ 3 giá trị gốc (giua_ky/cuoi_ky/khac) để hỗ trợ đánh giá định
+    // kỳ theo tháng/quý/năm — chủ yếu dùng cho mầm non (đánh giá quá trình
+    // thay vì chỉ 2 mốc giữa/cuối kỳ như phổ thông). Đơn vị nào không cần thì
+    // cứ tiếp tục dùng giua_ky/cuoi_ky/khac như cũ.
+    loaiDanhGia: mysqlEnum("loaiDanhGia", [
+      "giua_ky",
+      "cuoi_ky",
+      "khac",
+      "theo_thang",
+      "theo_quy",
+      "theo_nam",
+    ])
       .notNull()
       .default("khac"),
+    // 5 lĩnh vực phát triển theo Thông tư 17/2009/TT-BGDĐT (sửa đổi bởi TT
+    // 51/2020) — chỉ áp dụng cho mầm non, để trống với các cấp học khác.
+    linhVucPhatTrien: mysqlEnum("linhVucPhatTrien", [
+      "the_chat",
+      "nhan_thuc",
+      "ngon_ngu",
+      "tinh_cam_ky_nang_xa_hoi",
+      "tham_my",
+    ]),
     diemSo: decimal("diemSo", { precision: 5, scale: 1 }),
     xepLoai: varchar("xepLoai", { length: 50 }),
     nhanXet: text("nhanXet"),

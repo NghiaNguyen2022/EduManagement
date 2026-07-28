@@ -3,7 +3,11 @@ import {
 } from "../db/audit.repository.js";
 import { findChuongTrinhById } from "../db/chuongTrinh.repository.js";
 import { findGiaoVienById } from "../db/giaoVien.repository.js";
-import { findHocSinhById } from "../db/hocSinh.repository.js";
+import {
+  createTrangThaiLichSu,
+  findHocSinhById,
+  updateHocSinhTrangThai,
+} from "../db/hocSinh.repository.js";
 import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
 import {
   closeEnrollment,
@@ -18,6 +22,7 @@ import {
   findGiaoVienChinhDangHoatDong,
   findLopHocById,
   findPhanCongGiaoVienById,
+  listActiveEnrollmentsByHocSinh,
   listHocSinhTrongLop,
   listLopHocAllDonVi,
   listLopHocByDonVi,
@@ -573,6 +578,43 @@ export async function ketThucXepLop(input: {
     lyDoRoiLop: input.lyDoRoiLop?.trim() || null,
     trangThai: input.trangThai as "ngung_hoc" | "hoan_thanh",
   });
+
+  // Đồng bộ ngược lại hồ sơ chung của học sinh: nếu đây là lượt xếp lớp đang
+  // hoạt động (chưa hẳn duy nhất) cuối cùng kết thúc, hồ sơ chung phải phản
+  // ánh đúng "đã hoàn thành/ngừng học", tránh lệch kiểu enrollment đã kết
+  // thúc nhưng HocSinh.trangThai vẫn còn "dang_hoc" (xem D06, cùng tinh thần
+  // đồng bộ một chiều ngược lại của `setHocSinhTrangThai`).
+  const student = await findHocSinhById(
+    input.donViId,
+    found.enrollment.hocSinhId,
+  );
+
+  if (
+    student &&
+    (student.trangThai === "dang_hoc" || student.trangThai === "bao_luu")
+  ) {
+    const remainingActiveEnrollments = await listActiveEnrollmentsByHocSinh(
+      found.enrollment.hocSinhId,
+    );
+
+    if (remainingActiveEnrollments.length === 0) {
+      const trangThaiMoi = input.trangThai as "ngung_hoc" | "hoan_thanh";
+
+      await updateHocSinhTrangThai({
+        id: student.id,
+        trangThai: trangThaiMoi,
+      });
+
+      await createTrangThaiLichSu({
+        hocSinhId: student.id,
+        trangThaiCu: student.trangThai,
+        trangThaiMoi,
+        lyDo: "Tự động đồng bộ khi lượt xếp lớp cuối cùng kết thúc.",
+        ngayHieuLuc: input.ngayRoiLop,
+        actorUserId: input.actorUserId,
+      });
+    }
+  }
 
   await createAuditLog({
     userId: input.actorUserId,

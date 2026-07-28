@@ -17,7 +17,11 @@ import type { ChuongTrinhItem } from "../features/chuongTrinh/chuongTrinhTypes";
 import { listGiaoVienApi } from "../features/giaoVien/giaoVienApi";
 import type { GiaoVienItem } from "../features/giaoVien/giaoVienTypes";
 import { addDanhGiaApi, listHocSinhApi } from "../features/hocSinh/hocSinhApi";
-import type { HocSinhItem, LoaiDanhGia } from "../features/hocSinh/hocSinhTypes";
+import type {
+  HocSinhItem,
+  LinhVucPhatTrien,
+  LoaiDanhGia,
+} from "../features/hocSinh/hocSinhTypes";
 import {
   createLichHocApi,
   listBuoiHocApi,
@@ -241,6 +245,7 @@ export function ClassDetailPage() {
 
   const [batchDanhGiaMeta, setBatchDanhGiaMeta] = useState({
     loaiDanhGia: "" as LoaiDanhGia | "",
+    linhVucPhatTrien: "" as LinhVucPhatTrien | "",
     ngayDanhGia: todayIso(),
   });
   const [batchDanhGiaRows, setBatchDanhGiaRows] = useState<
@@ -670,6 +675,7 @@ export function ClassDetailPage() {
           addDanhGiaApi(item.hocSinh.id, {
             enrollmentId: String(item.enrollmentId),
             loaiDanhGia: batchDanhGiaMeta.loaiDanhGia,
+            linhVucPhatTrien: batchDanhGiaMeta.linhVucPhatTrien,
             diemSo: row!.diemSo.trim() ? Number(row!.diemSo) : null,
             xepLoai: row!.xepLoai,
             nhanXet: row!.nhanXet,
@@ -1414,11 +1420,33 @@ export function ClassDetailPage() {
                 { value: "giua_ky", label: "Giữa kỳ" },
                 { value: "cuoi_ky", label: "Cuối kỳ" },
                 { value: "khac", label: "Khác" },
+                { value: "theo_thang", label: "Theo tháng" },
+                { value: "theo_quy", label: "Theo quý" },
+                { value: "theo_nam", label: "Theo năm" },
               ]}
               onChange={(value) =>
                 setBatchDanhGiaMeta({
                   ...batchDanhGiaMeta,
                   loaiDanhGia: value as LoaiDanhGia,
+                })
+              }
+            />
+
+            <SelectField
+              label="Lĩnh vực phát triển"
+              value={batchDanhGiaMeta.linhVucPhatTrien}
+              placeholder="-- Không chọn (không phải mầm non) --"
+              options={[
+                { value: "the_chat", label: "Thể chất" },
+                { value: "nhan_thuc", label: "Nhận thức" },
+                { value: "ngon_ngu", label: "Ngôn ngữ" },
+                { value: "tinh_cam_ky_nang_xa_hoi", label: "Tình cảm - Kỹ năng xã hội" },
+                { value: "tham_my", label: "Thẩm mỹ" },
+              ]}
+              onChange={(value) =>
+                setBatchDanhGiaMeta({
+                  ...batchDanhGiaMeta,
+                  linhVucPhatTrien: value as LinhVucPhatTrien,
                 })
               }
             />

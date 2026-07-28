@@ -120,12 +120,26 @@ export type ThanhTichFormInput = {
   ghiChu: string;
 };
 
-export type LoaiDanhGia = "giua_ky" | "cuoi_ky" | "khac";
+export type LoaiDanhGia =
+  | "giua_ky"
+  | "cuoi_ky"
+  | "khac"
+  | "theo_thang"
+  | "theo_quy"
+  | "theo_nam";
+
+export type LinhVucPhatTrien =
+  | "the_chat"
+  | "nhan_thuc"
+  | "ngon_ngu"
+  | "tinh_cam_ky_nang_xa_hoi"
+  | "tham_my";
 
 export type DanhGiaItem = {
   id: number;
   enrollmentId: number;
   loaiDanhGia: LoaiDanhGia;
+  linhVucPhatTrien: LinhVucPhatTrien | null;
   diemSo: string | null;
   xepLoai: string | null;
   nhanXet: string | null;
@@ -140,6 +154,7 @@ export type DanhGiaItem = {
 export type DanhGiaFormInput = {
   enrollmentId: string;
   loaiDanhGia: LoaiDanhGia | "";
+  linhVucPhatTrien: LinhVucPhatTrien | "";
   diemSo: number | null;
   xepLoai: string;
   nhanXet: string;

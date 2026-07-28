@@ -38,6 +38,7 @@ import type {
   GuardianLinkItem,
   HocSinhDetail,
   HocSinhFormInput,
+  LinhVucPhatTrien,
   LoaiDanhGia,
   ThanhTichFormInput,
   ThanhTichItem,
@@ -100,6 +101,7 @@ const emptyThanhTichForm: ThanhTichFormInput = {
 const emptyDanhGiaForm: DanhGiaFormInput = {
   enrollmentId: "",
   loaiDanhGia: "",
+  linhVucPhatTrien: "",
   diemSo: null,
   xepLoai: "",
   nhanXet: "",
@@ -110,6 +112,17 @@ const LOAI_DANH_GIA_LABEL: Record<LoaiDanhGia, string> = {
   giua_ky: "Giữa kỳ",
   cuoi_ky: "Cuối kỳ",
   khac: "Khác",
+  theo_thang: "Theo tháng",
+  theo_quy: "Theo quý",
+  theo_nam: "Theo năm",
+};
+
+const LINH_VUC_PHAT_TRIEN_LABEL: Record<LinhVucPhatTrien, string> = {
+  the_chat: "Thể chất",
+  nhan_thuc: "Nhận thức",
+  ngon_ngu: "Ngôn ngữ",
+  tinh_cam_ky_nang_xa_hoi: "Tình cảm - Kỹ năng xã hội",
+  tham_my: "Thẩm mỹ",
 };
 
 type TabId = "thong-tin" | "phu-huynh" | "lich-su" | "thanh-tich";
@@ -1213,6 +1226,7 @@ export function StudentDetailPage() {
               <tr>
                 <th>Lớp</th>
                 <th>Loại đánh giá</th>
+                <th>Lĩnh vực</th>
                 <th>Điểm</th>
                 <th>Xếp loại</th>
                 <th>Nhận xét</th>
@@ -1229,6 +1243,11 @@ export function StudentDetailPage() {
                     <small>{item.lopHoc.maLop}</small>
                   </td>
                   <td>{LOAI_DANH_GIA_LABEL[item.loaiDanhGia]}</td>
+                  <td>
+                    {item.linhVucPhatTrien
+                      ? LINH_VUC_PHAT_TRIEN_LABEL[item.linhVucPhatTrien]
+                      : "—"}
+                  </td>
                   <td>{item.diemSo ?? "—"}</td>
                   <td>{item.xepLoai || "—"}</td>
                   <td>{item.nhanXet || "—"}</td>
@@ -1250,7 +1269,7 @@ export function StudentDetailPage() {
 
               {danhGiaList.length === 0 ? (
                 <tr>
-                  <td colSpan={canGhiNhanHocTap ? 7 : 6} className="empty-cell">
+                  <td colSpan={canGhiNhanHocTap ? 8 : 7} className="empty-cell">
                     Chưa có kết quả học tập nào.
                   </td>
                 </tr>
@@ -1288,6 +1307,22 @@ export function StudentDetailPage() {
                 setDanhGiaForm({
                   ...danhGiaForm,
                   loaiDanhGia: value as DanhGiaFormInput["loaiDanhGia"],
+                })
+              }
+            />
+
+            <SelectField
+              label="Lĩnh vực phát triển"
+              value={danhGiaForm.linhVucPhatTrien}
+              placeholder="-- Không chọn (không phải mầm non) --"
+              options={Object.entries(LINH_VUC_PHAT_TRIEN_LABEL).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              onChange={(value) =>
+                setDanhGiaForm({
+                  ...danhGiaForm,
+                  linhVucPhatTrien: value as DanhGiaFormInput["linhVucPhatTrien"],
                 })
               }
             />

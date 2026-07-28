@@ -56,7 +56,20 @@ export async function findDanhGiaById(id: number) {
 
 export async function createDanhGia(input: {
   enrollmentId: number;
-  loaiDanhGia: "giua_ky" | "cuoi_ky" | "khac";
+  loaiDanhGia:
+    | "giua_ky"
+    | "cuoi_ky"
+    | "khac"
+    | "theo_thang"
+    | "theo_quy"
+    | "theo_nam";
+  linhVucPhatTrien:
+    | "the_chat"
+    | "nhan_thuc"
+    | "ngon_ngu"
+    | "tinh_cam_ky_nang_xa_hoi"
+    | "tham_my"
+    | null;
   diemSo: string | null;
   xepLoai: string | null;
   nhanXet: string | null;
@@ -69,6 +82,7 @@ export async function createDanhGia(input: {
   await db.insert(hocSinhLopHocDanhGia).values({
     enrollmentId: input.enrollmentId,
     loaiDanhGia: input.loaiDanhGia,
+    linhVucPhatTrien: input.linhVucPhatTrien,
     diemSo: input.diemSo,
     xepLoai: input.xepLoai,
     nhanXet: input.nhanXet,

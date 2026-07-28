@@ -8,7 +8,22 @@ import {
 import { findHocSinhById } from "../db/hocSinh.repository.js";
 import { findEnrollmentById } from "../db/lopHoc.repository.js";
 
-const LOAI_DANH_GIA_HOP_LE = ["giua_ky", "cuoi_ky", "khac"];
+const LOAI_DANH_GIA_HOP_LE = [
+  "giua_ky",
+  "cuoi_ky",
+  "khac",
+  "theo_thang",
+  "theo_quy",
+  "theo_nam",
+];
+
+const LINH_VUC_PHAT_TRIEN_HOP_LE = [
+  "the_chat",
+  "nhan_thuc",
+  "ngon_ngu",
+  "tinh_cam_ky_nang_xa_hoi",
+  "tham_my",
+];
 
 export async function listDanhGia(donViId: number, hocSinhId: number) {
   const hocSinh = await findHocSinhById(donViId, hocSinhId);
@@ -25,6 +40,7 @@ export async function addDanhGia(input: {
   hocSinhId: number;
   enrollmentId: number;
   loaiDanhGia: string;
+  linhVucPhatTrien?: string | null;
   diemSo?: string | null;
   xepLoai?: string | null;
   nhanXet?: string | null;
@@ -46,13 +62,34 @@ export async function addDanhGia(input: {
     throw new Error("Loại đánh giá không hợp lệ.");
   }
 
+  if (
+    input.linhVucPhatTrien &&
+    !LINH_VUC_PHAT_TRIEN_HOP_LE.includes(input.linhVucPhatTrien)
+  ) {
+    throw new Error("Lĩnh vực phát triển không hợp lệ.");
+  }
+
   if (!input.ngayDanhGia) {
     throw new Error("Vui lòng chọn ngày đánh giá.");
   }
 
   const created = await createDanhGia({
     enrollmentId: input.enrollmentId,
-    loaiDanhGia: input.loaiDanhGia as "giua_ky" | "cuoi_ky" | "khac",
+    loaiDanhGia: input.loaiDanhGia as
+      | "giua_ky"
+      | "cuoi_ky"
+      | "khac"
+      | "theo_thang"
+      | "theo_quy"
+      | "theo_nam",
+    linhVucPhatTrien:
+      (input.linhVucPhatTrien as
+        | "the_chat"
+        | "nhan_thuc"
+        | "ngon_ngu"
+        | "tinh_cam_ky_nang_xa_hoi"
+        | "tham_my"
+        | undefined) || null,
     diemSo: input.diemSo || null,
     xepLoai: input.xepLoai?.trim() || null,
     nhanXet: input.nhanXet?.trim() || null,

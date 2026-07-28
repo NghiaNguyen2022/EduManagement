@@ -317,6 +317,9 @@ hocSinhRouter.post(
         hocSinhId: Number(req.params.id),
         enrollmentId: Number(req.body?.enrollmentId),
         loaiDanhGia: String(req.body?.loaiDanhGia ?? ""),
+        linhVucPhatTrien: req.body?.linhVucPhatTrien
+          ? String(req.body.linhVucPhatTrien)
+          : null,
         diemSo: req.body?.diemSo ? String(req.body.diemSo) : null,
         xepLoai: req.body?.xepLoai ? String(req.body.xepLoai) : null,
         nhanXet: req.body?.nhanXet ? String(req.body.nhanXet) : null,

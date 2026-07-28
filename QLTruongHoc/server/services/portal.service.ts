@@ -237,6 +237,7 @@ export async function getParentPortalOverview(input: { userId: number }) {
               id: item.danhGia.id,
               enrollmentId: item.enrollmentId,
               loaiDanhGia: item.danhGia.loaiDanhGia,
+              linhVucPhatTrien: item.danhGia.linhVucPhatTrien,
               diemSo: item.danhGia.diemSo,
               xepLoai: item.danhGia.xepLoai,
               nhanXet: item.danhGia.nhanXet,
