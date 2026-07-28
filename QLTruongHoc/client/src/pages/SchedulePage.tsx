@@ -10,7 +10,8 @@ import { listThoiKhoaBieuApi } from "../features/lichHoc/lichHocApi";
 import type { ThoiKhoaBieuItem } from "../features/lichHoc/lichHocTypes";
 
 const TRANG_THAI_BUOI_HOC_LABEL: Record<string, string> = {
-  du_kien: "Dự kiến",
+  du_kien: "Chưa học",
+  dang_hoc: "Đang học",
   da_hoc: "Đã học",
   nghi: "Nghỉ",
   huy: "Huỷ",
@@ -169,7 +170,9 @@ export function SchedulePage() {
                       {item.buoiHoc.phongHoc || "—"}
                     </div>
 
-                    <span>
+                    <span
+                      className={`status-badge status-badge--${item.buoiHoc.trangThai}`}
+                    >
                       {TRANG_THAI_BUOI_HOC_LABEL[item.buoiHoc.trangThai]}
                     </span>
                   </div>

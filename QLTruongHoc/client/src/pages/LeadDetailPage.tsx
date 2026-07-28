@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import {
   DateField,
@@ -140,6 +140,7 @@ export function LeadDetailPage() {
     try {
       const data = await getLeadDetailApi(leadId);
       setDetail(data);
+
       setInfoForm({
         hoTen: data.lead.hoTen,
         soDienThoai: data.lead.soDienThoai,
@@ -181,7 +182,7 @@ export function LeadDetailPage() {
 
     try {
       await updateLeadApi(leadId, infoForm);
-      setNotice("Đã cập nhật thông tin lead.");
+      setNotice("Đã cập nhật thông tin khách hàng tiềm năng.");
       await loadDetail();
     } catch (saveError) {
       setError(
@@ -252,7 +253,7 @@ export function LeadDetailPage() {
 
     try {
       await markLeadNotContinuingApi(leadId, notContinuingReason);
-      setNotice("Đã đánh dấu lead không tiếp tục.");
+      setNotice("Đã đánh dấu khách hàng tiềm năng không tiếp tục.");
       setPendingNotContinuing(false);
       setNotContinuingReason("");
       await loadDetail();
@@ -274,13 +275,13 @@ export function LeadDetailPage() {
 
     try {
       await reopenLeadApi(leadId);
-      setNotice("Đã mở lại lead.");
+      setNotice("Đã mở lại khách hàng tiềm năng.");
       await loadDetail();
     } catch (reopenError) {
       setError(
         reopenError instanceof Error
           ? reopenError.message
-          : "Không thể mở lại lead.",
+          : "Không thể mở lại khách hàng tiềm năng.",
       );
     } finally {
       setBusyAction(false);
@@ -314,7 +315,7 @@ export function LeadDetailPage() {
   if (loading || !detail || !infoForm) {
     return (
       <div className="page-stack">
-        <PageHeader title="Lead" subtitle={error || "Đang tải dữ liệu..."} />
+        <PageHeader title="Khách hàng tiềm năng" subtitle={error || "Đang tải dữ liệu..."} />
       </div>
     );
   }
@@ -323,14 +324,14 @@ export function LeadDetailPage() {
     <div className="page-stack">
       <PageHeader
         title={detail.lead.hoTen}
-        subtitle={`Mã lead ${detail.lead.maLead} · ${TRANG_THAI_LABEL[detail.lead.trangThai]}`}
+        subtitle={`Mã khách hàng tiềm năng ${detail.lead.maLead} · ${TRANG_THAI_LABEL[detail.lead.trangThai]}`}
         action={
           <button
             type="button"
             className="text-button"
             onClick={() => navigate("/admissions")}
           >
-            ← Danh sách lead
+            ← Danh sách khách hàng tiềm năng
           </button>
         }
       />
@@ -341,8 +342,11 @@ export function LeadDetailPage() {
       {detail.lead.trangThai === "da_dang_ky" ? (
         <SectionCard title="Đã xác nhận đăng ký">
           <p>
-            Lead này đã chuyển đổi thành học sinh (mã học sinh nội bộ #
-            {detail.lead.hocSinhId}). Xem chi tiết tại trang Học sinh.
+            Khách hàng tiềm năng này đã chuyển đổi thành học sinh (mã học sinh nội bộ #
+            {detail.lead.hocSinhId}).{" "}
+            {detail.lead.hocSinhId ? (
+              <Link to={`/students/${detail.lead.hocSinhId}`}>Xem chi tiết học sinh →</Link>
+            ) : null}
           </p>
         </SectionCard>
       ) : null}
@@ -358,13 +362,13 @@ export function LeadDetailPage() {
             disabled={busyAction}
             onClick={() => void handleReopen()}
           >
-            Mở lại lead
+            Mở lại khách hàng tiềm năng
           </button>
         </SectionCard>
       ) : null}
 
       <SectionCard
-        title="Thông tin lead"
+        title="Thông tin khách hàng tiềm năng"
         subtitle={isLocked ? "Đã khoá — không thể sửa" : undefined}
       >
         <form className="user-create-form" onSubmit={handleSaveInfo}>
@@ -450,7 +454,7 @@ export function LeadDetailPage() {
       {canManage && !isLocked ? (
         <SectionCard
           title="Ghi nhận hoạt động chăm sóc"
-          subtitle="Có thể đổi trạng thái lead cùng lúc, trừ đã đăng ký."
+          subtitle="Có thể đổi trạng thái khách hàng tiềm năng cùng lúc, trừ đã đăng ký."
         >
           <form
             className="user-create-form"
@@ -620,13 +624,16 @@ export function LeadDetailPage() {
       {canManage && !isLocked ? (
         <SectionCard
           title="Xác nhận đăng ký"
-          subtitle="Tạo hồ sơ học sinh và liên kết phụ huynh từ thông tin lead."
+          subtitle="Tạo hồ sơ học sinh và liên kết phụ huynh từ thông tin khách hàng tiềm năng."
         >
           {!showConfirmForm ? (
             <button
               type="button"
               className="primary-button"
-              onClick={() => setShowConfirmForm(true)}
+              onClick={() => {
+                setConfirmForm({ ...emptyConfirmForm, hoTenHocVien: detail.lead.hoTen });
+                setShowConfirmForm(true);
+              }}
             >
               Xác nhận đăng ký
             </button>
@@ -768,7 +775,7 @@ export function LeadDetailPage() {
       <ConfirmDialog
         open={pendingNotContinuing}
         title="Đánh dấu không tiếp tục"
-        message={`Lead ${detail.lead.hoTen} sẽ chuyển sang trạng thái không tiếp tục với lý do: "${notContinuingReason}".`}
+        message={`Khách hàng tiềm năng ${detail.lead.hoTen} sẽ chuyển sang trạng thái không tiếp tục với lý do: "${notContinuingReason}".`}
         confirmLabel="Xác nhận"
         danger
         busy={busyAction}

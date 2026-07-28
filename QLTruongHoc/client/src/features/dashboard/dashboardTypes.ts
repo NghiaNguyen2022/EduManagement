@@ -49,4 +49,5 @@ export type DashboardSummary = {
   tyLeChuyenDoiLead: TyLeChuyenDoiLead;
   buoiHocCanDieuChinh: number;
   hocSinhBaoLuu: number;
+  hocSinhChoXepLop: number;
 };

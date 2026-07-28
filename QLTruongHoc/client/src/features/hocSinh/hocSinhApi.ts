@@ -1,4 +1,5 @@
 import type {
+  GhiDanhTrucTiepFormInput,
   GuardianFormInput,
   GuardianLinkItem,
   HocSinhDetail,
@@ -53,10 +54,35 @@ export function getHocSinhDetailApi(id: number) {
   return request<HocSinhDetail>(`/api/hoc-sinh/${id}`);
 }
 
+export function listHocSinhChoXepLopApi() {
+  return request<HocSinhItem[]>("/api/hoc-sinh/cho-xep-lop");
+}
+
+export function ghiDanhTrucTiepApi(input: GhiDanhTrucTiepFormInput) {
+  return request<HocSinhItem>("/api/hoc-sinh/ghi-danh", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function ghiNhanKetQuaTestDauVaoApi(
+  id: number,
+  ketQuaTestDauVao: string,
+) {
+  return request<HocSinhItem>(`/api/hoc-sinh/${id}/ket-qua-test`, {
+    method: "PATCH",
+    body: JSON.stringify({ ketQuaTestDauVao }),
+  });
+}
+
 export function updateHocSinhApi(id: number, input: HocSinhFormInput) {
   return request<HocSinhItem>(`/api/hoc-sinh/${id}`, {
     method: "PATCH",
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      ...input,
+      chieuCaoCm: input.chieuCaoCm !== null ? String(input.chieuCaoCm) : null,
+      canNangKg: input.canNangKg !== null ? String(input.canNangKg) : null,
+    }),
   });
 }
 

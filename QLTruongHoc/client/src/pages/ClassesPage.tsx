@@ -9,6 +9,7 @@ import {
 import { EntityLink, OrgLink } from "../components/shared/EntityLink";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
+import { TabBar } from "../components/shared/TabBar";
 import { useAuth } from "../features/auth/AuthContext";
 import {
   createChuongTrinhApi,
@@ -42,6 +43,7 @@ const emptyChuongTrinhForm: ChuongTrinhFormInput = {
   tongSoBuoi: null,
   tongSoGio: null,
   moTa: "",
+  coTestDauVao: false,
 };
 
 const emptyLopForm: LopHocFormInput = {
@@ -54,9 +56,12 @@ const emptyLopForm: LopHocFormInput = {
   phongHoc: "",
 };
 
+type TabId = "chuong-trinh" | "lop-hoc";
+
 export function ClassesPage() {
   const { auth } = useAuth();
 
+  const [activeTab, setActiveTab] = useState<TabId>("chuong-trinh");
   const [classes, setClasses] = useState<LopHocItem[]>([]);
   const [programs, setPrograms] = useState<ChuongTrinhItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +73,7 @@ export function ClassesPage() {
     emptyChuongTrinhForm,
   );
   const [savingProgram, setSavingProgram] = useState(false);
+  const [showClassForm, setShowClassForm] = useState(false);
   const [classForm, setClassForm] = useState<LopHocFormInput>(
     emptyLopForm,
   );
@@ -171,6 +177,7 @@ export function ClassesPage() {
       const created = await createLopHocApi(classForm);
       setNotice(`Đã tạo lớp ${created.maLop}.`);
       setClassForm(emptyLopForm);
+      setShowClassForm(false);
       await loadData();
     } catch (classError) {
       setError(
@@ -197,6 +204,20 @@ export function ClassesPage() {
       {error ? <div className="form-error">{error}</div> : null}
       {notice ? <div className="form-success">{notice}</div> : null}
 
+      <TabBar
+        tabs={[
+          {
+            id: "chuong-trinh",
+            label: "Chương trình đào tạo",
+            badge: programs.length,
+          },
+          { id: "lop-hoc", label: "Lớp học", badge: classes.length },
+        ]}
+        activeId={activeTab}
+        onChange={(id) => setActiveTab(id as TabId)}
+      />
+
+      {activeTab === "chuong-trinh" ? (
       <SectionCard
         title="Chương trình đào tạo"
         subtitle={`${programs.length} chương trình`}
@@ -268,6 +289,22 @@ export function ClassesPage() {
               }
             />
 
+            {auth?.currentOrganization?.loaiHinhDaoTao !== "mam_non" ? (
+              <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <input
+                  type="checkbox"
+                  checked={programForm.coTestDauVao}
+                  onChange={(event) =>
+                    setProgramForm({
+                      ...programForm,
+                      coTestDauVao: event.target.checked,
+                    })
+                  }
+                />
+                Yêu cầu test đầu vào trước khi xếp lớp
+              </label>
+            ) : null}
+
             <button
               type="submit"
               className="primary-button"
@@ -335,12 +372,23 @@ export function ClassesPage() {
           </div>
         )}
       </SectionCard>
-
+      ) : (
+      <>
       {canManage ? (
         <SectionCard
           title="Thêm lớp học"
           subtitle="Mã lớp tự đặt theo quy ước của đơn vị."
+          actions={
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => setShowClassForm((current) => !current)}
+            >
+              {showClassForm ? "Đóng" : "Thêm lớp"}
+            </button>
+          }
         >
+          {showClassForm ? (
           <form
             className="user-create-form"
             onSubmit={handleCreateClass}
@@ -423,6 +471,7 @@ export function ClassesPage() {
               {savingClass ? "Đang lưu..." : "Tạo lớp"}
             </button>
           </form>
+          ) : null}
         </SectionCard>
       ) : null}
 
@@ -504,6 +553,8 @@ export function ClassesPage() {
           </table>
         </div>
       </SectionCard>
+      </>
+      )}
     </div>
   );
 }

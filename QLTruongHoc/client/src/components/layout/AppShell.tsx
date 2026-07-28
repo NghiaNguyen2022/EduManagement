@@ -11,8 +11,14 @@ import {
   useAuth,
 } from "../../features/auth/AuthContext";
 import {
+  NotificationProvider,
+} from "../../features/thongBaoSuKien/NotificationContext";
+import {
   findRouteByPath,
 } from "../../routes/appRoutes";
+import {
+  ToastStack,
+} from "../shared/ToastStack";
 import {
   Sidebar,
 } from "./Sidebar";
@@ -68,6 +74,7 @@ export function AppShell({
   }, [auth?.currentOrganization?.tenDonVi, location.pathname]);
 
   return (
+    <NotificationProvider>
     <div
       className={`app-shell ${
         sidebarCollapsed
@@ -75,6 +82,8 @@ export function AppShell({
           : ""
       }`}
     >
+      <ToastStack />
+
       <Sidebar
         collapsed={
           sidebarCollapsed
@@ -151,5 +160,6 @@ export function AppShell({
         </main>
       </div>
     </div>
+    </NotificationProvider>
   );
 }

@@ -9,15 +9,27 @@ import { EntityLink, OrgLink } from "../components/shared/EntityLink";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
 import { useAuth } from "../features/auth/AuthContext";
+import { listChuongTrinhApi } from "../features/chuongTrinh/chuongTrinhApi";
+import type { ChuongTrinhItem } from "../features/chuongTrinh/chuongTrinhTypes";
 import {
   createHocSinhApi,
+  ghiNhanKetQuaTestDauVaoApi,
   listHocSinhApi,
+  listHocSinhChoXepLopApi,
 } from "../features/hocSinh/hocSinhApi";
 import type {
   HocSinhFormInput,
   HocSinhItem,
 } from "../features/hocSinh/hocSinhTypes";
+import { listLopHocApi, xepHocSinhVaoLopApi } from "../features/lopHoc/lopHocApi";
+import type { LopHocItem } from "../features/lopHoc/lopHocTypes";
 import { useUnsavedChangesGuard } from "../features/navigation/UnsavedChangesContext";
+
+const LOP_HOC_CO_THE_XEP = new Set(["chuan_bi", "dang_hoc"]);
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 const TRANG_THAI_LABEL: Record<string, string> = {
   tiep_nhan: "Tiếp nhận",
@@ -30,16 +42,36 @@ const TRANG_THAI_LABEL: Record<string, string> = {
 const emptyForm: HocSinhFormInput = {
   hoTen: "",
   tenThuongGoi: "",
+  hinhAnhUrl: null,
   ngaySinh: "",
   gioiTinh: "",
+  soDinhDanh: "",
+  noiSinh: "",
+  danToc: "",
+  quocTich: "",
   diaChi: "",
+  truongLopTruocDo: "",
   ngayNhapHoc: "",
+  dienChinhSach: "",
+  chieuCaoCm: null,
+  canNangKg: null,
+  diUngBenhNen: "",
+  lienHeKhanCapHoTen: "",
+  lienHeKhanCapSdt: "",
 };
 
 export function StudentsPage() {
   const { auth } = useAuth();
 
   const [students, setStudents] = useState<HocSinhItem[]>([]);
+  const [choXepLop, setChoXepLop] = useState<HocSinhItem[]>([]);
+  const [classes, setClasses] = useState<LopHocItem[]>([]);
+  const [chuongTrinh, setChuongTrinh] = useState<ChuongTrinhItem[]>([]);
+  const [xepLopChon, setXepLopChon] = useState<Record<number, string>>({});
+  const [ketQuaTestChon, setKetQuaTestChon] = useState<Record<number, string>>(
+    {},
+  );
+  const [xepLopDangLuu, setXepLopDangLuu] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -91,14 +123,86 @@ export function StudentsPage() {
           ? loadError.message
           : "Không thể tải dữ liệu.",
       );
-    } finally {
-      setLoading(false);
     }
+
+    // Tách riêng khỏi khối trên: panel "chờ xếp lớp" cần `lop_hoc.quan_ly` (gác
+    // ở server), khác với điều kiện hiển thị `canManage` (`hoc_sinh.quan_ly`).
+    // Vai trò nào có cái này mà thiếu cái kia thì panel chỉ ẩn đi, không được
+    // phép làm hỏng cả danh sách học sinh phía trên.
+    if (canManage) {
+      try {
+        const [choXepLopRows, classRows, chuongTrinhRows] = await Promise.all([
+          listHocSinhChoXepLopApi(),
+          listLopHocApi(),
+          listChuongTrinhApi(),
+        ]);
+        setChoXepLop(choXepLopRows);
+        setClasses(classRows);
+        setChuongTrinh(chuongTrinhRows);
+      } catch {
+        setChoXepLop([]);
+        setClasses([]);
+        setChuongTrinh([]);
+      }
+    }
+
+    setLoading(false);
   }
 
   useEffect(() => {
     void loadData();
-  }, [auth?.currentOrganization?.id]);
+  }, [auth?.currentOrganization?.id, canManage]);
+
+  // Lớp có chương trình bật `coTestDauVao` — hiện thêm ô ghi kết quả test
+  // ngay lúc học vụ xếp lớp (tuỳ chọn, không bắt buộc). Xem
+  // docs/analysis/TUYEN_SINH_THEO_LOAI_HINH.md.
+  function lopCanTest(lopHocId: string) {
+    if (!lopHocId) return false;
+
+    const lop = classes.find((item) => String(item.id) === lopHocId);
+
+    if (!lop?.chuongTrinhDaoTaoId) return false;
+
+    return chuongTrinh.some(
+      (item) => item.id === lop.chuongTrinhDaoTaoId && item.coTestDauVao,
+    );
+  }
+
+  async function handleXepLop(hocSinhId: number) {
+    const lopHocId = xepLopChon[hocSinhId];
+
+    if (!lopHocId) {
+      setError("Vui lòng chọn lớp trước khi xếp.");
+      return;
+    }
+
+    setError("");
+    setNotice("");
+    setXepLopDangLuu(hocSinhId);
+
+    try {
+      const ketQuaTest = ketQuaTestChon[hocSinhId]?.trim();
+
+      if (lopCanTest(lopHocId) && ketQuaTest) {
+        await ghiNhanKetQuaTestDauVaoApi(hocSinhId, ketQuaTest);
+      }
+
+      await xepHocSinhVaoLopApi(Number(lopHocId), {
+        hocSinhId,
+        ngayVaoLop: today(),
+      });
+      setNotice("Đã xếp học sinh vào lớp.");
+      await loadData();
+    } catch (xepLopError) {
+      setError(
+        xepLopError instanceof Error
+          ? xepLopError.message
+          : "Không thể xếp học sinh vào lớp.",
+      );
+    } finally {
+      setXepLopDangLuu(null);
+    }
+  }
 
   async function handleCreate(
     event: React.FormEvent<HTMLFormElement>,
@@ -214,6 +318,91 @@ export function StudentsPage() {
         </SectionCard>
       ) : null}
 
+      {canManage && choXepLop.length > 0 ? (
+        <SectionCard
+          title={`Học sinh chờ xếp lớp (${choXepLop.length})`}
+          subtitle="Đã nhập học nhưng chưa có lớp đang học — chọn lớp rồi xếp."
+        >
+          <div className="user-table-wrap">
+            <table className="user-table">
+              <thead>
+                <tr>
+                  <th>Học sinh</th>
+                  <th>Nguyện vọng</th>
+                  <th>Lớp</th>
+                  <th>Kết quả test đầu vào</th>
+                  <th></th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {choXepLop.map((student) => {
+                  const lopChon = xepLopChon[student.id] ?? "";
+                  const canTest = lopCanTest(lopChon);
+
+                  return (
+                    <tr key={student.id}>
+                      <td>
+                        <EntityLink to={`/students/${student.id}`}>
+                          <strong>{student.hoTen}</strong>
+                        </EntityLink>
+                        <small>{student.maHocSinh}</small>
+                      </td>
+
+                      <td>{student.nguyenVongLop ?? "—"}</td>
+
+                      <td>
+                        <SelectField
+                          value={lopChon}
+                          placeholder="Chọn lớp"
+                          options={classes
+                            .filter((item) => LOP_HOC_CO_THE_XEP.has(item.trangThai))
+                            .map((item) => ({
+                              value: String(item.id),
+                              label: `${item.tenLop} (${item.maLop})`,
+                            }))}
+                          onChange={(value) =>
+                            setXepLopChon({ ...xepLopChon, [student.id]: value })
+                          }
+                        />
+                      </td>
+
+                      <td>
+                        {canTest ? (
+                          <TextField
+                            value={ketQuaTestChon[student.id] ?? ""}
+                            placeholder="VD: A2 - Elementary"
+                            onChange={(value) =>
+                              setKetQuaTestChon({
+                                ...ketQuaTestChon,
+                                [student.id]: value,
+                              })
+                            }
+                          />
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+
+                      <td>
+                        <button
+                          type="button"
+                          className="primary-button"
+                          disabled={xepLopDangLuu === student.id}
+                          onClick={() => handleXepLop(student.id)}
+                        >
+                          {xepLopDangLuu === student.id ? "Đang xếp..." : "Xếp lớp"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
+      ) : null}
+
       <SectionCard
         title="Danh sách học sinh"
         subtitle={
@@ -247,13 +436,29 @@ export function StudentsPage() {
               {filteredStudents.map((student) => (
                 <tr key={student.id}>
                   <td>
-                    <EntityLink
-                      to={`/students/${student.id}`}
-                      donVi={student.donVi}
-                    >
-                      <strong>{student.hoTen}</strong>
-                    </EntityLink>
-                    <small>{student.maHocSinh}</small>
+                    <div className="student-row-identity">
+                      {student.hinhAnhUrl ? (
+                        <img
+                          src={student.hinhAnhUrl}
+                          alt=""
+                          className="profile-avatar profile-avatar--sm"
+                        />
+                      ) : (
+                        <div className="profile-avatar profile-avatar--sm profile-avatar--placeholder">
+                          🎒
+                        </div>
+                      )}
+
+                      <div>
+                        <EntityLink
+                          to={`/students/${student.id}`}
+                          donVi={student.donVi}
+                        >
+                          <strong>{student.hoTen}</strong>
+                        </EntityLink>
+                        <small>{student.maHocSinh}</small>
+                      </div>
+                    </div>
                   </td>
 
                   <td>{student.ngaySinh ?? "—"}</td>

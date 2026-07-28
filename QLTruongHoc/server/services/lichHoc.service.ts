@@ -16,13 +16,47 @@ import {
   updateBuoiHocChiTiet,
   updateBuoiHocTrangThai,
 } from "../db/lichHoc.repository.js";
+import { findGiaoVienByNguoiDungId } from "../db/giaoVien.repository.js";
 import {
   findGiaoVienChinhDangHoatDong,
   findLopHocById,
 } from "../db/lopHoc.repository.js";
 
 const THU_HOP_LE = [2, 3, 4, 5, 6, 7, 8];
-const LOAI_BUOI_KHONG_SUA = ["da_hoc"];
+// Buổi "dang_hoc" khoá khỏi màn hình lịch học (học vụ) — chỉ giáo viên (qua
+// bắt đầu/kết thúc buổi học) hoặc quản lý mới đổi được từ đây trở đi.
+const LOAI_BUOI_KHONG_SUA = ["dang_hoc", "da_hoc"];
+
+/**
+ * Bắt đầu/kết thúc buổi học là hành động của giáo viên đứng lớp — không tái
+ * dùng `lop_hoc.quan_ly` (học vụ) vì học vụ không "dạy" buổi học. Cho phép
+ * qua nếu có quyền quản lý (`he_thong.quan_tri`/`lop_hoc.quan_ly`, ví dụ học
+ * vụ cần can thiệp hộ), ngược lại bắt buộc đúng giáo viên được phân công cho
+ * buổi học đó (`BuoiHoc.giaoVienId` khớp hồ sơ giáo viên của người thao tác).
+ */
+async function requireGiaoVienCuaBuoiHoc(input: {
+  donViId: number;
+  giaoVienId: number | null;
+  actorUserId: number;
+  grantedPermissions: string[];
+}) {
+  const coQuyenQuanLy =
+    input.grantedPermissions.includes("he_thong.quan_tri") ||
+    input.grantedPermissions.includes("lop_hoc.quan_ly");
+
+  if (coQuyenQuanLy) {
+    return;
+  }
+
+  const giaoVien = await findGiaoVienByNguoiDungId(
+    input.donViId,
+    input.actorUserId,
+  );
+
+  if (!giaoVien || giaoVien.id !== input.giaoVienId) {
+    throw new Error("Bạn không phải giáo viên phụ trách buổi học này.");
+  }
+}
 
 function validateGio(gioBatDau: string, gioKetThuc: string) {
   if (!gioBatDau || !gioKetThuc) {
@@ -473,6 +507,133 @@ export async function capNhatTrangThaiBuoiHoc(input: {
     objectType: "BuoiHoc",
     objectId: String(input.id),
     content: `Đổi trạng thái buổi học ngày ${found.buoiHoc.ngayHoc} sang ${input.trangThai}.`,
+    ipAddress: input.ipAddress,
+  });
+
+  return updated;
+}
+
+export async function batDauBuoiHoc(input: {
+  donViId: number;
+  id: number;
+  actorUserId: number;
+  grantedPermissions: string[];
+  ipAddress?: string;
+}) {
+  const found = await findBuoiHocById(input.id);
+
+  if (!found || found.donViId !== input.donViId) {
+    throw new Error("Không tìm thấy buổi học.");
+  }
+
+  if (found.buoiHoc.trangThai !== "du_kien") {
+    throw new Error("Chỉ có thể bắt đầu buổi học đang ở trạng thái chưa học.");
+  }
+
+  await requireGiaoVienCuaBuoiHoc({
+    donViId: input.donViId,
+    giaoVienId: found.buoiHoc.giaoVienId,
+    actorUserId: input.actorUserId,
+    grantedPermissions: input.grantedPermissions,
+  });
+
+  const updated = await updateBuoiHocTrangThai({
+    id: input.id,
+    trangThai: "dang_hoc",
+  });
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "lich_hoc.start_session",
+    objectType: "BuoiHoc",
+    objectId: String(input.id),
+    content: `Bắt đầu buổi học ngày ${found.buoiHoc.ngayHoc}.`,
+    ipAddress: input.ipAddress,
+  });
+
+  return updated;
+}
+
+export async function ketThucBuoiHoc(input: {
+  donViId: number;
+  id: number;
+  actorUserId: number;
+  grantedPermissions: string[];
+  ipAddress?: string;
+}) {
+  const found = await findBuoiHocById(input.id);
+
+  if (!found || found.donViId !== input.donViId) {
+    throw new Error("Không tìm thấy buổi học.");
+  }
+
+  if (found.buoiHoc.trangThai !== "dang_hoc") {
+    throw new Error("Chỉ có thể kết thúc buổi học đang diễn ra.");
+  }
+
+  await requireGiaoVienCuaBuoiHoc({
+    donViId: input.donViId,
+    giaoVienId: found.buoiHoc.giaoVienId,
+    actorUserId: input.actorUserId,
+    grantedPermissions: input.grantedPermissions,
+  });
+
+  const updated = await updateBuoiHocTrangThai({
+    id: input.id,
+    trangThai: "da_hoc",
+  });
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "lich_hoc.end_session",
+    objectType: "BuoiHoc",
+    objectId: String(input.id),
+    content: `Kết thúc buổi học ngày ${found.buoiHoc.ngayHoc}.`,
+    ipAddress: input.ipAddress,
+  });
+
+  return updated;
+}
+
+/** Mở lại buổi đã kết thúc — dùng khi giáo viên cần sửa điểm danh sau khi đã bấm "Kết thúc". */
+export async function moLaiBuoiHocDangHoc(input: {
+  donViId: number;
+  id: number;
+  actorUserId: number;
+  grantedPermissions: string[];
+  ipAddress?: string;
+}) {
+  const found = await findBuoiHocById(input.id);
+
+  if (!found || found.donViId !== input.donViId) {
+    throw new Error("Không tìm thấy buổi học.");
+  }
+
+  if (found.buoiHoc.trangThai !== "da_hoc") {
+    throw new Error("Chỉ có thể mở lại buổi học đã kết thúc.");
+  }
+
+  await requireGiaoVienCuaBuoiHoc({
+    donViId: input.donViId,
+    giaoVienId: found.buoiHoc.giaoVienId,
+    actorUserId: input.actorUserId,
+    grantedPermissions: input.grantedPermissions,
+  });
+
+  const updated = await updateBuoiHocTrangThai({
+    id: input.id,
+    trangThai: "dang_hoc",
+  });
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "lich_hoc.reopen_session",
+    objectType: "BuoiHoc",
+    objectId: String(input.id),
+    content: `Mở lại buổi học ngày ${found.buoiHoc.ngayHoc} để chỉnh điểm danh.`,
     ipAddress: input.ipAddress,
   });
 

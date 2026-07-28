@@ -8,9 +8,11 @@ import {
   findHocSinhById,
   listHocSinhAllDonVi,
   listHocSinhByDonVi,
+  listHocSinhChoXepLop,
   listTrangThaiLichSuByHocSinh,
   updateHocSinh,
   updateHocSinhTrangThai,
+  updateKetQuaTestDauVao,
 } from "../db/hocSinh.repository.js";
 import {
   closeEnrollment,
@@ -22,6 +24,7 @@ import {
   listGuardianLinksByHocSinh,
 } from "../db/phuHuynh.repository.js";
 import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
+import { addGuardianToStudent } from "./phuHuynh.service.js";
 
 type TrangThaiHocSinh =
   | "tiep_nhan"
@@ -58,6 +61,52 @@ export async function listHocSinh(donViId: number, loaiDonVi?: string) {
   }
 
   return listHocSinhByDonVi(donViId);
+}
+
+export async function getHocSinhChoXepLop(donViId: number) {
+  return listHocSinhChoXepLop(donViId);
+}
+
+/**
+ * Học vụ ghi kết quả test đầu vào ngay lúc xếp lớp (nếu chương trình của lớp
+ * yêu cầu) — chỉ là ghi chú ngữ cảnh, không phải trạng thái/luồng duyệt. Xem
+ * docs/analysis/TUYEN_SINH_THEO_LOAI_HINH.md.
+ */
+export async function ghiNhanKetQuaTestDauVao(input: {
+  donViId: number;
+  id: number;
+  ketQuaTestDauVao: string | null;
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  const existing = await findHocSinhById(input.donViId, input.id);
+
+  if (!existing) {
+    throw new Error("Không tìm thấy học sinh trong đơn vị hiện tại.");
+  }
+
+  const ketQuaTestDauVao = input.ketQuaTestDauVao?.trim() || null;
+
+  const updated = await updateKetQuaTestDauVao({
+    id: input.id,
+    ketQuaTestDauVao,
+  });
+
+  if (!updated) {
+    throw new Error("Không thể ghi nhận kết quả test đầu vào.");
+  }
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "hoc_sinh.ghi_ket_qua_test_dau_vao",
+    objectType: "HocSinh",
+    objectId: String(input.id),
+    content: `Ghi kết quả test đầu vào cho học sinh ${existing.hoTen} (${existing.maHocSinh}): ${ketQuaTestDauVao ?? "(trống)"}.`,
+    ipAddress: input.ipAddress,
+  });
+
+  return updated;
 }
 
 export async function getHocSinhDetail(
@@ -114,6 +163,7 @@ export async function createHocSinhMoi(input: {
   gioiTinh?: string | null;
   diaChi?: string | null;
   ngayNhapHoc?: string | null;
+  nguyenVongLop?: string | null;
   actorUserId: number;
   ipAddress?: string;
 }) {
@@ -150,6 +200,7 @@ export async function createHocSinhMoi(input: {
       (input.gioiTinh as "nam" | "nu" | "khac" | undefined) ?? null,
     diaChi: input.diaChi?.trim() || null,
     ngayNhapHoc: input.ngayNhapHoc || null,
+    nguyenVongLop: input.nguyenVongLop?.trim() || null,
   });
 
   if (!created) {
@@ -178,15 +229,102 @@ export async function createHocSinhMoi(input: {
   return created;
 }
 
+/**
+ * Ghi danh trực tiếp — dùng cho mầm non: không có khách hàng tiềm năng/đặt
+ * lịch như trung tâm ngoại ngữ, tuyển sinh ghi nhận thẳng hồ sơ học sinh +
+ * phụ huynh trong 1 bước, học vụ xếp lớp sau (theo độ tuổi). Tái dùng đúng 2
+ * hàm `confirmLeadRegistration` (trung tâm) đang dùng, chỉ khác là không có
+ * Lead đi trước. Xem docs/analysis/TUYEN_SINH_THEO_LOAI_HINH.md.
+ */
+export async function ghiNhanHoSoHocSinh(input: {
+  donViId: number;
+  hoTenHocVien: string;
+  ngaySinh: string;
+  gioiTinh?: string | null;
+  diaChiHocVien?: string | null;
+  ngayNhapHoc?: string | null;
+  hoTenNguoiLienHe: string;
+  soDienThoaiNguoiLienHe: string;
+  emailNguoiLienHe?: string | null;
+  moiQuanHe: string;
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  const hocSinhMoi = await createHocSinhMoi({
+    donViId: input.donViId,
+    hoTen: input.hoTenHocVien,
+    ngaySinh: input.ngaySinh,
+    gioiTinh: input.gioiTinh ?? null,
+    diaChi: input.diaChiHocVien ?? null,
+    ngayNhapHoc: input.ngayNhapHoc ?? null,
+    actorUserId: input.actorUserId,
+    ipAddress: input.ipAddress,
+  });
+
+  await addGuardianToStudent({
+    donViId: input.donViId,
+    hocSinhId: hocSinhMoi.id,
+    dienThoai: input.soDienThoaiNguoiLienHe,
+    hoTen: input.hoTenNguoiLienHe,
+    email: input.emailNguoiLienHe ?? null,
+    moiQuanHe: input.moiQuanHe,
+    laLienHeChinh: true,
+    duocDonTre: true,
+    nhanThongBao: true,
+    nhanThongTinHocPhi: true,
+    actorUserId: input.actorUserId,
+    ipAddress: input.ipAddress,
+  });
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "hoc_sinh.ghi_danh_truc_tiep",
+    objectType: "HocSinh",
+    objectId: String(hocSinhMoi.id),
+    content: `Ghi danh trực tiếp học sinh ${hocSinhMoi.hoTen} (${hocSinhMoi.maHocSinh}), người liên hệ ${input.hoTenNguoiLienHe}.`,
+    ipAddress: input.ipAddress,
+  });
+
+  return hocSinhMoi;
+}
+
+function parseSoDoTuyChon(
+  value: string | null | undefined,
+  tenTruong: string,
+): string | null {
+  if (!value) return null;
+
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new Error(`${tenTruong} không hợp lệ.`);
+  }
+
+  return parsed.toFixed(1);
+}
+
 export async function updateHocSinhInfo(input: {
   donViId: number;
   id: number;
   hoTen: string;
   tenThuongGoi?: string | null;
+  hinhAnhUrl?: string | null;
   ngaySinh: string;
   gioiTinh?: string | null;
+  soDinhDanh?: string | null;
+  noiSinh?: string | null;
+  danToc?: string | null;
+  quocTich?: string | null;
   diaChi?: string | null;
+  truongLopTruocDo?: string | null;
   ngayNhapHoc?: string | null;
+  dienChinhSach?: string | null;
+  chieuCaoCm?: string | null;
+  canNangKg?: string | null;
+  diUngBenhNen?: string | null;
+  lienHeKhanCapHoTen?: string | null;
+  lienHeKhanCapSdt?: string | null;
   actorUserId: number;
   ipAddress?: string;
 }) {
@@ -210,11 +348,23 @@ export async function updateHocSinhInfo(input: {
     id: input.id,
     hoTen,
     tenThuongGoi: input.tenThuongGoi?.trim() || null,
+    hinhAnhUrl: input.hinhAnhUrl?.trim() || null,
     ngaySinh: input.ngaySinh,
     gioiTinh:
       (input.gioiTinh as "nam" | "nu" | "khac" | undefined) ?? null,
+    soDinhDanh: input.soDinhDanh?.trim() || null,
+    noiSinh: input.noiSinh?.trim() || null,
+    danToc: input.danToc?.trim() || null,
+    quocTich: input.quocTich?.trim() || null,
     diaChi: input.diaChi?.trim() || null,
+    truongLopTruocDo: input.truongLopTruocDo?.trim() || null,
     ngayNhapHoc: input.ngayNhapHoc || null,
+    dienChinhSach: input.dienChinhSach?.trim() || null,
+    chieuCaoCm: parseSoDoTuyChon(input.chieuCaoCm, "Chiều cao"),
+    canNangKg: parseSoDoTuyChon(input.canNangKg, "Cân nặng"),
+    diUngBenhNen: input.diUngBenhNen?.trim() || null,
+    lienHeKhanCapHoTen: input.lienHeKhanCapHoTen?.trim() || null,
+    lienHeKhanCapSdt: input.lienHeKhanCapSdt?.trim() || null,
   });
 
   if (!updated) {

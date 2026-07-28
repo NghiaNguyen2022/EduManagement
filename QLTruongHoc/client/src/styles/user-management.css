@@ -137,6 +137,32 @@
   margin-left: 8px;
 }
 
+/* Trạng thái buổi học (BuoiHoc.trangThai) */
+.status-badge--du_kien {
+  background: var(--edu-color-background-soft);
+  color: var(--edu-color-text-muted);
+}
+
+.status-badge--dang_hoc {
+  background: var(--edu-color-secondary-soft);
+  color: var(--edu-color-secondary);
+}
+
+.status-badge--da_hoc {
+  background: var(--edu-color-success-soft);
+  color: var(--edu-color-success);
+}
+
+.status-badge--nghi {
+  background: var(--edu-color-warning-soft);
+  color: var(--edu-color-warning);
+}
+
+.status-badge--huy {
+  background: var(--edu-color-danger-soft);
+  color: var(--edu-color-danger);
+}
+
 .row-actions {
   display: flex;
   gap: 10px;

@@ -7,6 +7,7 @@ export type ChuongTrinhItem = {
   tongSoBuoi: number | null;
   tongSoGio: string | null;
   moTa: string | null;
+  coTestDauVao: boolean;
   trangThai: "hoat_dong" | "ngung_hoat_dong";
   donVi?: { id: number; maDonVi: string; tenDonVi: string };
 };
@@ -17,4 +18,5 @@ export type ChuongTrinhFormInput = {
   tongSoBuoi: number | null;
   tongSoGio: number | null;
   moTa: string;
+  coTestDauVao: boolean;
 };

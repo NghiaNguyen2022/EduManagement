@@ -1,5 +1,6 @@
 import {
   bigint,
+  boolean,
   date,
   datetime,
   decimal,
@@ -23,6 +24,11 @@ export const chuongTrinhDaoTao = mysqlTable(
     tongSoBuoi: int("tongSoBuoi"),
     tongSoGio: decimal("tongSoGio", { precision: 10, scale: 2 }),
     moTa: text("moTa"),
+    // Bật/tắt theo TỪNG chương trình — không phải theo cả đơn vị, vì cùng 1
+    // trung tâm có thể vừa dạy môn cần test trình độ (ngoại ngữ) vừa dạy môn
+    // không cần (tin học). Học vụ ghi kết quả test lúc xếp lớp nếu chương
+    // trình của lớp bật cờ này. Xem docs/analysis/TUYEN_SINH_THEO_LOAI_HINH.md.
+    coTestDauVao: boolean("coTestDauVao").notNull().default(false),
     trangThai: mysqlEnum("trangThai", ["hoat_dong", "ngung_hoat_dong"])
       .notNull()
       .default("hoat_dong"),

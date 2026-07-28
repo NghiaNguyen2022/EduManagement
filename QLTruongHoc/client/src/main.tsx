@@ -26,6 +26,7 @@ import "./styles/form-components.css";
 import "./styles/premium-date-picker.css";
 import "./styles/audit-filter-layout.css";
 import "./styles/dialog.css";
+import "./styles/notification.css";
 
 ReactDOM.createRoot(
   document.getElementById(

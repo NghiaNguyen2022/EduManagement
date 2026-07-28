@@ -1,5 +1,5 @@
 export type PortalRoleSlug =
-      "parent" | "quan-ly-don-vi" | "giao-vien" | "hoc-vu" | "ke-toan" | "tuyen-sinh" | "he-thong";
+      "parent" | "unit-manager" | "teacher" | "academic-affairs" | "accountant" | "admissions" | "system";
 
 export type PortalRoleDefinition = {
       slug: PortalRoleSlug;
@@ -38,13 +38,13 @@ export const portalRoleOrder: Array<{
       slug: PortalRoleSlug;
 }> = [
             { role: "phu_huynh", slug: "parent" },
-            { role: "quan_ly_don_vi", slug: "quan-ly-don-vi" },
-            { role: "giao_vien", slug: "giao-vien" },
-            { role: "hoc_vu", slug: "hoc-vu" },
-            { role: "ke_toan", slug: "ke-toan" },
-            { role: "tu_van", slug: "tuyen-sinh" },
-            { role: "tuyen_sinh", slug: "tuyen-sinh" },
-            { role: "quan_tri_he_thong", slug: "he-thong" },
+            { role: "quan_ly_don_vi", slug: "unit-manager" },
+            { role: "giao_vien", slug: "teacher" },
+            { role: "hoc_vu", slug: "academic-affairs" },
+            { role: "ke_toan", slug: "accountant" },
+            { role: "tu_van", slug: "admissions" },
+            { role: "tuyen_sinh", slug: "admissions" },
+            { role: "quan_tri_he_thong", slug: "system" },
       ];
 
 export const portalRoles: PortalRoleDefinition[] = [
@@ -159,7 +159,7 @@ export const portalRoles: PortalRoleDefinition[] = [
             ],
       },
       {
-            slug: "quan-ly-don-vi",
+            slug: "unit-manager",
             title: "Cổng quản lý đơn vị",
             subtitle: "Tổng quan toàn đơn vị: đào tạo, tuyển sinh, tài chính và việc cần xử lý.",
             summary: "Màn hình điều phối cho người phụ trách đơn vị.",
@@ -176,7 +176,7 @@ export const portalRoles: PortalRoleDefinition[] = [
                   },
                   {
                         label: "Tuyển sinh",
-                        description: "Xem lead mới và tỷ lệ chuyển đổi trong tháng.",
+                        description: "Xem khách hàng tiềm năng mới và tỷ lệ chuyển đổi trong tháng.",
                         to: "/admissions",
                   },
                   {
@@ -223,7 +223,7 @@ export const portalRoles: PortalRoleDefinition[] = [
                         tone: "warning",
                   },
                   {
-                        title: "Lead mới trong tháng",
+                        title: "Khách hàng tiềm năng mới trong tháng",
                         value: "—",
                         note: "Tính từ đầu tháng tới hôm nay",
                         icon: "📈",
@@ -237,7 +237,7 @@ export const portalRoles: PortalRoleDefinition[] = [
                   },
                   {
                         title: "Theo dõi tuyển sinh",
-                        detail: "Nắm số lead mới và tỷ lệ chuyển đổi để điều phối đội tư vấn.",
+                        detail: "Nắm số khách hàng tiềm năng mới và tỷ lệ chuyển đổi để điều phối đội tư vấn.",
                   },
                   {
                         title: "Rà soát sĩ số lớp",
@@ -246,7 +246,7 @@ export const portalRoles: PortalRoleDefinition[] = [
             ],
       },
       {
-            slug: "giao-vien",
+            slug: "teacher",
             title: "Cổng giáo viên",
             subtitle: "Quản lý lớp dạy, báo giảng, điểm danh và theo dõi học sinh.",
             summary: "Màn hình làm việc nhanh cho giáo viên.",
@@ -318,7 +318,7 @@ export const portalRoles: PortalRoleDefinition[] = [
             ],
       },
       {
-            slug: "hoc-vu",
+            slug: "academic-affairs",
             title: "Cổng học vụ",
             subtitle: "Quản lý lớp học, lịch học, xếp lớp và theo dõi tiến độ đào tạo.",
             summary: "Màn hình điều phối nghiệp vụ học vụ.",
@@ -332,6 +332,11 @@ export const portalRoles: PortalRoleDefinition[] = [
                         label: "Lớp học",
                         description: "Quản lý lớp đang chạy, sĩ số và phân công.",
                         to: "/classes",
+                  },
+                  {
+                        label: "Học sinh chờ xếp lớp",
+                        description: "Học sinh đã nhập học nhưng chưa có lớp — xếp theo nguyện vọng/test đầu vào.",
+                        to: "/students",
                   },
                   {
                         label: "Lịch học",
@@ -378,11 +383,22 @@ export const portalRoles: PortalRoleDefinition[] = [
                         icon: "✅",
                         tone: "success",
                   },
+                  {
+                        title: "Học sinh chờ xếp lớp",
+                        value: "—",
+                        note: "Đã nhập học nhưng chưa có lớp đang học",
+                        icon: "🧩",
+                        tone: "warning",
+                  },
             ],
             nextSteps: [
                   {
                         title: "Xem lớp và sĩ số",
                         detail: "Nhìn nhanh lớp nào đang thiếu/đủ học sinh để điều phối.",
+                  },
+                  {
+                        title: "Xếp lớp cho học sinh mới",
+                        detail: "Căn cứ nguyện vọng (và kết quả test đầu vào nếu chương trình yêu cầu) để xếp lớp.",
                   },
                   {
                         title: "Xếp bù buổi nghỉ/hủy",
@@ -395,7 +411,7 @@ export const portalRoles: PortalRoleDefinition[] = [
             ],
       },
       {
-            slug: "ke-toan",
+            slug: "accountant",
             title: "Cổng kế toán",
             subtitle: "Theo dõi kỳ thu, công nợ, phiếu thu và báo cáo tài chính.",
             summary: "Màn hình tổng quan cho nghiệp vụ tài chính.",
@@ -477,13 +493,13 @@ export const portalRoles: PortalRoleDefinition[] = [
             ],
       },
       {
-            slug: "tuyen-sinh",
+            slug: "admissions",
             title: "Cổng tuyển sinh",
-            subtitle: "Theo dõi lead, hồ sơ đăng ký và chăm sóc khách hàng tiềm năng.",
+            subtitle: "Theo dõi khách hàng tiềm năng, hồ sơ đăng ký và chăm sóc khách hàng.",
             summary: "Màn hình làm việc nhanh cho tuyển sinh.",
             quickLinks: [
                   {
-                        label: "Lead tuyển sinh",
+                        label: "Khách hàng tiềm năng",
                         description: "Mở danh sách khách hàng tiềm năng để xử lý tiếp.",
                         to: "/admissions",
                   },
@@ -505,14 +521,14 @@ export const portalRoles: PortalRoleDefinition[] = [
             ],
             stats: [
                   {
-                        title: "Lead mới trong tháng",
+                        title: "Khách hàng tiềm năng mới trong tháng",
                         value: "—",
                         note: "Từ đầu tháng tới hôm nay",
                         icon: "📞",
                         tone: "primary",
                   },
                   {
-                        title: "Lead đang chăm sóc",
+                        title: "Khách hàng tiềm năng đang chăm sóc",
                         value: "—",
                         note: "Chưa đăng ký, chưa dừng chăm sóc",
                         icon: "📋",
@@ -528,19 +544,19 @@ export const portalRoles: PortalRoleDefinition[] = [
                   {
                         title: "Tỷ lệ chuyển đổi",
                         value: "—",
-                        note: "Lead đã đăng ký / tổng lead đã tiếp nhận",
+                        note: "Khách hàng tiềm năng đã đăng ký / tổng đã tiếp nhận",
                         icon: "📈",
                         tone: "info",
                   },
             ],
             nextSteps: [
                   {
-                        title: "Mở danh sách lead",
-                        detail: "Ưu tiên xử lý lead mới và lead đang chăm sóc dở dang.",
+                        title: "Mở danh sách khách hàng tiềm năng",
+                        detail: "Ưu tiên xử lý khách hàng tiềm năng mới và đang chăm sóc dở dang.",
                   },
                   {
                         title: "Theo dõi hồ sơ",
-                        detail: "Chuyển lead đã xác nhận sang hồ sơ đăng ký và học sinh liên quan.",
+                        detail: "Chuyển khách hàng tiềm năng đã xác nhận sang hồ sơ đăng ký và học sinh liên quan.",
                   },
                   {
                         title: "Nhắc lịch hẹn hôm nay",
@@ -549,7 +565,7 @@ export const portalRoles: PortalRoleDefinition[] = [
             ],
       },
       {
-            slug: "he-thong",
+            slug: "system",
             title: "Cổng quản trị hệ thống",
             subtitle: "Điều phối đơn vị, người dùng, vai trò và nhật ký hệ thống.",
             summary: "Màn hình tổng quan cho quản trị nền tảng.",
@@ -623,10 +639,10 @@ export const portalRoles: PortalRoleDefinition[] = [
 ];
 
 /**
- * Kế toán tổng (đứng ở hệ thống) không thao tác được ở đơn vị con (xem
- * `getPortalContext`), nên "Định hướng portal" mặc định của kế toán (viết
- * cho người đứng tại 1 đơn vị, có thể tự "xử lý"/"duyệt") không đúng ở đây —
- * đổi thành các bước giám sát/tổng hợp thực sự làm được từ hệ thống.
+ * Kế toán tổng (đứng ở hệ thống) không thao tác được ở đơn vị con, nên
+ * "Định hướng portal" mặc định của kế toán (viết cho người đứng tại 1 đơn vị,
+ * có thể tự "xử lý"/"duyệt") không đúng ở đây — đổi thành các bước giám
+ * sát/tổng hợp thực sự làm được từ hệ thống.
  */
 export function getPortalNextSteps(input: {
       slug: PortalRoleSlug;
@@ -636,7 +652,7 @@ export function getPortalNextSteps(input: {
 
       if (!role) return [];
 
-      if (input.slug === "ke-toan" && input.organizationLevel === "he_thong") {
+      if (input.slug === "accountant" && input.organizationLevel === "he_thong") {
             return [
                   {
                         title: "Rà soát đơn vị có công nợ cao",
@@ -667,7 +683,7 @@ export function getDefaultPortalSlug(roles: string[]) {
             }
       }
 
-      return "he-thong" satisfies PortalRoleSlug;
+      return "system" satisfies PortalRoleSlug;
 }
 
 export function getDefaultPortalPath(roles: string[]) {
@@ -676,108 +692,6 @@ export function getDefaultPortalPath(roles: string[]) {
 
 export function canAccessPortalRole(slug: PortalRoleSlug, roles: string[]) {
       return portalRoleOrder.some((item) => item.slug === slug && roles.includes(item.role));
-}
-
-export function getPortalContext(input: {
-      slug: PortalRoleSlug;
-      organizationLevel: string;
-      educationType: string | null;
-}) {
-      const isSystem = input.organizationLevel === "he_thong";
-
-      if (input.slug === "quan-ly-don-vi") {
-            return isSystem
-                  ? null
-                  : {
-                          title: "Quản lý đơn vị",
-                          details: [
-                                "Xem và điều phối toàn bộ đơn vị: đào tạo, tuyển sinh, tài chính, nhân sự.",
-                                "Không giới hạn theo một mảng nghiệp vụ như các vai trò chuyên môn khác.",
-                                "Chỉ trong phạm vi đơn vị đang đứng, không xem được đơn vị khác.",
-                          ],
-                    };
-      }
-
-      if (input.slug === "ke-toan") {
-            // Kế toán tổng (đứng ở hệ thống) đã có báo cáo theo đơn vị và các thẻ
-            // số liệu để tự nói lên phạm vi xem gộp — không cần thêm khối mô tả
-            // scope riêng nữa. Kế toán tại đơn vị vẫn giữ khối này vì có thao tác
-            // thực (lập/thu/điều chỉnh), cần nói rõ ranh giới trước khi bắt tay vào.
-            return isSystem
-                  ? null
-                  : {
-                          title: "Kế toán vận hành tại đơn vị",
-                          details: [
-                                "Lập khoản thu, kỳ thu và khoản phải thu cho học sinh.",
-                                "Thu tiền, theo dõi công nợ, hoàn/chuyển/bảo lưu phí.",
-                                "Báo cáo chỉ trong phạm vi đơn vị đang làm việc.",
-                          ],
-                    };
-      }
-
-      if (input.slug === "giao-vien" && input.educationType === "mam_non") {
-            return {
-                  title: "Giáo viên mầm non",
-                  details: [
-                        "Làm việc theo lớp được phân công: lịch, điểm danh và báo giảng.",
-                        "Theo dõi xin phép/vắng học và ghi nhận nhận xét từng trẻ.",
-                        "Hồ sơ sức khỏe, đón/trả và đánh giá phát triển đang là module chuyên biệt kế tiếp.",
-                  ],
-            };
-      }
-
-      if (input.slug === "giao-vien" && input.educationType === "ngoai_ngu") {
-            return {
-                  title: "Giáo viên trung tâm ngoại ngữ",
-                  details: [
-                        "Làm việc theo lớp được phân công: lịch dạy, điểm danh và báo giảng.",
-                        "Theo dõi bài học, bài tập và trao đổi theo học viên/lớp.",
-                        "Điểm kiểm tra và kỹ năng nghe/nói/đọc/viết đang là module chuyên biệt kế tiếp.",
-                  ],
-            };
-      }
-
-      if (input.slug === "hoc-vu") {
-            return input.educationType === "mam_non"
-                  ? {
-                          title: "Học vụ mầm non",
-                          details: [
-                                "Quản lý lớp, giáo viên, lịch, xếp trẻ và tình trạng học.",
-                                "Theo dõi điểm danh, đơn xin phép và trao đổi phụ huynh.",
-                                "Điều phối hồ sơ sức khỏe và đón/trả sau khi module chuyên biệt hoàn thành.",
-                          ],
-                    }
-                  : {
-                          title: "Học vụ trung tâm",
-                          details: [
-                                "Quản lý chương trình, cấp độ, lớp, giáo viên và lịch phòng.",
-                                "Xếp/chuyển lớp, theo dõi sĩ số, điểm danh và báo giảng.",
-                                "Theo dõi tiến độ chương trình sau khi cấu trúc chương/bài hoàn thành.",
-                          ],
-                    };
-      }
-
-      if (input.slug === "tuyen-sinh") {
-            return input.educationType === "ngoai_ngu"
-                  ? {
-                          title: "Tư vấn · tuyển sinh ngoại ngữ",
-                          details: [
-                                "Tiếp nhận lead, nhu cầu khóa học và lịch sử chăm sóc.",
-                                "Chuyển đổi lead thành học viên/phụ huynh.",
-                                "Kiểm tra đầu vào và gợi ý trình độ là module chuyên biệt kế tiếp.",
-                          ],
-                    }
-                  : {
-                          title: "Tư vấn · tuyển sinh tại đơn vị",
-                          details: [
-                                "Tiếp nhận lead, nhu cầu nhập học và lịch sử chăm sóc.",
-                                "Xác nhận đăng ký, sinh mã học sinh và liên kết phụ huynh.",
-                                "Theo dõi số lead mới và hồ sơ đã chuyển đổi.",
-                          ],
-                    };
-      }
-
-      return null;
 }
 
 /**

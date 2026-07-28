@@ -3,7 +3,9 @@ import {
   nguoiDung,
   nguoiDungVaiTroDonVi,
   phienDangNhap,
+  quyen,
   vaiTro,
+  vaiTroQuyen,
 } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
@@ -29,6 +31,37 @@ export async function listUsersByOrganization(organizationId: number) {
     .innerJoin(nguoiDung, eq(nguoiDungVaiTroDonVi.nguoiDungId, nguoiDung.id))
     .innerJoin(vaiTro, eq(nguoiDungVaiTroDonVi.vaiTroId, vaiTro.id))
     .where(eq(nguoiDungVaiTroDonVi.donViId, organizationId));
+}
+
+/**
+ * Nhân viên trong 1 đơn vị đang giữ 1 quyền cụ thể — dùng để suy ra người
+ * nhận thông báo sự kiện (VD: "ai có `tai_chinh.duyet` ở đơn vị này"), đúng
+ * theo mô hình phân quyền `requirePermission` đang dùng, không hard-code
+ * mã vai trò. Xem docs/analysis/THONG_BAO_SU_KIEN.md.
+ */
+export async function listNguoiDungTheoQuyen(donViId: number, maQuyen: string) {
+  const db = getDb();
+
+  const rows = await db
+    .selectDistinct({
+      id: nguoiDung.id,
+      hoTen: nguoiDung.hoTen,
+    })
+    .from(nguoiDungVaiTroDonVi)
+    .innerJoin(nguoiDung, eq(nguoiDungVaiTroDonVi.nguoiDungId, nguoiDung.id))
+    .innerJoin(vaiTro, eq(nguoiDungVaiTroDonVi.vaiTroId, vaiTro.id))
+    .innerJoin(vaiTroQuyen, eq(vaiTroQuyen.vaiTroId, vaiTro.id))
+    .innerJoin(quyen, eq(vaiTroQuyen.quyenId, quyen.id))
+    .where(
+      and(
+        eq(nguoiDungVaiTroDonVi.donViId, donViId),
+        eq(nguoiDungVaiTroDonVi.dangHoatDong, true),
+        eq(nguoiDung.trangThai, "hoat_dong"),
+        eq(quyen.maQuyen, maQuyen),
+      ),
+    );
+
+  return rows;
 }
 
 export async function listAssignableRoles() {

@@ -3,9 +3,11 @@ import {
   boolean,
   date,
   datetime,
+  decimal,
   index,
   mysqlEnum,
   mysqlTable,
+  text,
   uniqueIndex,
   varchar,
 } from "drizzle-orm/mysql-core";
@@ -18,10 +20,36 @@ export const hocSinh = mysqlTable(
     maHocSinh: varchar("maHocSinh", { length: 50 }).notNull(),
     hoTen: varchar("hoTen", { length: 255 }).notNull(),
     tenThuongGoi: varchar("tenThuongGoi", { length: 100 }),
+    // Ảnh chân dung — dùng chung cơ chế `/api/upload` (đã có cho DonVi/NguoiDung).
+    hinhAnhUrl: varchar("hinhAnhUrl", { length: 500 }),
     ngaySinh: date("ngaySinh", { mode: "string" }),
     gioiTinh: mysqlEnum("gioiTinh", ["nam", "nu", "khac"]),
+    // Định danh chuẩn sổ đăng bộ học sinh.
+    soDinhDanh: varchar("soDinhDanh", { length: 50 }),
+    noiSinh: varchar("noiSinh", { length: 255 }),
+    danToc: varchar("danToc", { length: 100 }),
+    quocTich: varchar("quocTich", { length: 100 }),
     diaChi: varchar("diaChi", { length: 500 }),
+    truongLopTruocDo: varchar("truongLopTruocDo", { length: 255 }),
     ngayNhapHoc: date("ngayNhapHoc", { mode: "string" }),
+    // Diện chính sách/ưu tiên (hộ nghèo, dân tộc thiểu số, con TBLS...) — text
+    // tự do, dùng làm căn cứ miễn giảm học phí sau này, không phải enum cứng
+    // vì thực tế có nhiều tổ hợp diện khác nhau.
+    dienChinhSach: varchar("dienChinhSach", { length: 255 }),
+    // Sức khoẻ + liên hệ khẩn cấp — quan trọng nhất với mầm non nhưng để mở
+    // cho mọi loại hình, không bắt buộc.
+    chieuCaoCm: decimal("chieuCaoCm", { precision: 5, scale: 1 }),
+    canNangKg: decimal("canNangKg", { precision: 5, scale: 1 }),
+    diUngBenhNen: text("diUngBenhNen"),
+    lienHeKhanCapHoTen: varchar("lienHeKhanCapHoTen", { length: 255 }),
+    lienHeKhanCapSdt: varchar("lienHeKhanCapSdt", { length: 30 }),
+    // Ghi chú ngữ cảnh cho học vụ khi xếp lớp — không phải trạng thái/luồng
+    // duyệt. `nguyenVongLop` carry từ Lead.nhuCau lúc xác nhận đăng ký (trung
+    // tâm) hoặc để trống (mầm non xếp theo tuổi, không cần nguyện vọng).
+    // `ketQuaTestDauVao` do học vụ tự ghi lúc xếp lớp nếu chương trình yêu
+    // cầu test đầu vào. Xem docs/analysis/TUYEN_SINH_THEO_LOAI_HINH.md.
+    nguyenVongLop: text("nguyenVongLop"),
+    ketQuaTestDauVao: text("ketQuaTestDauVao"),
     trangThai: mysqlEnum("trangThai", [
       "tiep_nhan",
       "dang_hoc",

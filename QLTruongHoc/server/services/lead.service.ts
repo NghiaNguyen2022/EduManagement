@@ -545,6 +545,9 @@ export async function confirmLeadRegistration(input: {
     gioiTinh: input.gioiTinh ?? null,
     diaChi: input.diaChiHocVien ?? null,
     ngayNhapHoc: input.ngayNhapHoc ?? null,
+    // Carry nguyện vọng từ lead sang học sinh — học vụ dùng để xếp lớp sau
+    // này (không xếp lớp ở bước này nữa, xem docs/analysis/TUYEN_SINH_THEO_LOAI_HINH.md).
+    nguyenVongLop: existing.nhuCau,
     actorUserId: input.actorUserId,
     ipAddress: input.ipAddress,
   });

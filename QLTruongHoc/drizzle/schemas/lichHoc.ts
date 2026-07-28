@@ -51,7 +51,7 @@ export const buoiHoc = mysqlTable(
     loaiBuoi: mysqlEnum("loaiBuoi", ["thuong", "bu"])
       .notNull()
       .default("thuong"),
-    trangThai: mysqlEnum("trangThai", ["du_kien", "da_hoc", "nghi", "huy"])
+    trangThai: mysqlEnum("trangThai", ["du_kien", "dang_hoc", "da_hoc", "nghi", "huy"])
       .notNull()
       .default("du_kien"),
     ghiChu: varchar("ghiChu", { length: 500 }),

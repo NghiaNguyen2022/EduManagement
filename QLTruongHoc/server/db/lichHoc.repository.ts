@@ -450,7 +450,7 @@ export async function updateBuoiHocChiTiet(input: {
 
 export async function updateBuoiHocTrangThai(input: {
   id: number;
-  trangThai: "du_kien" | "da_hoc" | "nghi" | "huy";
+  trangThai: "du_kien" | "dang_hoc" | "da_hoc" | "nghi" | "huy";
   ghiChu?: string | null;
 }) {
   const db = getDb();

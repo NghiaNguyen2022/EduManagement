@@ -38,12 +38,12 @@ export type AppRouteDefinition = {
        * mục này tồn tại trong lộ trình.
        */
       comingSoon?: boolean;
-  /**
-   * Không hiện ở menu bên trái — dùng cho trang mở từ nơi khác (VD: tên
-   * người dùng ở góc phải Topbar), nhưng vẫn cần khai báo ở đây để tiêu đề
-   * tab trình duyệt (`findRouteByPath` trong `AppShell.tsx`) nhận đúng tên.
-   */
-  hideFromSidebar?: boolean;
+      /**
+       * Không hiện ở menu bên trái — dùng cho trang mở từ nơi khác (VD: tên
+       * người dùng ở góc phải Topbar), nhưng vẫn cần khai báo ở đây để tiêu đề
+       * tab trình duyệt (`findRouteByPath` trong `AppShell.tsx`) nhận đúng tên.
+       */
+      hideFromSidebar?: boolean;
 };
 
 export const appRoutes: AppRouteDefinition[] = [
@@ -57,7 +57,7 @@ export const appRoutes: AppRouteDefinition[] = [
       },
       {
             id: "portal-he-thong",
-            path: "/portal/he-thong",
+            path: "/portal/system",
             label: "Cổng quản trị hệ thống",
             group: "Cổng làm việc",
             roles: ["quan_tri_he_thong"],
@@ -66,14 +66,14 @@ export const appRoutes: AppRouteDefinition[] = [
       },
       {
             id: "portal-quan-ly-don-vi",
-            path: "/portal/quan-ly-don-vi",
+            path: "/portal/unit-manager",
             label: "Cổng quản lý đơn vị",
             group: "Cổng làm việc",
             roles: ["quan_ly_don_vi"],
       },
       {
             id: "portal-giao-vien",
-            path: "/portal/giao-vien",
+            path: "/portal/teacher",
             label: "Cổng giáo viên",
             group: "Cổng làm việc",
             roles: ["giao_vien"],
@@ -81,7 +81,7 @@ export const appRoutes: AppRouteDefinition[] = [
       },
       {
             id: "portal-hoc-vu",
-            path: "/portal/hoc-vu",
+            path: "/portal/academic-affairs",
             label: "Cổng học vụ",
             group: "Cổng làm việc",
             roles: ["hoc_vu"],
@@ -89,14 +89,14 @@ export const appRoutes: AppRouteDefinition[] = [
       },
       {
             id: "portal-ke-toan",
-            path: "/portal/ke-toan",
+            path: "/portal/accountant",
             label: "Cổng kế toán",
             group: "Cổng làm việc",
             roles: ["ke_toan"],
       },
       {
             id: "portal-tuyen-sinh",
-            path: "/portal/tuyen-sinh",
+            path: "/portal/admissions",
             label: "Cổng tư vấn · tuyển sinh",
             group: "Cổng làm việc",
             roles: ["tu_van", "tuyen_sinh"],

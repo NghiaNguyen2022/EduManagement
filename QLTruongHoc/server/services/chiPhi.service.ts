@@ -18,6 +18,7 @@ import {
 } from "../db/chiPhi.repository.js";
 import { getCauHinhTaiChinhDonVi } from "../db/taiChinh.repository.js";
 import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
+import { notifyNguoiDung, notifyTheoQuyen } from "./thongBaoSuKien.service.js";
 
 type LoaiChiPhi = "luong" | "mat_bang" | "dien_nuoc" | "vat_tu" | "marketing" | "khac";
 const LOAI_CHI_PHI_HOP_LE: LoaiChiPhi[] = [
@@ -91,6 +92,18 @@ export async function createDanhMucChiPhiMoi(input: {
     ipAddress: input.ipAddress,
   });
 
+  if (trangThaiDuyet === "cho_duyet") {
+    await notifyTheoQuyen({
+      donViId: input.donViId,
+      maQuyen: "tai_chinh.duyet",
+      loaiTruNguoiDungId: input.actorUserId,
+      loaiSuKien: "danh_muc_chi_phi.cho_duyet",
+      tieuDe: "Danh mục chi phí chờ duyệt",
+      noiDung: `Danh mục chi phí ${created.maChiPhi} — ${created.tenChiPhi} vừa được tạo, đang chờ bạn duyệt.`,
+      duongDan: "/finance/chi-phi",
+    });
+  }
+
   return created;
 }
 
@@ -141,6 +154,17 @@ export async function duyetDanhMucChiPhi(input: {
     content: `${input.quyetDinh === "duyet" ? "Duyệt" : "Từ chối"} danh mục chi phí ${found.maChiPhi}.`,
     ipAddress: input.ipAddress,
   });
+
+  if (found.nguoiTaoId) {
+    await notifyNguoiDung({
+      donViId: input.donViId,
+      nguoiNhanId: found.nguoiTaoId,
+      loaiSuKien: input.quyetDinh === "duyet" ? "danh_muc_chi_phi.da_duyet" : "danh_muc_chi_phi.tu_choi",
+      tieuDe: input.quyetDinh === "duyet" ? "Danh mục chi phí đã được duyệt" : "Danh mục chi phí bị từ chối",
+      noiDung: `Danh mục chi phí ${found.maChiPhi} đã ${input.quyetDinh === "duyet" ? "được duyệt" : "bị từ chối"}.`,
+      duongDan: "/finance/chi-phi",
+    });
+  }
 
   return updated;
 }
@@ -255,6 +279,18 @@ export async function ghiNhanChiPhi(input: {
     ipAddress: input.ipAddress,
   });
 
+  if (trangThai === "cho_duyet") {
+    await notifyTheoQuyen({
+      donViId: input.donViId,
+      maQuyen: "tai_chinh.duyet",
+      loaiTruNguoiDungId: input.actorUserId,
+      loaiSuKien: "chi_phi.cho_duyet",
+      tieuDe: "Đề xuất chi chờ duyệt",
+      noiDung: `Đề xuất chi ${loaiDeXuat === "dot_xuat" ? "đột xuất" : "định kỳ"} ${danhMuc.tenChiPhi} (${created.soTien}) đang chờ bạn duyệt.`,
+      duongDan: "/finance/chi-phi",
+    });
+  }
+
   return created;
 }
 
@@ -303,6 +339,15 @@ export async function duyetChiPhi(input: {
     objectId: String(input.chiPhiId),
     content: `${input.quyetDinh === "duyet" ? "Duyệt" : "Từ chối"} đề xuất chi #${input.chiPhiId}: ${found.soTien} ngày ${found.ngayChi}.`,
     ipAddress: input.ipAddress,
+  });
+
+  await notifyNguoiDung({
+    donViId: input.donViId,
+    nguoiNhanId: found.nguoiTaoId,
+    loaiSuKien: input.quyetDinh === "duyet" ? "chi_phi.da_duyet" : "chi_phi.tu_choi",
+    tieuDe: input.quyetDinh === "duyet" ? "Đề xuất chi đã được duyệt" : "Đề xuất chi bị từ chối",
+    noiDung: `Đề xuất chi #${input.chiPhiId} (${found.soTien}, ngày ${found.ngayChi}) đã ${input.quyetDinh === "duyet" ? "được duyệt" : "bị từ chối"}.`,
+    duongDan: "/finance/chi-phi",
   });
 
   return updated;

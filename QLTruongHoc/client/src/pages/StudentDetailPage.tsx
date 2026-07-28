@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { DateField, SelectField, TextField } from "../components/form";
+import {
+  DateField,
+  FileUploadField,
+  NumberInput,
+  SelectField,
+  TextAreaField,
+  TextField,
+} from "../components/form";
 import { ConfirmDialog } from "../components/shared/ConfirmDialog";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
@@ -102,6 +109,54 @@ export function StudentDetailPage() {
     return permissions.includes("he_thong.quan_tri") || permissions.includes("hoc_sinh.quan_ly");
   }, [auth]);
 
+  const timelineEvents = useMemo(() => {
+    if (!detail) return [];
+
+    const events: {
+      key: string;
+      date: string;
+      title: string;
+      detail?: string;
+      kind: "enroll" | "leave" | "status";
+    }[] = [];
+
+    for (const item of detail.lopHoc) {
+      events.push({
+        key: `enroll-${item.enrollmentId}`,
+        date: item.ngayVaoLop,
+        title: `Vào lớp ${item.lopHoc.tenLop}`,
+        detail: item.lopHoc.maLop,
+        kind: "enroll",
+      });
+
+      if (item.ngayRoiLop) {
+        events.push({
+          key: `leave-${item.enrollmentId}`,
+          date: item.ngayRoiLop,
+          title: `Rời lớp ${item.lopHoc.tenLop}`,
+          detail: TRANG_THAI_ENROLLMENT_LABEL[item.trangThai],
+          kind: "leave",
+        });
+      }
+    }
+
+    for (const item of detail.lichSuTrangThai) {
+      events.push({
+        key: `status-${item.id}`,
+        date: item.ngayHieuLuc,
+        title: `Đổi trạng thái: ${
+          item.trangThaiCu ? TRANG_THAI_LABEL[item.trangThaiCu] : "Tạo mới"
+        } → ${TRANG_THAI_LABEL[item.trangThaiMoi]}`,
+        detail: item.lyDo || undefined,
+        kind: "status",
+      });
+    }
+
+    return events.sort((a, b) =>
+      a.date < b.date ? 1 : a.date > b.date ? -1 : 0,
+    );
+  }, [detail]);
+
   const canCreateGuardianAccount = useMemo(() => {
     const permissions = auth?.currentOrganization?.quyen ?? [];
     return (
@@ -126,10 +181,22 @@ export function StudentDetailPage() {
       setInfoForm({
         hoTen: data.hocSinh.hoTen,
         tenThuongGoi: data.hocSinh.tenThuongGoi ?? "",
+        hinhAnhUrl: data.hocSinh.hinhAnhUrl,
         ngaySinh: data.hocSinh.ngaySinh ?? "",
         gioiTinh: data.hocSinh.gioiTinh ?? "",
+        soDinhDanh: data.hocSinh.soDinhDanh ?? "",
+        noiSinh: data.hocSinh.noiSinh ?? "",
+        danToc: data.hocSinh.danToc ?? "",
+        quocTich: data.hocSinh.quocTich ?? "",
         diaChi: data.hocSinh.diaChi ?? "",
+        truongLopTruocDo: data.hocSinh.truongLopTruocDo ?? "",
         ngayNhapHoc: data.hocSinh.ngayNhapHoc ?? "",
+        dienChinhSach: data.hocSinh.dienChinhSach ?? "",
+        chieuCaoCm: data.hocSinh.chieuCaoCm ? Number(data.hocSinh.chieuCaoCm) : null,
+        canNangKg: data.hocSinh.canNangKg ? Number(data.hocSinh.canNangKg) : null,
+        diUngBenhNen: data.hocSinh.diUngBenhNen ?? "",
+        lienHeKhanCapHoTen: data.hocSinh.lienHeKhanCapHoTen ?? "",
+        lienHeKhanCapSdt: data.hocSinh.lienHeKhanCapSdt ?? "",
       });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Không thể tải học sinh.");
@@ -311,15 +378,27 @@ export function StudentDetailPage() {
 
   return (
     <div className="page-stack">
-      <PageHeader
-        title={detail.hocSinh.hoTen}
-        subtitle={`Mã học sinh ${detail.hocSinh.maHocSinh}`}
-        action={
-          <button type="button" className="text-button" onClick={() => navigate("/students")}>
-            ← Danh sách học sinh
-          </button>
-        }
-      />
+      <div className="profile-header">
+        {detail.hocSinh.hinhAnhUrl ? (
+          <img
+            src={detail.hocSinh.hinhAnhUrl}
+            alt=""
+            className="profile-avatar"
+          />
+        ) : (
+          <div className="profile-avatar profile-avatar--placeholder">🎒</div>
+        )}
+
+        <PageHeader
+          title={detail.hocSinh.hoTen}
+          subtitle={`Mã học sinh ${detail.hocSinh.maHocSinh}`}
+          action={
+            <button type="button" className="text-button" onClick={() => navigate("/students")}>
+              ← Danh sách học sinh
+            </button>
+          }
+        />
+      </div>
 
       {error ? <div className="form-error">{error}</div> : null}
       {notice ? <div className="form-success">{notice}</div> : null}
@@ -374,81 +453,31 @@ export function StudentDetailPage() {
         ) : null}
       </SectionCard>
 
-      <SectionCard title="Lớp học đã tham gia" subtitle={`${detail.lopHoc.length} lượt xếp lớp`}>
-        <div className="user-table-wrap">
-          <table className="user-table">
-            <thead>
-              <tr>
-                <th>Lớp học</th>
-                <th>Ngày vào lớp</th>
-                <th>Ngày rời lớp</th>
-                <th>Trạng thái</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {detail.lopHoc.map((item) => (
-                <tr key={item.enrollmentId}>
-                  <td>
-                    <strong>{item.lopHoc.tenLop}</strong>
-                    <small>{item.lopHoc.maLop}</small>
-                  </td>
-                  <td>{item.ngayVaoLop}</td>
-                  <td>{item.ngayRoiLop ?? "—"}</td>
-                  <td>{TRANG_THAI_ENROLLMENT_LABEL[item.trangThai]}</td>
-                </tr>
-              ))}
-
-              {detail.lopHoc.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="empty-cell">
-                    Chưa từng xếp vào lớp nào.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </SectionCard>
-
       <SectionCard
-        title="Lịch sử trạng thái"
-        subtitle={`${detail.lichSuTrangThai.length} lần thay đổi`}
+        title="Lịch sử học tập"
+        subtitle={`${timelineEvents.length} sự kiện — gộp lớp học và thay đổi trạng thái theo thời gian`}
       >
-        <div className="user-table-wrap">
-          <table className="user-table">
-            <thead>
-              <tr>
-                <th>Thời điểm</th>
-                <th>Thay đổi</th>
-                <th>Ngày hiệu lực</th>
-                <th>Lý do</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {detail.lichSuTrangThai.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.createdAt}</td>
-                  <td>
-                    {item.trangThaiCu ? TRANG_THAI_LABEL[item.trangThaiCu] : "Tạo mới"} →{" "}
-                    {TRANG_THAI_LABEL[item.trangThaiMoi]}
-                  </td>
-                  <td>{item.ngayHieuLuc}</td>
-                  <td>{item.lyDo || "—"}</td>
-                </tr>
-              ))}
-
-              {detail.lichSuTrangThai.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="empty-cell">
-                    Chưa có lịch sử.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+        {timelineEvents.length === 0 ? (
+          <div className="empty-cell">Chưa có lịch sử học tập.</div>
+        ) : (
+          <ul className="timeline">
+            {timelineEvents.map((event) => (
+              <li
+                key={event.key}
+                className={`timeline__item timeline__item--${event.kind}`}
+              >
+                <span className="timeline__dot" />
+                <div className="timeline__content">
+                  <div className="timeline__date">{event.date}</div>
+                  <div className="timeline__title">{event.title}</div>
+                  {event.detail ? (
+                    <div className="timeline__detail">{event.detail}</div>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </SectionCard>
 
       <SectionCard title="Thông tin học sinh" subtitle="Chỉnh sửa hồ sơ cơ bản">
@@ -467,6 +496,14 @@ export function StudentDetailPage() {
             disabled={!canManage}
             onChange={(value) => setInfoForm({ ...infoForm, tenThuongGoi: value })}
           />
+
+          {canManage ? (
+            <FileUploadField
+              label="Ảnh chân dung"
+              value={infoForm.hinhAnhUrl}
+              onChange={(value) => setInfoForm({ ...infoForm, hinhAnhUrl: value })}
+            />
+          ) : null}
 
           <DateField
             label="Ngày sinh"
@@ -506,6 +543,105 @@ export function StudentDetailPage() {
             value={infoForm.ngayNhapHoc}
             disabled={!canManage}
             onChange={(value) => setInfoForm({ ...infoForm, ngayNhapHoc: value })}
+          />
+
+          {canManage ? (
+            <button type="submit" className="primary-button" disabled={savingInfo}>
+              {savingInfo ? "Đang lưu..." : "Lưu thay đổi"}
+            </button>
+          ) : null}
+        </form>
+      </SectionCard>
+
+      <SectionCard
+        title="Hồ sơ mở rộng"
+        subtitle="Định danh, diện chính sách, sức khoẻ và thông tin chuyển trường — dùng chung nút Lưu với thẻ Thông tin học sinh ở trên."
+      >
+        <form className="user-create-form" onSubmit={handleSaveInfo}>
+          <TextField
+            label="Số CCCD / số định danh cá nhân / số giấy khai sinh"
+            value={infoForm.soDinhDanh}
+            disabled={!canManage}
+            onChange={(value) => setInfoForm({ ...infoForm, soDinhDanh: value })}
+          />
+
+          <TextField
+            label="Nơi sinh"
+            value={infoForm.noiSinh}
+            disabled={!canManage}
+            onChange={(value) => setInfoForm({ ...infoForm, noiSinh: value })}
+          />
+
+          <TextField
+            label="Dân tộc"
+            value={infoForm.danToc}
+            disabled={!canManage}
+            onChange={(value) => setInfoForm({ ...infoForm, danToc: value })}
+          />
+
+          <TextField
+            label="Quốc tịch"
+            value={infoForm.quocTich}
+            placeholder="Việt Nam"
+            disabled={!canManage}
+            onChange={(value) => setInfoForm({ ...infoForm, quocTich: value })}
+          />
+
+          <TextField
+            label="Diện chính sách / ưu tiên"
+            value={infoForm.dienChinhSach}
+            placeholder="VD: Hộ nghèo, dân tộc thiểu số, con thương binh liệt sĩ..."
+            disabled={!canManage}
+            onChange={(value) => setInfoForm({ ...infoForm, dienChinhSach: value })}
+          />
+
+          <TextField
+            label="Trường/lớp học trước đó"
+            value={infoForm.truongLopTruocDo}
+            placeholder="Nếu chuyển đến từ trường/lớp khác"
+            disabled={!canManage}
+            onChange={(value) => setInfoForm({ ...infoForm, truongLopTruocDo: value })}
+          />
+
+          <NumberInput
+            label="Chiều cao (cm)"
+            value={infoForm.chieuCaoCm}
+            allowDecimal
+            min={0}
+            disabled={!canManage}
+            onChange={(value) => setInfoForm({ ...infoForm, chieuCaoCm: value })}
+          />
+
+          <NumberInput
+            label="Cân nặng (kg)"
+            value={infoForm.canNangKg}
+            allowDecimal
+            min={0}
+            disabled={!canManage}
+            onChange={(value) => setInfoForm({ ...infoForm, canNangKg: value })}
+          />
+
+          <TextAreaField
+            label="Dị ứng / bệnh nền"
+            value={infoForm.diUngBenhNen}
+            rows={3}
+            disabled={!canManage}
+            onChange={(value) => setInfoForm({ ...infoForm, diUngBenhNen: value })}
+          />
+
+          <TextField
+            label="Họ tên người liên hệ khẩn cấp"
+            value={infoForm.lienHeKhanCapHoTen}
+            disabled={!canManage}
+            onChange={(value) => setInfoForm({ ...infoForm, lienHeKhanCapHoTen: value })}
+          />
+
+          <TextField
+            label="Số điện thoại khẩn cấp"
+            type="tel"
+            value={infoForm.lienHeKhanCapSdt}
+            disabled={!canManage}
+            onChange={(value) => setInfoForm({ ...infoForm, lienHeKhanCapSdt: value })}
           />
 
           {canManage ? (

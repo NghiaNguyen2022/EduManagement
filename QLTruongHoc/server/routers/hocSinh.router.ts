@@ -8,7 +8,10 @@ import {
 } from "../middleware/permission.middleware.js";
 import {
   createHocSinhMoi,
+  getHocSinhChoXepLop,
   getHocSinhDetail,
+  ghiNhanHoSoHocSinh,
+  ghiNhanKetQuaTestDauVao,
   listHocSinh,
   setHocSinhTrangThai,
   updateHocSinhInfo,
@@ -57,6 +60,80 @@ hocSinhRouter.post("/", requirePermission("hoc_sinh.quan_ly"), async (req, res) 
   }
 });
 
+hocSinhRouter.get(
+  "/cho-xep-lop",
+  requirePermission("lop_hoc.quan_ly"),
+  async (req, res) => {
+    const rows = await getHocSinhChoXepLop(req.auth!.currentOrganization!.id);
+
+    res.json({ ok: true, data: rows });
+  },
+);
+
+// Ghi danh trực tiếp — dùng cho mầm non (không qua Lead). Gác bằng quyền
+// tuyển sinh (không phải hoc_sinh.quan_ly) vì đây là hành động của tuyển
+// sinh, giống cách confirmLeadRegistration cũng tạo HocSinh qua quyền
+// tuyen_sinh.quan_ly. Xem docs/analysis/TUYEN_SINH_THEO_LOAI_HINH.md.
+hocSinhRouter.post(
+  "/ghi-danh",
+  requirePermission("tuyen_sinh.quan_ly"),
+  async (req, res) => {
+    try {
+      const created = await ghiNhanHoSoHocSinh({
+        donViId: req.auth!.currentOrganization!.id,
+        hoTenHocVien: String(req.body?.hoTenHocVien ?? ""),
+        ngaySinh: String(req.body?.ngaySinh ?? ""),
+        gioiTinh: req.body?.gioiTinh ? String(req.body.gioiTinh) : null,
+        diaChiHocVien: req.body?.diaChiHocVien ? String(req.body.diaChiHocVien) : null,
+        ngayNhapHoc: req.body?.ngayNhapHoc ? String(req.body.ngayNhapHoc) : null,
+        hoTenNguoiLienHe: String(req.body?.hoTenNguoiLienHe ?? ""),
+        soDienThoaiNguoiLienHe: String(req.body?.soDienThoaiNguoiLienHe ?? ""),
+        emailNguoiLienHe: req.body?.emailNguoiLienHe ? String(req.body.emailNguoiLienHe) : null,
+        moiQuanHe: String(req.body?.moiQuanHe ?? ""),
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.status(201).json({ ok: true, data: created });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Không thể ghi danh học sinh.",
+      });
+    }
+  },
+);
+
+// Học vụ ghi kết quả test đầu vào ngay lúc xếp lớp — cùng quyền đang gác
+// "chờ xếp lớp" (lop_hoc.quan_ly), không cần quyền mới.
+hocSinhRouter.patch(
+  "/:id/ket-qua-test",
+  requirePermission("lop_hoc.quan_ly"),
+  async (req, res) => {
+    try {
+      const updated = await ghiNhanKetQuaTestDauVao({
+        donViId: req.auth!.currentOrganization!.id,
+        id: Number(req.params.id),
+        ketQuaTestDauVao: req.body?.ketQuaTestDauVao
+          ? String(req.body.ketQuaTestDauVao)
+          : null,
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.json({ ok: true, data: updated });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Không thể ghi nhận kết quả test đầu vào.",
+      });
+    }
+  },
+);
+
 hocSinhRouter.get("/:id", requirePermission("hoc_sinh.xem"), async (req, res) => {
   try {
     const detail = await getHocSinhDetail(req.auth!.currentOrganization!.id, Number(req.params.id));
@@ -77,10 +154,28 @@ hocSinhRouter.patch("/:id", requirePermission("hoc_sinh.quan_ly"), async (req, r
       id: Number(req.params.id),
       hoTen: String(req.body?.hoTen ?? ""),
       tenThuongGoi: req.body?.tenThuongGoi ? String(req.body.tenThuongGoi) : null,
+      hinhAnhUrl: req.body?.hinhAnhUrl ? String(req.body.hinhAnhUrl) : null,
       ngaySinh: String(req.body?.ngaySinh ?? ""),
       gioiTinh: req.body?.gioiTinh ? String(req.body.gioiTinh) : null,
+      soDinhDanh: req.body?.soDinhDanh ? String(req.body.soDinhDanh) : null,
+      noiSinh: req.body?.noiSinh ? String(req.body.noiSinh) : null,
+      danToc: req.body?.danToc ? String(req.body.danToc) : null,
+      quocTich: req.body?.quocTich ? String(req.body.quocTich) : null,
       diaChi: req.body?.diaChi ? String(req.body.diaChi) : null,
+      truongLopTruocDo: req.body?.truongLopTruocDo
+        ? String(req.body.truongLopTruocDo)
+        : null,
       ngayNhapHoc: req.body?.ngayNhapHoc ? String(req.body.ngayNhapHoc) : null,
+      dienChinhSach: req.body?.dienChinhSach ? String(req.body.dienChinhSach) : null,
+      chieuCaoCm: req.body?.chieuCaoCm ? String(req.body.chieuCaoCm) : null,
+      canNangKg: req.body?.canNangKg ? String(req.body.canNangKg) : null,
+      diUngBenhNen: req.body?.diUngBenhNen ? String(req.body.diUngBenhNen) : null,
+      lienHeKhanCapHoTen: req.body?.lienHeKhanCapHoTen
+        ? String(req.body.lienHeKhanCapHoTen)
+        : null,
+      lienHeKhanCapSdt: req.body?.lienHeKhanCapSdt
+        ? String(req.body.lienHeKhanCapSdt)
+        : null,
       actorUserId: req.auth!.user.id,
       ipAddress: req.ip,
     });

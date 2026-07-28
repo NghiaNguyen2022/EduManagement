@@ -48,6 +48,7 @@ import {
 } from "../db/taiChinh.repository.js";
 import { findLopHocById } from "../db/lopHoc.repository.js";
 import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
+import { notifyNguoiDung, notifyTheoQuyen } from "./thongBaoSuKien.service.js";
 
 type LoaiKhoanThu = "hoc_phi" | "tien_an" | "dich_vu" | "tai_lieu" | "khac";
 const LOAI_KHOAN_THU_HOP_LE: LoaiKhoanThu[] = ["hoc_phi", "tien_an", "dich_vu", "tai_lieu", "khac"];
@@ -1025,6 +1026,16 @@ export async function taoYeuCauDieuChinh(input: {
     ipAddress: input.ipAddress,
   });
 
+  await notifyTheoQuyen({
+    donViId: input.donViId,
+    maQuyen: "tai_chinh.duyet",
+    loaiTruNguoiDungId: input.actorUserId,
+    loaiSuKien: "dieu_chinh.cho_duyet",
+    tieuDe: "Yêu cầu điều chỉnh khoản thu chờ duyệt",
+    noiDung: `Yêu cầu ${loaiDieuChinh} cho khoản phải thu #${input.khoanPhaiThuId} đang chờ bạn duyệt — ${lyDo}.`,
+    duongDan: "/finance/dieu-chinh",
+  });
+
   return created;
 }
 
@@ -1179,6 +1190,15 @@ export async function duyetDieuChinh(input: {
     objectId: String(input.dieuChinhId),
     content: `${input.quyetDinh === "duyet" ? "Duyệt" : "Từ chối"} yêu cầu ${found.loaiDieuChinh} cho khoản phải thu #${found.khoanPhaiThuId}.`,
     ipAddress: input.ipAddress,
+  });
+
+  await notifyNguoiDung({
+    donViId: input.donViId,
+    nguoiNhanId: found.nguoiTaoId,
+    loaiSuKien: input.quyetDinh === "duyet" ? "dieu_chinh.da_duyet" : "dieu_chinh.tu_choi",
+    tieuDe: input.quyetDinh === "duyet" ? "Yêu cầu điều chỉnh đã được duyệt" : "Yêu cầu điều chỉnh bị từ chối",
+    noiDung: `Yêu cầu ${found.loaiDieuChinh} cho khoản phải thu #${found.khoanPhaiThuId} đã ${input.quyetDinh === "duyet" ? "được duyệt" : "bị từ chối"}.`,
+    duongDan: "/finance/dieu-chinh",
   });
 
   return updated;

@@ -14,6 +14,7 @@ import {
 import { createAuditLog } from "../db/audit.repository.js";
 import { findGuardianChildByHocSinhId } from "./phuHuynh.service.js";
 import { listHocSinhByPhuHuynhId, listPhuHuynhByNguoiDungId } from "../db/phuHuynh.repository.js";
+import { notifyNguoiDung, notifyTheoQuyen } from "./thongBaoSuKien.service.js";
 
 function normalizeText(value: string) {
   return value.trim();
@@ -83,6 +84,16 @@ export async function createDonXinPhepByGuardian(input: {
     objectId: String(created.id),
     content: `Gửi đơn xin phép cho học sinh ${child.hoTen} (${child.maHocSinh}) lớp ${lopHocRow?.tenLop ?? input.lopHocId} từ ${input.tuNgay} đến ${input.denNgay}.`,
     ipAddress: input.ipAddress,
+  });
+
+  await notifyTheoQuyen({
+    donViId: child.donViId,
+    maQuyen: "diem_danh.thuc_hien",
+    loaiTruNguoiDungId: input.actorUserId,
+    loaiSuKien: "xin_phep.cho_duyet",
+    tieuDe: "Đơn xin phép chờ duyệt",
+    noiDung: `Học sinh ${child.hoTen} (${child.maHocSinh}) gửi đơn xin phép lớp ${lopHocRow?.tenLop ?? input.lopHocId} từ ${input.tuNgay} đến ${input.denNgay}.`,
+    duongDan: "/attendance/xin-phep",
   });
 
   return created;
@@ -190,6 +201,15 @@ export async function duyetDonXinPhep(input: {
       ? `Duyệt đơn xin phép #${input.id}, tự động cập nhật ${soBuoiCapNhat} buổi học sang vắng có phép.`
       : `Từ chối đơn xin phép #${input.id}.`,
     ipAddress: input.ipAddress,
+  });
+
+  await notifyNguoiDung({
+    donViId: input.donViId,
+    nguoiNhanId: found.nguoiTaoId,
+    loaiSuKien: input.chapNhan ? "xin_phep.da_duyet" : "xin_phep.tu_choi",
+    tieuDe: input.chapNhan ? "Đơn xin phép đã được duyệt" : "Đơn xin phép bị từ chối",
+    noiDung: `Đơn xin phép #${input.id} đã ${input.chapNhan ? "được duyệt" : "bị từ chối"}.`,
+    duongDan: "/attendance/xin-phep",
   });
 
   return findDonXinPhepById(input.donViId, input.id);

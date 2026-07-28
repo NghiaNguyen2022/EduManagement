@@ -18,7 +18,12 @@ import type {
   DiemDanhHocSinhItem,
   TrangThaiDiemDanh,
 } from "../features/diemDanh/diemDanhTypes";
-import { listThoiKhoaBieuApi } from "../features/lichHoc/lichHocApi";
+import {
+  batDauBuoiHocApi,
+  ketThucBuoiHocApi,
+  listThoiKhoaBieuApi,
+  moLaiBuoiHocDangHocApi,
+} from "../features/lichHoc/lichHocApi";
 import type { ThoiKhoaBieuItem } from "../features/lichHoc/lichHocTypes";
 
 const emptyBaoGiangForm: BaoGiangFormInput = {
@@ -36,8 +41,9 @@ const TRANG_THAI_DIEM_DANH_LABEL: Record<TrangThaiDiemDanh, string> = {
 };
 
 const TRANG_THAI_BUOI_HOC_LABEL: Record<string, string> = {
-  du_kien: "Dự kiến",
-  da_hoc: "Đã điểm danh",
+  du_kien: "Chưa học",
+  dang_hoc: "Đang học",
+  da_hoc: "Đã học",
   nghi: "Nghỉ",
   huy: "Huỷ",
 };
@@ -83,6 +89,8 @@ export function AttendancePage() {
   const [loadingRoster, setLoadingRoster] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
+  const [sessionActionLoading, setSessionActionLoading] = useState(false);
+  const [startingId, setStartingId] = useState<number | null>(null);
 
   const [baoGiangForm, setBaoGiangForm] = useState<BaoGiangFormInput>(
     emptyBaoGiangForm,
@@ -203,6 +211,24 @@ export function AttendancePage() {
     setBuoiHocInfo(null);
   }
 
+  async function handleStartFromList(buoiHocId: number) {
+    setError("");
+    setStartingId(buoiHocId);
+
+    try {
+      await batDauBuoiHocApi(buoiHocId);
+      await loadDay();
+    } catch (startError) {
+      setError(
+        startError instanceof Error
+          ? startError.message
+          : "Không thể bắt đầu buổi học.",
+      );
+    } finally {
+      setStartingId(null);
+    }
+  }
+
   function setTrangThai(
     hocSinhId: number,
     trangThai: TrangThaiDiemDanh,
@@ -236,6 +262,72 @@ export function AttendancePage() {
     );
   }
 
+  async function handleBatDauRoster() {
+    if (!selectedBuoiHocId) return;
+
+    setError("");
+    setNotice("");
+    setSessionActionLoading(true);
+
+    try {
+      const updated = await batDauBuoiHocApi(selectedBuoiHocId);
+      setBuoiHocInfo(updated);
+      setNotice("Đã bắt đầu buổi học — có thể điểm danh ngay bây giờ.");
+    } catch (startError) {
+      setError(
+        startError instanceof Error
+          ? startError.message
+          : "Không thể bắt đầu buổi học.",
+      );
+    } finally {
+      setSessionActionLoading(false);
+    }
+  }
+
+  async function handleKetThucRoster() {
+    if (!selectedBuoiHocId) return;
+
+    setError("");
+    setNotice("");
+    setSessionActionLoading(true);
+
+    try {
+      const updated = await ketThucBuoiHocApi(selectedBuoiHocId);
+      setBuoiHocInfo(updated);
+      setNotice("Đã kết thúc buổi học.");
+    } catch (endError) {
+      setError(
+        endError instanceof Error
+          ? endError.message
+          : "Không thể kết thúc buổi học.",
+      );
+    } finally {
+      setSessionActionLoading(false);
+    }
+  }
+
+  async function handleMoLaiRoster() {
+    if (!selectedBuoiHocId) return;
+
+    setError("");
+    setNotice("");
+    setSessionActionLoading(true);
+
+    try {
+      const updated = await moLaiBuoiHocDangHocApi(selectedBuoiHocId);
+      setBuoiHocInfo(updated);
+      setNotice("Đã mở lại buổi học để chỉnh điểm danh.");
+    } catch (reopenError) {
+      setError(
+        reopenError instanceof Error
+          ? reopenError.message
+          : "Không thể mở lại buổi học.",
+      );
+    } finally {
+      setSessionActionLoading(false);
+    }
+  }
+
   async function handleSave() {
     if (!selectedBuoiHocId) return;
 
@@ -267,6 +359,8 @@ export function AttendancePage() {
     }
   }
 
+  const dangHoc = buoiHocInfo?.trangThai === "dang_hoc";
+
   if (selectedBuoiHocId) {
     return (
       <div className="page-stack">
@@ -290,6 +384,64 @@ export function AttendancePage() {
 
         {error ? <div className="form-error">{error}</div> : null}
         {notice ? <div className="form-success">{notice}</div> : null}
+
+        <SectionCard title="Trạng thái buổi học">
+          <div className="row-actions">
+            {buoiHocInfo ? (
+              <span
+                className={`status-badge status-badge--${buoiHocInfo.trangThai}`}
+              >
+                {TRANG_THAI_BUOI_HOC_LABEL[buoiHocInfo.trangThai]}
+              </span>
+            ) : null}
+
+            {canManage && buoiHocInfo?.trangThai === "du_kien" ? (
+              <button
+                type="button"
+                className="primary-button"
+                disabled={sessionActionLoading}
+                onClick={() => void handleBatDauRoster()}
+              >
+                {sessionActionLoading ? "Đang xử lý..." : "Bắt đầu buổi học"}
+              </button>
+            ) : null}
+
+            {canManage && buoiHocInfo?.trangThai === "dang_hoc" ? (
+              <button
+                type="button"
+                className="primary-button"
+                disabled={sessionActionLoading}
+                onClick={() => void handleKetThucRoster()}
+              >
+                {sessionActionLoading ? "Đang xử lý..." : "Kết thúc buổi học"}
+              </button>
+            ) : null}
+
+            {canManage && buoiHocInfo?.trangThai === "da_hoc" ? (
+              <button
+                type="button"
+                className="text-button"
+                disabled={sessionActionLoading}
+                onClick={() => void handleMoLaiRoster()}
+              >
+                {sessionActionLoading
+                  ? "Đang xử lý..."
+                  : "Mở lại để chỉnh điểm danh"}
+              </button>
+            ) : null}
+          </div>
+
+          {buoiHocInfo?.trangThai === "du_kien" ? (
+            <p className="info-note">
+              Buổi học chưa bắt đầu — bấm "Bắt đầu buổi học" để mở điểm danh.
+            </p>
+          ) : buoiHocInfo?.trangThai === "da_hoc" ? (
+            <p className="info-note">
+              Buổi học đã kết thúc — điểm danh đã khoá, chỉ xem. Bấm "Mở lại"
+              nếu cần chỉnh sửa.
+            </p>
+          ) : null}
+        </SectionCard>
 
         <SectionCard
           title="Danh sách học sinh"
@@ -321,7 +473,7 @@ export function AttendancePage() {
                     <td>
                       <SelectField
                         value={item.trangThai}
-                        disabled={!canManage || saving}
+                        disabled={!canManage || !dangHoc || saving}
                         options={Object.entries(
                           TRANG_THAI_DIEM_DANH_LABEL,
                         ).map(([value, label]) => ({
@@ -340,7 +492,7 @@ export function AttendancePage() {
                     <td>
                       <TextField
                         value={item.ghiChu ?? ""}
-                        disabled={!canManage || saving}
+                        disabled={!canManage || !dangHoc || saving}
                         onChange={(value) =>
                           setGhiChu(item.hocSinh.id, value)
                         }
@@ -350,7 +502,7 @@ export function AttendancePage() {
                     <td>
                       <TextField
                         value={item.nhanXet ?? ""}
-                        disabled={!canManage || saving}
+                        disabled={!canManage || !dangHoc || saving}
                         onChange={(value) =>
                           setNhanXet(item.hocSinh.id, value)
                         }
@@ -374,7 +526,7 @@ export function AttendancePage() {
             <button
               type="button"
               className="primary-button"
-              disabled={saving}
+              disabled={!dangHoc || saving}
               onClick={() => void handleSave()}
             >
               {saving ? "Đang lưu..." : "Lưu điểm danh"}
@@ -498,19 +650,42 @@ export function AttendancePage() {
                   </td>
                   <td>{item.giaoVienHoTen || "—"}</td>
                   <td>
-                    {TRANG_THAI_BUOI_HOC_LABEL[item.buoiHoc.trangThai]}
+                    <span
+                      className={`status-badge status-badge--${item.buoiHoc.trangThai}`}
+                    >
+                      {TRANG_THAI_BUOI_HOC_LABEL[item.buoiHoc.trangThai]}
+                    </span>
                   </td>
                   <td>
                     {item.buoiHoc.trangThai === "nghi" ||
                     item.buoiHoc.trangThai === "huy" ? (
                       "—"
+                    ) : item.buoiHoc.trangThai === "du_kien" ? (
+                      canManage ? (
+                        <button
+                          type="button"
+                          className="text-button"
+                          disabled={startingId === item.buoiHoc.id}
+                          onClick={() =>
+                            void handleStartFromList(item.buoiHoc.id)
+                          }
+                        >
+                          {startingId === item.buoiHoc.id
+                            ? "Đang bắt đầu..."
+                            : "Bắt đầu buổi học"}
+                        </button>
+                      ) : (
+                        "—"
+                      )
                     ) : (
                       <button
                         type="button"
                         className="text-button"
                         onClick={() => openRoster(item.buoiHoc.id)}
                       >
-                        Điểm danh
+                        {item.buoiHoc.trangThai === "dang_hoc"
+                          ? "Điểm danh"
+                          : "Xem điểm danh"}
                       </button>
                     )}
                   </td>

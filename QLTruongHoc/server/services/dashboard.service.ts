@@ -11,6 +11,7 @@ import {
   countLopDangHoc,
   countLopDangHocAllDonVi,
 } from "../db/dashboard.repository.js";
+import { countHocSinhChoXepLop } from "../db/hocSinh.repository.js";
 import {
   countLeadDangXuLy,
   countLichHenTuVanHomNay,
@@ -233,18 +234,27 @@ export async function getDashboardSummary(
   // Số liệu riêng cho Portal tuyển sinh/học vụ — cả 2 Portal này đều ẩn ở
   // đơn vị hệ thống (`hideAtHeThong: true` trong appRoutes.tsx) nên chỉ cần
   // tính khi đứng tại một đơn vị cụ thể, không cần biến thể "AllDonVi".
-  const [leadDangXuLy, lichHenTuVanHomNay, tyLeChuyenDoiLead, buoiHocCanDieuChinh, hocSinhBaoLuu] =
-    await Promise.all([
-      !isHeThong && canViewAdmissions ? countLeadDangXuLy(donViId) : 0,
-      !isHeThong && canViewAdmissions ? countLichHenTuVanHomNay(donViId, homNay) : 0,
-      !isHeThong && canViewAdmissions
-        ? layTyLeChuyenDoiLead(donViId)
-        : { daDangKy: 0, tongLead: 0 },
-      !isHeThong && canViewClasses
-        ? countBuoiHocCanDieuChinh({ donViId, tuNgay: homNay, denNgay: congNgayIso(homNay, 6) })
-        : 0,
-      !isHeThong && canViewStudents ? countHocSinhBaoLuu(donViId) : 0,
-    ]);
+  const [
+    leadDangXuLy,
+    lichHenTuVanHomNay,
+    tyLeChuyenDoiLead,
+    buoiHocCanDieuChinh,
+    hocSinhBaoLuu,
+    hocSinhChoXepLop,
+  ] = await Promise.all([
+    !isHeThong && canViewAdmissions ? countLeadDangXuLy(donViId) : 0,
+    !isHeThong && canViewAdmissions ? countLichHenTuVanHomNay(donViId, homNay) : 0,
+    !isHeThong && canViewAdmissions
+      ? layTyLeChuyenDoiLead(donViId)
+      : { daDangKy: 0, tongLead: 0 },
+    !isHeThong && canViewClasses
+      ? countBuoiHocCanDieuChinh({ donViId, tuNgay: homNay, denNgay: congNgayIso(homNay, 6) })
+      : 0,
+    !isHeThong && canViewStudents ? countHocSinhBaoLuu(donViId) : 0,
+    // Đúng số liệu Cổng học vụ dùng để xếp lớp — gác bằng canViewClasses
+    // (lop_hoc.xem/quan_ly), khớp quyền endpoint /hoc-sinh/cho-xep-lop.
+    !isHeThong && canViewClasses ? countHocSinhChoXepLop(donViId) : 0,
+  ]);
 
   return {
     hocSinhDangHoc,
@@ -268,5 +278,6 @@ export async function getDashboardSummary(
     tyLeChuyenDoiLead,
     buoiHocCanDieuChinh,
     hocSinhBaoLuu,
+    hocSinhChoXepLop,
   };
 }

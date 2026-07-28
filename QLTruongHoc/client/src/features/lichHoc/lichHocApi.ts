@@ -121,6 +121,27 @@ export function setBuoiHocTrangThaiApi(
   );
 }
 
+export function batDauBuoiHocApi(buoiHocId: number) {
+  return request<BuoiHocItem>(
+    `/api/lop-hoc/buoi-hoc/${buoiHocId}/bat-dau`,
+    { method: "PATCH" },
+  );
+}
+
+export function ketThucBuoiHocApi(buoiHocId: number) {
+  return request<BuoiHocItem>(
+    `/api/lop-hoc/buoi-hoc/${buoiHocId}/ket-thuc`,
+    { method: "PATCH" },
+  );
+}
+
+export function moLaiBuoiHocDangHocApi(buoiHocId: number) {
+  return request<BuoiHocItem>(
+    `/api/lop-hoc/buoi-hoc/${buoiHocId}/mo-lai-dang-hoc`,
+    { method: "PATCH" },
+  );
+}
+
 export function listThoiKhoaBieuApi(params: {
   tuNgay: string;
   denNgay: string;

@@ -99,6 +99,7 @@ export async function createChuongTrinh(input: {
   tongSoBuoi: number | null;
   tongSoGio: string | null;
   moTa: string | null;
+  coTestDauVao: boolean;
 }) {
   const db = getDb();
 
@@ -110,6 +111,7 @@ export async function createChuongTrinh(input: {
     tongSoBuoi: input.tongSoBuoi,
     tongSoGio: input.tongSoGio,
     moTa: input.moTa,
+    coTestDauVao: input.coTestDauVao,
     trangThai: "hoat_dong",
     createdAt: now(),
     updatedAt: now(),
@@ -125,6 +127,7 @@ export async function updateChuongTrinh(input: {
   tongSoBuoi: number | null;
   tongSoGio: string | null;
   moTa: string | null;
+  coTestDauVao: boolean;
 }) {
   const db = getDb();
 
@@ -136,6 +139,7 @@ export async function updateChuongTrinh(input: {
       tongSoBuoi: input.tongSoBuoi,
       tongSoGio: input.tongSoGio,
       moTa: input.moTa,
+      coTestDauVao: input.coTestDauVao,
       updatedAt: now(),
     })
     .where(eq(chuongTrinhDaoTao.id, input.id));

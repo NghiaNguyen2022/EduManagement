@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import { NotificationBell } from "./NotificationBell";
 import {
   OrganizationSelector,
   type OrganizationOption,
@@ -78,10 +79,7 @@ export function Topbar({
       </div>
 
       <div className="topbar__right">
-        <button type="button" className="topbar-action">
-          ◌
-          <span className="topbar-action__dot" />
-        </button>
+        <NotificationBell />
 
         <div className="user-menu">
           <Link

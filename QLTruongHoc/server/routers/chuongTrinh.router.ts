@@ -74,6 +74,7 @@ chuongTrinhRouter.post(
           ? String(req.body.tongSoGio)
           : null,
         moTa: req.body?.moTa ? String(req.body.moTa) : null,
+        coTestDauVao: Boolean(req.body?.coTestDauVao),
         actorUserId: req.auth!.user.id,
         ipAddress: req.ip,
       });
@@ -108,6 +109,7 @@ chuongTrinhRouter.patch(
           ? String(req.body.tongSoGio)
           : null,
         moTa: req.body?.moTa ? String(req.body.moTa) : null,
+        coTestDauVao: Boolean(req.body?.coTestDauVao),
         actorUserId: req.auth!.user.id,
         ipAddress: req.ip,
       });

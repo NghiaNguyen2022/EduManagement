@@ -1,5 +1,6 @@
 import type {
   ConfirmRegistrationInput,
+  ConfirmRegistrationResult,
   LeadActivityFormInput,
   LeadDetail,
   LeadFormInput,
@@ -119,7 +120,7 @@ export function confirmLeadRegistrationApi(
   id: number,
   input: ConfirmRegistrationInput,
 ) {
-  return request(
+  return request<ConfirmRegistrationResult>(
     `/api/leads/${id}/xac-nhan-dang-ky`,
     {
       method: "POST",

@@ -8,10 +8,13 @@ import {
   requirePermission,
 } from "../middleware/permission.middleware.js";
 import {
+  batDauBuoiHoc,
   capNhatTrangThaiBuoiHoc,
+  ketThucBuoiHoc,
   listBuoiHocLop,
   listLichHoc,
   listThoiKhoaBieu,
+  moLaiBuoiHocDangHoc,
   ngungQuyTacLichHoc,
   sinhBuoiHoc,
   suaBuoiHoc,
@@ -193,6 +196,70 @@ lichHocRouter.patch(
       res.json({ ok: true, data: updated });
     } catch (error) {
       handleError(res, error, "Không thể cập nhật trạng thái buổi học.");
+    }
+  },
+);
+
+// Bắt đầu/kết thúc/mở lại buổi học là việc của giáo viên đứng lớp — gác bằng
+// `diem_danh.thuc_hien` (giáo viên có quyền này) thay vì `lop_hoc.quan_ly`
+// (học vụ). Việc chỉ đúng giáo viên được phân công mới thao tác được (trừ
+// người có quyền quản lý) được kiểm tra trong service, không phải ở đây.
+lichHocRouter.patch(
+  "/buoi-hoc/:buoiHocId/bat-dau",
+  requirePermission("diem_danh.thuc_hien"),
+  async (req, res) => {
+    try {
+      const updated = await batDauBuoiHoc({
+        donViId: req.auth!.currentOrganization!.id,
+        id: Number(req.params.buoiHocId),
+        actorUserId: req.auth!.user.id,
+        grantedPermissions: req.auth!.currentOrganization!.quyen,
+        ipAddress: req.ip,
+      });
+
+      res.json({ ok: true, data: updated });
+    } catch (error) {
+      handleError(res, error, "Không thể bắt đầu buổi học.");
+    }
+  },
+);
+
+lichHocRouter.patch(
+  "/buoi-hoc/:buoiHocId/ket-thuc",
+  requirePermission("diem_danh.thuc_hien"),
+  async (req, res) => {
+    try {
+      const updated = await ketThucBuoiHoc({
+        donViId: req.auth!.currentOrganization!.id,
+        id: Number(req.params.buoiHocId),
+        actorUserId: req.auth!.user.id,
+        grantedPermissions: req.auth!.currentOrganization!.quyen,
+        ipAddress: req.ip,
+      });
+
+      res.json({ ok: true, data: updated });
+    } catch (error) {
+      handleError(res, error, "Không thể kết thúc buổi học.");
+    }
+  },
+);
+
+lichHocRouter.patch(
+  "/buoi-hoc/:buoiHocId/mo-lai-dang-hoc",
+  requirePermission("diem_danh.thuc_hien"),
+  async (req, res) => {
+    try {
+      const updated = await moLaiBuoiHocDangHoc({
+        donViId: req.auth!.currentOrganization!.id,
+        id: Number(req.params.buoiHocId),
+        actorUserId: req.auth!.user.id,
+        grantedPermissions: req.auth!.currentOrganization!.quyen,
+        ipAddress: req.ip,
+      });
+
+      res.json({ ok: true, data: updated });
+    } catch (error) {
+      handleError(res, error, "Không thể mở lại buổi học.");
     }
   },
 );

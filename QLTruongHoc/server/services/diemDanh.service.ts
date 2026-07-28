@@ -6,10 +6,7 @@ import {
   listRosterByLopHocNgay,
   upsertDiemDanh,
 } from "../db/diemDanh.repository.js";
-import {
-  findBuoiHocById,
-  updateBuoiHocTrangThai,
-} from "../db/lichHoc.repository.js";
+import { findBuoiHocById } from "../db/lichHoc.repository.js";
 
 type TrangThaiDiemDanh =
   | "co_mat"
@@ -87,12 +84,11 @@ export async function luuDiemDanh(input: {
     input.buoiHocId,
   );
 
-  if (
-    found.buoiHoc.trangThai === "nghi" ||
-    found.buoiHoc.trangThai === "huy"
-  ) {
+  // Chỉ điểm danh khi buổi học đang diễn ra — giáo viên phải bấm "Bắt đầu
+  // buổi học" trước, và có thể "Mở lại" một buổi đã kết thúc nếu cần sửa.
+  if (found.buoiHoc.trangThai !== "dang_hoc") {
     throw new Error(
-      "Buổi học đã nghỉ hoặc đã huỷ, không thể điểm danh.",
+      "Chỉ có thể điểm danh khi buổi học đang diễn ra.",
     );
   }
 
@@ -129,13 +125,6 @@ export async function luuDiemDanh(input: {
       ghiChu: entry.ghiChu?.trim() || null,
       nhanXet: entry.nhanXet?.trim() || null,
       actorUserId: input.actorUserId,
-    });
-  }
-
-  if (found.buoiHoc.trangThai === "du_kien") {
-    await updateBuoiHocTrangThai({
-      id: input.buoiHocId,
-      trangThai: "da_hoc",
     });
   }
 

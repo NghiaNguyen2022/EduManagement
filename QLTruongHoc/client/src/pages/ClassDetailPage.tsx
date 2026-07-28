@@ -10,6 +10,7 @@ import {
 } from "../components/form";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
+import { TabBar } from "../components/shared/TabBar";
 import { useAuth } from "../features/auth/AuthContext";
 import { listChuongTrinhApi } from "../features/chuongTrinh/chuongTrinhApi";
 import type { ChuongTrinhItem } from "../features/chuongTrinh/chuongTrinhTypes";
@@ -90,7 +91,8 @@ const THU_TRONG_TUAN_LABEL: Record<number, string> = {
 };
 
 const TRANG_THAI_BUOI_HOC_LABEL: Record<string, string> = {
-  du_kien: "Dự kiến",
+  du_kien: "Chưa học",
+  dang_hoc: "Đang học",
   da_hoc: "Đã học",
   nghi: "Nghỉ",
   huy: "Huỷ",
@@ -140,6 +142,68 @@ function addDaysIso(iso: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
+function startOfMonthIso(iso: string) {
+  const date = new Date(`${iso}T00:00:00Z`);
+  date.setUTCDate(1);
+  return date.toISOString().slice(0, 10);
+}
+
+function endOfMonthIso(iso: string) {
+  const date = new Date(`${iso}T00:00:00Z`);
+  date.setUTCMonth(date.getUTCMonth() + 1, 0);
+  return date.toISOString().slice(0, 10);
+}
+
+function addMonthsIso(iso: string, months: number) {
+  const date = new Date(`${iso}T00:00:00Z`);
+  date.setUTCMonth(date.getUTCMonth() + months, 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function formatThangNam(iso: string) {
+  const date = new Date(`${iso}T00:00:00Z`);
+  return `Tháng ${date.getUTCMonth() + 1}/${date.getUTCFullYear()}`;
+}
+
+// Lưới lịch luôn đủ tuần trọn vẹn (Thứ Hai → Chủ Nhật), có thể lòi ra ngày
+// của tháng trước/sau ở đầu/cuối lưới — ô đó vẫn hiện buổi học nếu có, chỉ mờ
+// đi để phân biệt với ngày thuộc tháng đang xem.
+function buildCalendarWeeks(monthStartIso: string, monthEndIso: string) {
+  const start = new Date(`${monthStartIso}T00:00:00Z`);
+  const startWeekday = (start.getUTCDay() + 6) % 7;
+  const gridStart = new Date(start);
+  gridStart.setUTCDate(gridStart.getUTCDate() - startWeekday);
+
+  const end = new Date(`${monthEndIso}T00:00:00Z`);
+  const endWeekday = (end.getUTCDay() + 6) % 7;
+  const gridEnd = new Date(end);
+  gridEnd.setUTCDate(gridEnd.getUTCDate() + (6 - endWeekday));
+
+  const weeks: string[][] = [];
+  const cursor = new Date(gridStart);
+
+  while (cursor <= gridEnd) {
+    const week: string[] = [];
+
+    for (let i = 0; i < 7; i += 1) {
+      week.push(cursor.toISOString().slice(0, 10));
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+
+    weeks.push(week);
+  }
+
+  return weeks;
+}
+
+type TabId =
+  | "thong-tin"
+  | "giao-vien"
+  | "hoc-sinh"
+  | "lich-hoc"
+  | "buoi-hoc"
+  | "trao-doi";
+
 export function ClassDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -147,6 +211,7 @@ export function ClassDetailPage() {
 
   const classId = Number(id);
 
+  const [activeTab, setActiveTab] = useState<TabId>("thong-tin");
   const [detail, setDetail] = useState<LopHocDetail | null>(null);
   const [programs, setPrograms] = useState<ChuongTrinhItem[]>([]);
   const [teachers, setTeachers] = useState<GiaoVienItem[]>([]);
@@ -200,6 +265,13 @@ export function ClassDetailPage() {
   const [generatingLichHocId, setGeneratingLichHocId] = useState<
     number | null
   >(null);
+  const [expandedSinhRowId, setExpandedSinhRowId] = useState<number | null>(
+    null,
+  );
+  const [showCreateLichHocForm, setShowCreateLichHocForm] = useState(false);
+  const [buoiHocViewMode, setBuoiHocViewMode] = useState<"list" | "calendar">(
+    "list",
+  );
 
   const [buoiHocList, setBuoiHocList] = useState<BuoiHocItem[]>([]);
   const [buoiHocRange, setBuoiHocRange] = useState({
@@ -245,6 +317,38 @@ export function ClassDetailPage() {
       permissions.includes("hoc_tap.ghi_nhan")
     );
   }, [auth]);
+
+  const buoiHocByDate = useMemo(() => {
+    const map = new Map<string, BuoiHocItem[]>();
+
+    for (const item of buoiHocList) {
+      const list = map.get(item.ngayHoc) ?? [];
+      list.push(item);
+      map.set(item.ngayHoc, list);
+    }
+
+    return map;
+  }, [buoiHocList]);
+
+  function handleSwitchToCalendar() {
+    const monthStart = startOfMonthIso(buoiHocRange.tuNgay || todayIso());
+    setBuoiHocRange({
+      tuNgay: monthStart,
+      denNgay: endOfMonthIso(monthStart),
+    });
+    setBuoiHocViewMode("calendar");
+  }
+
+  function handleGoToMonth(deltaMonths: number) {
+    const monthStart = addMonthsIso(
+      startOfMonthIso(buoiHocRange.tuNgay),
+      deltaMonths,
+    );
+    setBuoiHocRange({
+      tuNgay: monthStart,
+      denNgay: endOfMonthIso(monthStart),
+    });
+  }
 
   async function loadTraoDoi() {
     setLoadingTraoDoi(true);
@@ -554,25 +658,63 @@ export function ClassDetailPage() {
     }));
   }
 
-  async function handleCreateLichHoc(
+  // Gộp "tạo quy tắc" + "sinh buổi học" thành 1 thao tác: ngày bắt đầu/kết
+  // thúc lấy thẳng từ thông tin lớp (đã nhập lúc tạo lớp) — tab này chỉ hỏi
+  // tần suất (thứ/giờ/phòng/GV), trừ khi lớp chưa có ngày kết thúc thì mới
+  // cần hỏi thêm "sinh đến ngày" vì không có mốc nào để tự suy ra.
+  async function handleCreateLichHocAndSinh(
     event: React.FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
+    if (!infoForm) return;
+
     setError("");
     setNotice("");
+
+    const ngayApDungTu = infoForm.ngayBatDau;
+
+    if (!ngayApDungTu) {
+      setError(
+        "Lớp chưa có ngày bắt đầu — sang tab \"Thông tin\" để bổ sung trước.",
+      );
+      return;
+    }
+
+    const ngaySinhDen = infoForm.ngayKetThuc || lichHocForm.ngayApDungDen;
+
+    if (!ngaySinhDen) {
+      setError("Vui lòng chọn ngày sinh buổi học đến.");
+      return;
+    }
+
     setSavingLichHoc(true);
 
     try {
-      await createLichHocApi(classId, lichHocForm);
-      setNotice("Đã tạo quy tắc lịch học.");
+      const createdRules = await createLichHocApi(classId, {
+        ...lichHocForm,
+        ngayApDungTu,
+        ngayApDungDen: ngaySinhDen,
+      });
+
+      let tongBuoiTao = 0;
+      for (const rule of createdRules) {
+        const result = await sinhBuoiHocApi(rule.id, ngaySinhDen);
+        tongBuoiTao += result.created;
+      }
+
+      setNotice(
+        `Đã tạo ${createdRules.length} quy tắc và sinh ${tongBuoiTao} buổi học.`,
+      );
       setLichHocForm(initialLichHocForm);
+      setShowCreateLichHocForm(false);
       const rows = await listLichHocApi(classId);
       setLichHocList(rows);
+      await loadBuoiHoc();
     } catch (createError) {
       setError(
         createError instanceof Error
           ? createError.message
-          : "Không thể tạo quy tắc lịch học.",
+          : "Không thể tạo lịch học.",
       );
     } finally {
       setSavingLichHoc(false);
@@ -714,6 +856,21 @@ export function ClassDetailPage() {
       {error ? <div className="form-error">{error}</div> : null}
       {notice ? <div className="form-success">{notice}</div> : null}
 
+      <TabBar
+        tabs={[
+          { id: "thong-tin", label: "Thông tin" },
+          { id: "giao-vien", label: "Giáo viên", badge: detail.giaoVien.length },
+          { id: "hoc-sinh", label: "Học sinh", badge: detail.hocSinh.length },
+          { id: "lich-hoc", label: "Lịch học", badge: lichHocList.length },
+          { id: "buoi-hoc", label: "Buổi học", badge: buoiHocList.length },
+          { id: "trao-doi", label: "Trao đổi", badge: traoDoiItems.length },
+        ]}
+        activeId={activeTab}
+        onChange={(tabId) => setActiveTab(tabId as TabId)}
+      />
+
+      {activeTab === "thong-tin" ? (
+      <>
       <SectionCard
         title="Trạng thái"
         subtitle={`Hiện tại: ${TRANG_THAI_LOP_LABEL[detail.lopHoc.trangThai]}`}
@@ -822,7 +979,10 @@ export function ClassDetailPage() {
           ) : null}
         </form>
       </SectionCard>
+      </>
+      ) : null}
 
+      {activeTab === "giao-vien" ? (
       <SectionCard
         title="Giáo viên phụ trách"
         subtitle={`${detail.giaoVien.length} phân công`}
@@ -945,7 +1105,9 @@ export function ClassDetailPage() {
           </form>
         ) : null}
       </SectionCard>
+      ) : null}
 
+      {activeTab === "hoc-sinh" ? (
       <SectionCard
         title="Học sinh trong lớp"
         subtitle={`${detail.hocSinh.length} lượt xếp lớp`}
@@ -1136,7 +1298,9 @@ export function ClassDetailPage() {
           </form>
         ) : null}
       </SectionCard>
+      ) : null}
 
+      {activeTab === "trao-doi" ? (
       <SectionCard
         title="Trao đổi phụ huynh"
         subtitle={
@@ -1268,10 +1432,15 @@ export function ClassDetailPage() {
           </table>
         </div>
       </SectionCard>
+      ) : null}
 
+      {activeTab === "lich-hoc" ? (
+      <>
       <SectionCard
-        title="Lịch học lặp lại"
-        subtitle={`${lichHocList.length} quy tắc`}
+        title="Các khung giờ học đã tạo"
+        subtitle={`${lichHocList.length} khung giờ đang áp dụng cho lớp này (${
+          infoForm.ngayBatDau || "chưa có ngày bắt đầu"
+        } → ${infoForm.ngayKetThuc || "chưa có ngày kết thúc"}) — mỗi dòng là 1 khung giờ lặp lại hàng tuần, buổi học cụ thể đã được sinh sẵn.`}
       >
         <div className="user-table-wrap">
           <table className="user-table">
@@ -1311,30 +1480,42 @@ export function ClassDetailPage() {
                     <td>
                       {item.trangThai === "hoat_dong" ? (
                         <div className="row-actions">
-                          <input
-                            type="date"
-                            className="form-control"
-                            value={sinhBuoiHocState[item.id] ?? ""}
-                            onChange={(event) =>
-                              setSinhBuoiHocState({
-                                ...sinhBuoiHocState,
-                                [item.id]: event.target.value,
-                              })
-                            }
-                          />
+                          {expandedSinhRowId === item.id ? (
+                            <>
+                              <input
+                                type="date"
+                                className="form-control"
+                                value={sinhBuoiHocState[item.id] ?? ""}
+                                onChange={(event) =>
+                                  setSinhBuoiHocState({
+                                    ...sinhBuoiHocState,
+                                    [item.id]: event.target.value,
+                                  })
+                                }
+                              />
 
-                          <button
-                            type="button"
-                            className="text-button"
-                            disabled={generatingLichHocId === item.id}
-                            onClick={() =>
-                              void handleSinhBuoiHoc(item.id)
-                            }
-                          >
-                            {generatingLichHocId === item.id
-                              ? "Đang sinh..."
-                              : "Sinh buổi học"}
-                          </button>
+                              <button
+                                type="button"
+                                className="text-button"
+                                disabled={generatingLichHocId === item.id}
+                                onClick={() =>
+                                  void handleSinhBuoiHoc(item.id)
+                                }
+                              >
+                                {generatingLichHocId === item.id
+                                  ? "Đang sinh..."
+                                  : "Xác nhận"}
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              className="text-button"
+                              onClick={() => setExpandedSinhRowId(item.id)}
+                            >
+                              Sinh thêm buổi học
+                            </button>
+                          )}
 
                           <button
                             type="button"
@@ -1363,138 +1544,286 @@ export function ClassDetailPage() {
           </table>
         </div>
 
-        {canManage ? (
-          <form
-            className="user-create-form"
-            onSubmit={handleCreateLichHoc}
-          >
-            <div className="form-field">
-              <span className="form-field__label">
-                Thứ trong tuần
-                <b aria-hidden="true"> *</b>
-              </span>
-
-              <div className="row-actions">
-                {Object.entries(THU_TRONG_TUAN_LABEL).map(
-                  ([value, label]) => (
-                    <label key={value} className="checkbox-inline">
-                      <input
-                        type="checkbox"
-                        checked={lichHocForm.thuTrongTuanList.includes(
-                          Number(value),
-                        )}
-                        onChange={() => toggleThu(Number(value))}
-                      />
-                      {label}
-                    </label>
-                  ),
-                )}
-              </div>
-            </div>
-
-            <TextField
-              label="Giờ bắt đầu"
-              type="time"
-              value={lichHocForm.gioBatDau}
-              required
-              onChange={(value) =>
-                setLichHocForm({ ...lichHocForm, gioBatDau: value })
-              }
-            />
-
-            <TextField
-              label="Giờ kết thúc"
-              type="time"
-              value={lichHocForm.gioKetThuc}
-              required
-              onChange={(value) =>
-                setLichHocForm({ ...lichHocForm, gioKetThuc: value })
-              }
-            />
-
-            <TextField
-              label="Phòng học"
-              value={lichHocForm.phongHoc}
-              placeholder={infoForm.phongHoc || "Theo phòng của lớp"}
-              onChange={(value) =>
-                setLichHocForm({ ...lichHocForm, phongHoc: value })
-              }
-            />
-
-            <SelectField
-              label="Giáo viên"
-              value={
-                lichHocForm.giaoVienId
-                  ? String(lichHocForm.giaoVienId)
-                  : ""
-              }
-              placeholder="Theo giáo viên chính của lớp"
-              options={teachers.map((teacher) => ({
-                value: String(teacher.id),
-                label: `${teacher.hoTen} (${teacher.maGiaoVien})`,
-              }))}
-              onChange={(value) =>
-                setLichHocForm({
-                  ...lichHocForm,
-                  giaoVienId: value ? Number(value) : null,
-                })
-              }
-            />
-
-            <DateField
-              label="Áp dụng từ"
-              value={lichHocForm.ngayApDungTu}
-              required
-              onChange={(value) =>
-                setLichHocForm({ ...lichHocForm, ngayApDungTu: value })
-              }
-            />
-
-            <DateField
-              label="Áp dụng đến (tuỳ chọn)"
-              value={lichHocForm.ngayApDungDen}
-              onChange={(value) =>
-                setLichHocForm({ ...lichHocForm, ngayApDungDen: value })
-              }
-            />
-
-            <button
-              type="submit"
-              className="primary-button"
-              disabled={savingLichHoc}
-            >
-              {savingLichHoc ? "Đang lưu..." : "Thêm quy tắc lịch học"}
-            </button>
-          </form>
-        ) : null}
       </SectionCard>
 
+      {canManage ? (
+        <SectionCard
+          title="Thêm khung giờ học mới"
+          subtitle="Dùng khi lớp cần thêm 1 khung giờ khác với các khung ở trên (ví dụ thêm buổi phụ đạo) — không cần dùng nếu lớp đã đủ lịch."
+          actions={
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => setShowCreateLichHocForm((current) => !current)}
+            >
+              {showCreateLichHocForm ? "Đóng" : "Thêm khung giờ"}
+            </button>
+          }
+        >
+          {!showCreateLichHocForm ? null : !infoForm.ngayBatDau ? (
+            <p className="info-note">
+              Lớp chưa có ngày bắt đầu — sang tab "Thông tin" để bổ sung
+              trước khi tạo lịch học.
+            </p>
+          ) : (
+            <form
+              className="user-create-form"
+              onSubmit={handleCreateLichHocAndSinh}
+            >
+              <div className="form-field">
+                <span className="form-field__label">
+                  Thứ trong tuần
+                  <b aria-hidden="true"> *</b>
+                </span>
+
+                <div className="day-toggle-group">
+                  {Object.entries(THU_TRONG_TUAN_LABEL).map(
+                    ([value, label]) => {
+                      const active = lichHocForm.thuTrongTuanList.includes(
+                        Number(value),
+                      );
+
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          className={`day-toggle${
+                            active ? " day-toggle--active" : ""
+                          }`}
+                          onClick={() => toggleThu(Number(value))}
+                        >
+                          {label.replace("Thứ ", "T.")}
+                        </button>
+                      );
+                    },
+                  )}
+                </div>
+              </div>
+
+              <TextField
+                label="Giờ bắt đầu"
+                type="time"
+                value={lichHocForm.gioBatDau}
+                required
+                onChange={(value) =>
+                  setLichHocForm({ ...lichHocForm, gioBatDau: value })
+                }
+              />
+
+              <TextField
+                label="Giờ kết thúc"
+                type="time"
+                value={lichHocForm.gioKetThuc}
+                required
+                onChange={(value) =>
+                  setLichHocForm({ ...lichHocForm, gioKetThuc: value })
+                }
+              />
+
+              <TextField
+                label="Phòng học"
+                value={lichHocForm.phongHoc}
+                placeholder={infoForm.phongHoc || "Theo phòng của lớp"}
+                onChange={(value) =>
+                  setLichHocForm({ ...lichHocForm, phongHoc: value })
+                }
+              />
+
+              <SelectField
+                label="Giáo viên"
+                value={
+                  lichHocForm.giaoVienId
+                    ? String(lichHocForm.giaoVienId)
+                    : ""
+                }
+                placeholder="Theo giáo viên chính của lớp"
+                options={teachers.map((teacher) => ({
+                  value: String(teacher.id),
+                  label: `${teacher.hoTen} (${teacher.maGiaoVien})`,
+                }))}
+                onChange={(value) =>
+                  setLichHocForm({
+                    ...lichHocForm,
+                    giaoVienId: value ? Number(value) : null,
+                  })
+                }
+              />
+
+              <p className="info-note">
+                Áp dụng từ {infoForm.ngayBatDau}
+                {infoForm.ngayKetThuc
+                  ? ` đến ${infoForm.ngayKetThuc} (theo thông tin lớp).`
+                  : " — lớp chưa có ngày kết thúc, chọn ngày sinh buổi học bên dưới."}
+              </p>
+
+              {!infoForm.ngayKetThuc ? (
+                <DateField
+                  label="Sinh buổi học đến ngày"
+                  value={lichHocForm.ngayApDungDen}
+                  required
+                  onChange={(value) =>
+                    setLichHocForm({ ...lichHocForm, ngayApDungDen: value })
+                  }
+                />
+              ) : null}
+
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={savingLichHoc}
+              >
+                {savingLichHoc ? "Đang tạo..." : "Tạo lịch & sinh buổi học"}
+              </button>
+            </form>
+          )}
+        </SectionCard>
+      ) : null}
+      </>
+      ) : null}
+
+      {activeTab === "buoi-hoc" ? (
       <SectionCard
         title="Buổi học"
         subtitle={
           loadingBuoiHoc
             ? "Đang tải..."
-            : `${buoiHocList.length} buổi trong khoảng đã chọn`
+            : buoiHocViewMode === "calendar"
+              ? `${buoiHocList.length} buổi trong ${formatThangNam(buoiHocRange.tuNgay)}`
+              : `${buoiHocList.length} buổi trong khoảng đã chọn`
+        }
+        actions={
+          <div className="view-toggle-group">
+            <button
+              type="button"
+              className={`view-toggle${
+                buoiHocViewMode === "list" ? " view-toggle--active" : ""
+              }`}
+              onClick={() => setBuoiHocViewMode("list")}
+            >
+              Danh sách
+            </button>
+            <button
+              type="button"
+              className={`view-toggle${
+                buoiHocViewMode === "calendar" ? " view-toggle--active" : ""
+              }`}
+              onClick={() => handleSwitchToCalendar()}
+            >
+              Lịch
+            </button>
+          </div>
         }
       >
-        <div className="user-toolbar">
-          <DateField
-            label="Từ ngày"
-            value={buoiHocRange.tuNgay}
-            onChange={(value) =>
-              setBuoiHocRange({ ...buoiHocRange, tuNgay: value })
-            }
-          />
+        {buoiHocViewMode === "list" ? (
+          <div className="user-toolbar">
+            <DateField
+              label="Từ ngày"
+              value={buoiHocRange.tuNgay}
+              onChange={(value) =>
+                setBuoiHocRange({ ...buoiHocRange, tuNgay: value })
+              }
+            />
 
-          <DateField
-            label="Đến ngày"
-            value={buoiHocRange.denNgay}
-            onChange={(value) =>
-              setBuoiHocRange({ ...buoiHocRange, denNgay: value })
-            }
-          />
-        </div>
+            <DateField
+              label="Đến ngày"
+              value={buoiHocRange.denNgay}
+              onChange={(value) =>
+                setBuoiHocRange({ ...buoiHocRange, denNgay: value })
+              }
+            />
+          </div>
+        ) : (
+          <div className="calendar-toolbar">
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => handleGoToMonth(-1)}
+            >
+              ← Tháng trước
+            </button>
 
+            <strong>{formatThangNam(buoiHocRange.tuNgay)}</strong>
+
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => handleGoToMonth(1)}
+            >
+              Tháng sau →
+            </button>
+          </div>
+        )}
+
+        {buoiHocViewMode === "calendar" ? (
+          <div className="calendar-grid">
+            <div className="calendar-grid__weekday-row">
+              {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((label) => (
+                <div key={label} className="calendar-grid__weekday">
+                  {label}
+                </div>
+              ))}
+            </div>
+
+            {buildCalendarWeeks(
+              buoiHocRange.tuNgay,
+              buoiHocRange.denNgay,
+            ).map((week, weekIndex) => (
+              <div className="calendar-grid__week" key={weekIndex}>
+                {week.map((dateIso) => {
+                  const inMonth =
+                    dateIso >= buoiHocRange.tuNgay &&
+                    dateIso <= buoiHocRange.denNgay;
+                  const sessions = buoiHocByDate.get(dateIso) ?? [];
+
+                  return (
+                    <div
+                      key={dateIso}
+                      className={`calendar-grid__cell${
+                        inMonth ? "" : " calendar-grid__cell--outside"
+                      }${
+                        dateIso === todayIso()
+                          ? " calendar-grid__cell--today"
+                          : ""
+                      }`}
+                    >
+                      <span className="calendar-grid__date">
+                        {Number(dateIso.slice(8, 10))}
+                      </span>
+
+                      <div className="calendar-grid__sessions">
+                        {sessions.map((item) => {
+                          const clickable =
+                            canXemDiemDanh &&
+                            item.trangThai !== "nghi" &&
+                            item.trangThai !== "huy";
+
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              className={`calendar-session calendar-session--${item.trangThai}`}
+                              disabled={!clickable}
+                              title={`${item.gioBatDau.slice(0, 5)}-${item.gioKetThuc.slice(0, 5)} · ${
+                                item.phongHoc || "—"
+                              }${item.loaiBuoi === "bu" ? " · Học bù" : ""}`}
+                              onClick={() =>
+                                clickable &&
+                                navigate(`/attendance?buoiHocId=${item.id}`)
+                              }
+                            >
+                              {item.gioBatDau.slice(0, 5)}
+                              {item.loaiBuoi === "bu" ? " •" : ""}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="user-table-wrap">
           <table className="user-table">
             <thead>
@@ -1523,7 +1852,13 @@ export function ClassDetailPage() {
                       "—"}
                   </td>
                   <td>{item.loaiBuoi === "bu" ? "Học bù" : "Thường"}</td>
-                  <td>{TRANG_THAI_BUOI_HOC_LABEL[item.trangThai]}</td>
+                  <td>
+                    <span
+                      className={`status-badge status-badge--${item.trangThai}`}
+                    >
+                      {TRANG_THAI_BUOI_HOC_LABEL[item.trangThai]}
+                    </span>
+                  </td>
                   {canXemDiemDanh ? (
                     <td>
                       {item.trangThai === "nghi" ||
@@ -1592,6 +1927,7 @@ export function ClassDetailPage() {
             </tbody>
           </table>
         </div>
+        )}
 
         {canManage ? (
           <form
@@ -1666,6 +2002,7 @@ export function ClassDetailPage() {
           </form>
         ) : null}
       </SectionCard>
+      ) : null}
     </div>
   );
 }

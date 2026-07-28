@@ -1,6 +1,11 @@
 export type TrangThaiLichHoc = "hoat_dong" | "ngung_hoat_dong";
 
-export type TrangThaiBuoiHoc = "du_kien" | "da_hoc" | "nghi" | "huy";
+export type TrangThaiBuoiHoc =
+  | "du_kien"
+  | "dang_hoc"
+  | "da_hoc"
+  | "nghi"
+  | "huy";
 
 export type LoaiBuoiHoc = "thuong" | "bu";
 

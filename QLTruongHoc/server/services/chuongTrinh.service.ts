@@ -42,6 +42,7 @@ export async function createChuongTrinhMoi(input: {
   tongSoBuoi?: number | null;
   tongSoGio?: string | null;
   moTa?: string | null;
+  coTestDauVao?: boolean;
   actorUserId: number;
   ipAddress?: string;
 }) {
@@ -64,6 +65,7 @@ export async function createChuongTrinhMoi(input: {
     tongSoBuoi: input.tongSoBuoi ?? null,
     tongSoGio: input.tongSoGio ?? null,
     moTa: input.moTa?.trim() || null,
+    coTestDauVao: input.coTestDauVao ?? false,
   });
 
   if (!created) {
@@ -91,6 +93,7 @@ export async function updateChuongTrinhThongTin(input: {
   tongSoBuoi?: number | null;
   tongSoGio?: string | null;
   moTa?: string | null;
+  coTestDauVao?: boolean;
   actorUserId: number;
   ipAddress?: string;
 }) {
@@ -113,6 +116,7 @@ export async function updateChuongTrinhThongTin(input: {
     tongSoBuoi: input.tongSoBuoi ?? null,
     tongSoGio: input.tongSoGio ?? null,
     moTa: input.moTa?.trim() || null,
+    coTestDauVao: input.coTestDauVao ?? existing.coTestDauVao,
   });
 
   if (!updated) {

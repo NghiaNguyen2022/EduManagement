@@ -33,6 +33,7 @@ type EditForm = {
   tongSoBuoi: number | null;
   tongSoGio: number | null;
   moTa: string;
+  coTestDauVao: boolean;
 };
 
 function toEditForm(item: ChuongTrinhItem): EditForm {
@@ -42,6 +43,7 @@ function toEditForm(item: ChuongTrinhItem): EditForm {
     tongSoBuoi: item.tongSoBuoi,
     tongSoGio: item.tongSoGio !== null ? Number(item.tongSoGio) : null,
     moTa: item.moTa ?? "",
+    coTestDauVao: item.coTestDauVao,
   };
 }
 
@@ -269,6 +271,20 @@ export function ChuongTrinhDetailPage() {
             disabled={!canManage}
             onChange={(value) => updateForm({ moTa: value })}
           />
+
+          {auth?.currentOrganization?.loaiHinhDaoTao !== "mam_non" ? (
+            <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <input
+                type="checkbox"
+                checked={form.coTestDauVao}
+                disabled={!canManage}
+                onChange={(event) =>
+                  updateForm({ coTestDauVao: event.target.checked })
+                }
+              />
+              Yêu cầu test đầu vào trước khi xếp lớp
+            </label>
+          ) : null}
 
           {canManage ? (
             <button

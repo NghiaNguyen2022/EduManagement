@@ -168,7 +168,7 @@ export function DashboardPage() {
                   tone: "warning" as const,
             },
             {
-                  title: "Lead mới trong tháng",
+                  title: "Khách hàng tiềm năng mới trong tháng",
                   value: summary?.leadMoiThangNay ?? 0,
                   note: "Tính từ đầu tháng tới hôm nay",
                   icon: "✓",
@@ -176,9 +176,8 @@ export function DashboardPage() {
             },
       ];
 
-      // Mầm non dùng "trẻ" thay "học viên" — theo đúng cách xưng hô đã dùng ở
-      // Portal (config/portal.ts#getPortalContext), áp dụng lại cho dashboard
-      // thay vì bịa thêm một quy ước khác.
+      // Mầm non dùng "trẻ" thay "học viên" theo cách xưng hô thống nhất giữa
+      // các màn tổng quan, tránh mỗi màn dùng một cách gọi khác nhau.
       const isMamNon = auth?.currentOrganization?.loaiHinhDaoTao === "mam_non";
       const nguoiHocLabel = isMamNon ? "Trẻ" : "Học viên";
 
@@ -215,7 +214,7 @@ export function DashboardPage() {
                   tone: "warning" as const,
             },
             {
-                  title: "Lead mới trong tháng",
+                  title: "Khách hàng tiềm năng mới trong tháng",
                   value: summary?.leadMoiThangNay ?? 0,
                   note: "Tính từ đầu tháng tới hôm nay",
                   icon: "✓",
@@ -374,7 +373,7 @@ export function DashboardPage() {
                         <>
                               <SectionCard
                                     title="Tổng quan theo đơn vị"
-                                    subtitle="Doanh thu, công nợ, học sinh bảo lưu và lead mới trong tháng — theo từng trường/trung tâm"
+                                    subtitle="Doanh thu, công nợ, học sinh bảo lưu và khách hàng tiềm năng mới trong tháng — theo từng trường/trung tâm"
                                     className="section-card--wide"
                               >
                                     {loading ? (
@@ -390,7 +389,7 @@ export function DashboardPage() {
                                                                   <th>Doanh thu</th>
                                                                   <th>Công nợ</th>
                                                                   <th>Học sinh bảo lưu</th>
-                                                                  <th>Lead mới</th>
+                                                                  <th>Khách hàng tiềm năng mới</th>
                                                             </tr>
                                                       </thead>
 

@@ -21,10 +21,24 @@ export type HocSinhItem = {
   maHocSinh: string;
   hoTen: string;
   tenThuongGoi: string | null;
+  hinhAnhUrl: string | null;
   ngaySinh: string | null;
   gioiTinh: GioiTinh | null;
+  soDinhDanh: string | null;
+  noiSinh: string | null;
+  danToc: string | null;
+  quocTich: string | null;
   diaChi: string | null;
+  truongLopTruocDo: string | null;
   ngayNhapHoc: string | null;
+  dienChinhSach: string | null;
+  chieuCaoCm: string | null;
+  canNangKg: string | null;
+  diUngBenhNen: string | null;
+  lienHeKhanCapHoTen: string | null;
+  lienHeKhanCapSdt: string | null;
+  nguyenVongLop: string | null;
+  ketQuaTestDauVao: string | null;
   trangThai: TrangThaiHocSinh;
   donVi?: { id: number; maDonVi: string; tenDonVi: string };
 };
@@ -88,10 +102,34 @@ export type HocSinhDetail = {
 export type HocSinhFormInput = {
   hoTen: string;
   tenThuongGoi: string;
+  hinhAnhUrl: string | null;
   ngaySinh: string;
   gioiTinh: GioiTinh | "";
+  soDinhDanh: string;
+  noiSinh: string;
+  danToc: string;
+  quocTich: string;
   diaChi: string;
+  truongLopTruocDo: string;
   ngayNhapHoc: string;
+  dienChinhSach: string;
+  chieuCaoCm: number | null;
+  canNangKg: number | null;
+  diUngBenhNen: string;
+  lienHeKhanCapHoTen: string;
+  lienHeKhanCapSdt: string;
+};
+
+export type GhiDanhTrucTiepFormInput = {
+  hoTenHocVien: string;
+  ngaySinh: string;
+  gioiTinh: GioiTinh | "";
+  diaChiHocVien: string;
+  ngayNhapHoc: string;
+  hoTenNguoiLienHe: string;
+  soDienThoaiNguoiLienHe: string;
+  emailNguoiLienHe: string;
+  moiQuanHe: MoiQuanHe | "";
 };
 
 export type GuardianFormInput = {

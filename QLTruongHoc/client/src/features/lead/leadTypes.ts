@@ -93,3 +93,8 @@ export type ConfirmRegistrationInput = {
     | "khac"
     | "";
 };
+
+export type ConfirmRegistrationResult = {
+  lead: LeadItem;
+  hocSinh: { id: number; hoTen: string; maHocSinh: string };
+};

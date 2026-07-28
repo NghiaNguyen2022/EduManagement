@@ -229,6 +229,36 @@
 > bản chất 5 mã tuần tự còn lại); "Mã số thuế"/"Mã giấy phép" cũng ngoài phạm vi vì là mã do nhà
 > nước cấp. Test qua service thật (tạo rồi dọn dữ liệu), `tsc --noEmit` sạch cả client/server. Xem
 > `docs/analysis/MA_TU_SINH.md`.
+>
+> Cập nhật 2026-07-27 (thông báo sự kiện tự động + hoàn thiện luồng tuyển sinh): (1) Xây bảng mới
+> `ThongBaoSuKien` (tách biệt khỏi `ThongBao` thủ công có sẵn, vì mô hình người nhận khác nhau) +
+> polling 20s (không có realtime nào trong app, polling khớp kiến trúc REST hiện có) — gắn tự động
+> vào 4 luồng duyệt đã có (danh mục chi phí, đề xuất chi, điều chỉnh khoản thu H08, xin phép): tạo
+> → toast cho người có quyền duyệt, duyệt/từ chối → toast báo lại người tạo. Người nhận suy theo
+> quyền (`listNguoiDungTheoQuyen`), không hard-code vai trò. Toast tự đóng 7s, chuông ở Topbar (vốn
+> là nút chết) nay hiện badge + dropdown thật. Test qua service thật (kế toán tạo → quản lý nhận,
+> quản lý duyệt → kế toán nhận, poll lần 2 không lặp lại) + trình duyệt thật (polling 200 OK liên
+> tục). (2) Hoàn thiện xác nhận đăng ký lead: prefill tên học viên từ lead, thêm ô chọn lớp ngay
+> lúc xác nhận (xếp lỗi vẫn giữ học sinh vừa tạo, không rollback), link thẳng sang trang học sinh
+> sau khi xác nhận (trước đây chỉ có chữ tĩnh). Thêm "chờ xếp lớp" — suy trực tiếp từ dữ liệu
+> `HocSinhLopHoc` (không thêm bảng/cột), test bằng dữ liệu thật xác nhận đúng cả trường hợp học
+> sinh `trangThai = "tiếp nhận"` nhưng đã có lớp (không bị lọt vào danh sách chờ sai). Xem
+> `docs/analysis/THONG_BAO_SU_KIEN.md`.
+>
+> Cập nhật 2026-07-27 (sửa lại luồng tuyển sinh theo phản hồi nghiệp vụ thật): người dùng chỉ ra
+> quyết định trước đó sai — **xếp lớp là việc của học vụ, không phải tuyển sinh**, và **mầm non
+> không có khái niệm khách hàng tiềm năng/Lead** như trung tâm ngoại ngữ. Đã sửa: (1) bỏ ô chọn lớp
+> khỏi "Xác nhận đăng ký" (`confirmLeadRegistration`), thay bằng copy `Lead.nhuCau` sang cột mới
+> `HocSinh.nguyenVongLop` để học vụ tham khảo khi xếp lớp sau. (2) Mầm non ghi danh trực tiếp qua
+> hàm mới `ghiNhanHoSoHocSinh` (không tạo Lead) — trang Tuyển sinh rẽ nhánh theo
+> `loaiHinhDaoTao === "mam_non"`. (3) Test đầu vào là tuỳ chọn theo TỪNG chương trình đào tạo
+> (`ChuongTrinhDaoTao.coTestDauVao`, không phải cả đơn vị, vì 1 trung tâm có thể vừa dạy môn cần
+> test vừa dạy môn không cần) — học vụ ghi kết quả (`HocSinh.ketQuaTestDauVao`) ngay lúc xếp lớp ở
+> panel "Chờ xếp lớp", không cần quyền/màn hình riêng cho giáo viên. (4) Thêm quick-link + stat thật
+> "Học sinh chờ xếp lớp" vào Cổng học vụ. Test qua service thật (trung tâm: nguyện vọng carry đúng
+> từ lead; mầm non: ghi danh không qua Lead; test đầu vào: lưu đúng kết quả, học sinh biến mất khỏi
+> chờ xếp lớp sau khi xếp) — chưa kiểm được bằng trình duyệt thật vì phiên đăng nhập đã bị đăng xuất
+> giữa chừng và không có mật khẩu để vào lại. Xem `docs/analysis/TUYEN_SINH_THEO_LOAI_HINH.md`.
 
 ## A. Nền tảng và đa đơn vị
 - [x] A01 Tạo Danh mục đơn vị trường/trung tâm/cơ sở. (2026-07-21: có API + trang `/organizations` tạo/sửa/ngừng hoạt động đơn vị, chỉ `he_thong.quan_tri`. Xem `docs/analysis/A01_cay_don_vi.md`.)

@@ -39,6 +39,7 @@ function toApiInput(input: ChuongTrinhFormInput) {
     tongSoGio:
       input.tongSoGio !== null ? String(input.tongSoGio) : null,
     moTa: input.moTa,
+    coTestDauVao: input.coTestDauVao,
   };
 }
 
