@@ -1,4 +1,5 @@
 import { listBuoiHocDaHocThieuBaoGiang } from "../db/baoGiang.repository.js";
+import { listDanhGiaByHocSinh } from "../db/danhGia.repository.js";
 import { listDiemDanhGanDayByHocSinh } from "../db/diemDanh.repository.js";
 import { findDonViById } from "../db/donVi.repository.js";
 import { findGiaoVienByNguoiDungId } from "../db/giaoVien.repository.js";
@@ -8,6 +9,7 @@ import {
 } from "../db/lopHoc.repository.js";
 import { listPhuHuynhByNguoiDungId, listHocSinhByPhuHuynhId } from "../db/phuHuynh.repository.js";
 import { listKhoanPhaiThuByHocSinh } from "../db/taiChinh.repository.js";
+import { listThanhTichByHocSinh } from "../db/thanhTich.repository.js";
 import { countTraoDoiGanDayTheoLop } from "../db/traoDoi.repository.js";
 import { listDonXinPhepByHocSinhIds } from "../db/xinPhep.repository.js";
 import { listThoiKhoaBieu } from "./lichHoc.service.js";
@@ -210,6 +212,38 @@ export async function getParentPortalOverview(input: { userId: number }) {
               unexcused: absences.filter((item) => item.trangThai === "vang_khong_phep").length,
             };
 
+            // Chứng chỉ/thành tích + kết quả học tập — chỉ xem, ghi nhận vẫn
+            // qua /api/hoc-sinh/:id/thanh-tich|danh-gia (quyền hoc_tap.ghi_nhan
+            // cho giáo viên/học vụ). Phạm vi hiển thị đã được chốt đúng con qua
+            // guardian linkage ở trên, không cần kiểm quyền hoc_tap thêm ở đây.
+            const [thanhTichRows, danhGiaRows] = await Promise.all([
+              listThanhTichByHocSinh(row.hocSinh.id),
+              listDanhGiaByHocSinh(row.hocSinh.id),
+            ]);
+
+            const thanhTich = thanhTichRows.map((item) => ({
+              id: item.id,
+              hocSinhId: item.hocSinhId,
+              tenThanhTich: item.tenThanhTich,
+              ketQua: item.ketQua,
+              ngayDat: item.ngayDat,
+              noiCap: item.noiCap,
+              tepMinhChungUrl: item.tepMinhChungUrl,
+              ghiChu: item.ghiChu,
+              createdAt: item.createdAt,
+            }));
+
+            const danhGia = danhGiaRows.map((item) => ({
+              id: item.danhGia.id,
+              enrollmentId: item.enrollmentId,
+              loaiDanhGia: item.danhGia.loaiDanhGia,
+              diemSo: item.danhGia.diemSo,
+              xepLoai: item.danhGia.xepLoai,
+              nhanXet: item.danhGia.nhanXet,
+              ngayDanhGia: item.danhGia.ngayDanhGia,
+              lopHoc: item.lopHoc,
+            }));
+
             // F03: đơn xin phép đã gửi cho con này — chỉ xem, gửi đơn mới qua
             // POST /api/xin-phep riêng (xem xinPhep.router.ts).
             const donXinPhep = (await listDonXinPhepByHocSinhIds([row.hocSinh.id])).map(
@@ -256,11 +290,8 @@ export async function getParentPortalOverview(input: { userId: number }) {
               absences,
               absenceSummary,
               donXinPhep,
-              scores: {
-                available: false,
-                title: "Điểm số chưa có nguồn dữ liệu",
-                detail: "Hệ thống hiện chưa có bảng/endpoint điểm số để phụ huynh xem trực tiếp.",
-              },
+              thanhTich,
+              danhGia,
             };
           }),
         );

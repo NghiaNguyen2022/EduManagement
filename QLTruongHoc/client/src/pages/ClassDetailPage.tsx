@@ -16,8 +16,8 @@ import { listChuongTrinhApi } from "../features/chuongTrinh/chuongTrinhApi";
 import type { ChuongTrinhItem } from "../features/chuongTrinh/chuongTrinhTypes";
 import { listGiaoVienApi } from "../features/giaoVien/giaoVienApi";
 import type { GiaoVienItem } from "../features/giaoVien/giaoVienTypes";
-import { listHocSinhApi } from "../features/hocSinh/hocSinhApi";
-import type { HocSinhItem } from "../features/hocSinh/hocSinhTypes";
+import { addDanhGiaApi, listHocSinhApi } from "../features/hocSinh/hocSinhApi";
+import type { HocSinhItem, LoaiDanhGia } from "../features/hocSinh/hocSinhTypes";
 import {
   createLichHocApi,
   listBuoiHocApi,
@@ -239,6 +239,15 @@ export function ClassDetailPage() {
   });
   const [savingEnroll, setSavingEnroll] = useState(false);
 
+  const [batchDanhGiaMeta, setBatchDanhGiaMeta] = useState({
+    loaiDanhGia: "" as LoaiDanhGia | "",
+    ngayDanhGia: todayIso(),
+  });
+  const [batchDanhGiaRows, setBatchDanhGiaRows] = useState<
+    Record<number, { diemSo: string; xepLoai: string; nhanXet: string }>
+  >({});
+  const [savingBatchDanhGia, setSavingBatchDanhGia] = useState(false);
+
   const [transferState, setTransferState] = useState<{
     enrollmentId: number;
     lopHocIdMoi: string;
@@ -315,6 +324,13 @@ export function ClassDetailPage() {
       permissions.includes("he_thong.quan_tri") ||
       permissions.includes("lop_hoc.quan_ly") ||
       permissions.includes("hoc_tap.ghi_nhan")
+    );
+  }, [auth]);
+
+  const canGhiNhanHocTap = useMemo(() => {
+    const permissions = auth?.currentOrganization?.quyen ?? [];
+    return (
+      permissions.includes("he_thong.quan_tri") || permissions.includes("hoc_tap.ghi_nhan")
     );
   }, [auth]);
 
@@ -592,6 +608,86 @@ export function ClassDetailPage() {
       );
     } finally {
       setSavingEnroll(false);
+    }
+  }
+
+  function setBatchDanhGiaRow(
+    enrollmentId: number,
+    patch: Partial<{ diemSo: string; xepLoai: string; nhanXet: string }>,
+  ) {
+    setBatchDanhGiaRows((current) => {
+      const base = current[enrollmentId] ?? {
+        diemSo: "",
+        xepLoai: "",
+        nhanXet: "",
+      };
+
+      return {
+        ...current,
+        [enrollmentId]: { ...base, ...patch },
+      };
+    });
+  }
+
+  // Ghi kết quả cho cả lớp trong 1 lượt lưu — giáo viên chấm theo lớp (VD sau
+  // 1 kỳ thi), không đi từng hồ sơ học sinh như màn hình gốc ở
+  // StudentDetailPage. Tái dùng nguyên API `addDanhGiaApi` (1 lệnh gọi/học
+  // sinh có nhập điểm/xếp loại/nhận xét), không cần endpoint hàng loạt riêng.
+  async function handleSaveBatchDanhGia(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    if (!detail) return;
+
+    if (!batchDanhGiaMeta.loaiDanhGia) {
+      setError("Vui lòng chọn loại đánh giá.");
+      return;
+    }
+
+    const rowsToSave = detail.hocSinh
+      .map((item) => ({
+        item,
+        row: batchDanhGiaRows[item.enrollmentId],
+      }))
+      .filter(
+        ({ row }) =>
+          row && (row.diemSo.trim() || row.xepLoai.trim() || row.nhanXet.trim()),
+      );
+
+    if (rowsToSave.length === 0) {
+      setError("Chưa nhập điểm/xếp loại/nhận xét cho học sinh nào.");
+      return;
+    }
+
+    setError("");
+    setNotice("");
+    setSavingBatchDanhGia(true);
+
+    try {
+      await Promise.all(
+        rowsToSave.map(({ item, row }) =>
+          addDanhGiaApi(item.hocSinh.id, {
+            enrollmentId: String(item.enrollmentId),
+            loaiDanhGia: batchDanhGiaMeta.loaiDanhGia,
+            diemSo: row!.diemSo.trim() ? Number(row!.diemSo) : null,
+            xepLoai: row!.xepLoai,
+            nhanXet: row!.nhanXet,
+            ngayDanhGia: batchDanhGiaMeta.ngayDanhGia,
+          }),
+        ),
+      );
+
+      setNotice(`Đã ghi kết quả học tập cho ${rowsToSave.length} học sinh.`);
+      setBatchDanhGiaRows({});
+    } catch (batchError) {
+      setError(
+        batchError instanceof Error
+          ? batchError.message
+          : "Không thể ghi kết quả học tập.",
+      );
+    } finally {
+      setSavingBatchDanhGia(false);
     }
   }
 
@@ -1108,6 +1204,7 @@ export function ClassDetailPage() {
       ) : null}
 
       {activeTab === "hoc-sinh" ? (
+      <>
       <SectionCard
         title="Học sinh trong lớp"
         subtitle={`${detail.hocSinh.length} lượt xếp lớp`}
@@ -1298,6 +1395,136 @@ export function ClassDetailPage() {
           </form>
         ) : null}
       </SectionCard>
+
+      {canGhiNhanHocTap ? (
+        <SectionCard
+          title="Ghi kết quả học tập cho lớp"
+          subtitle="Chọn loại đánh giá và ngày chung, rồi nhập điểm/xếp loại/nhận xét cho từng học sinh — bấm Lưu tất cả 1 lần. Bỏ trống dòng nào thì dòng đó không được lưu."
+        >
+          <form
+            className="user-create-form"
+            onSubmit={handleSaveBatchDanhGia}
+          >
+            <SelectField
+              label="Loại đánh giá"
+              value={batchDanhGiaMeta.loaiDanhGia}
+              required
+              placeholder="Chọn loại đánh giá"
+              options={[
+                { value: "giua_ky", label: "Giữa kỳ" },
+                { value: "cuoi_ky", label: "Cuối kỳ" },
+                { value: "khac", label: "Khác" },
+              ]}
+              onChange={(value) =>
+                setBatchDanhGiaMeta({
+                  ...batchDanhGiaMeta,
+                  loaiDanhGia: value as LoaiDanhGia,
+                })
+              }
+            />
+
+            <DateField
+              label="Ngày đánh giá"
+              value={batchDanhGiaMeta.ngayDanhGia}
+              required
+              onChange={(value) =>
+                setBatchDanhGiaMeta({
+                  ...batchDanhGiaMeta,
+                  ngayDanhGia: value,
+                })
+              }
+            />
+
+            <div className="user-table-wrap field-span-full">
+              <table className="user-table">
+                <thead>
+                  <tr>
+                    <th>Học sinh</th>
+                    <th>Điểm số</th>
+                    <th>Xếp loại</th>
+                    <th>Nhận xét</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {detail.hocSinh.map((item) => {
+                    const row = batchDanhGiaRows[item.enrollmentId] ?? {
+                      diemSo: "",
+                      xepLoai: "",
+                      nhanXet: "",
+                    };
+
+                    return (
+                      <tr key={item.enrollmentId}>
+                        <td>
+                          <strong>{item.hocSinh.hoTen}</strong>
+                          <small>{item.hocSinh.maHocSinh}</small>
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            step="0.1"
+                            min={0}
+                            className="form-control form-control--number"
+                            value={row.diemSo}
+                            onChange={(event) =>
+                              setBatchDanhGiaRow(item.enrollmentId, {
+                                diemSo: event.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="VD: Giỏi"
+                            value={row.xepLoai}
+                            onChange={(event) =>
+                              setBatchDanhGiaRow(item.enrollmentId, {
+                                xepLoai: event.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={row.nhanXet}
+                            onChange={(event) =>
+                              setBatchDanhGiaRow(item.enrollmentId, {
+                                nhanXet: event.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {detail.hocSinh.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="empty-cell">
+                        Chưa có học sinh trong lớp.
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={savingBatchDanhGia || detail.hocSinh.length === 0}
+            >
+              {savingBatchDanhGia ? "Đang lưu..." : "Lưu tất cả"}
+            </button>
+          </form>
+        </SectionCard>
+      ) : null}
+      </>
       ) : null}
 
       {activeTab === "trao-doi" ? (

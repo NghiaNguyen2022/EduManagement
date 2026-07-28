@@ -133,6 +133,12 @@ const XIN_PHEP_TRANG_THAI_LABEL: Record<string, string> = {
       tu_choi: "Từ chối",
 };
 
+const LOAI_DANH_GIA_LABEL: Record<string, string> = {
+      giua_ky: "Giữa kỳ",
+      cuoi_ky: "Cuối kỳ",
+      khac: "Khác",
+};
+
 function ChildLeaveRequestForm({
       hocSinhId,
       activeClasses,
@@ -409,9 +415,12 @@ export function PortalLandingPage() {
                         tone: "warning" as const,
                   },
                   {
-                        title: "Điểm số",
-                        value: "Chưa có",
-                        note: "Hệ thống hiện chưa có nguồn dữ liệu điểm số",
+                        title: "Thành tích & kết quả",
+                        value: children.reduce(
+                              (sum, child) => sum + child.thanhTich.length + child.danhGia.length,
+                              0,
+                        ),
+                        note: "Chứng chỉ và kết quả học tập đã ghi nhận cho các con",
                         icon: "📊",
                         tone: "info" as const,
                   },
@@ -586,9 +595,50 @@ export function PortalLandingPage() {
                                                                                     )}
                                                                               </div>
 
-                                                                              <div className="portal-score-box">
-                                                                                    <strong>{child.scores.title}</strong>
-                                                                                    <p>{child.scores.detail}</p>
+                                                                              <div
+                                                                                    className="portal-fee-box parent-portal-anchor"
+                                                                                    id={`thanh-tich-${child.hocSinh.id}`}
+                                                                              >
+                                                                                    <strong>Chứng chỉ / Thành tích</strong>
+                                                                                    {child.thanhTich.length === 0 ? (
+                                                                                          <div className="empty-cell">Chưa có chứng chỉ/thành tích nào.</div>
+                                                                                    ) : (
+                                                                                          child.thanhTich.map((item) => (
+                                                                                                <div className="portal-fee-row" key={item.id}>
+                                                                                                      <span>{item.tenThanhTich}</span>
+                                                                                                      <strong>{item.ketQua || "—"}</strong>
+                                                                                                      <small>
+                                                                                                            {item.ngayDat || "—"}
+                                                                                                            {item.noiCap ? ` · ${item.noiCap}` : ""}
+                                                                                                      </small>
+                                                                                                </div>
+                                                                                          ))
+                                                                                    )}
+                                                                              </div>
+
+                                                                              <div
+                                                                                    className="portal-fee-box parent-portal-anchor"
+                                                                                    id={`ket-qua-${child.hocSinh.id}`}
+                                                                              >
+                                                                                    <strong>Kết quả học tập</strong>
+                                                                                    {child.danhGia.length === 0 ? (
+                                                                                          <div className="empty-cell">Chưa có kết quả học tập nào.</div>
+                                                                                    ) : (
+                                                                                          child.danhGia.map((item) => (
+                                                                                                <div className="portal-fee-row" key={item.id}>
+                                                                                                      <span>
+                                                                                                            {item.lopHoc.tenLop} · {LOAI_DANH_GIA_LABEL[item.loaiDanhGia]}
+                                                                                                      </span>
+                                                                                                      <strong>
+                                                                                                            {item.diemSo ? `${item.diemSo} điểm` : item.xepLoai || "—"}
+                                                                                                      </strong>
+                                                                                                      <small>
+                                                                                                            {item.ngayDanhGia}
+                                                                                                            {item.nhanXet ? ` · ${item.nhanXet}` : ""}
+                                                                                                      </small>
+                                                                                                </div>
+                                                                                          ))
+                                                                                    )}
                                                                               </div>
 
                                                                               <div className="portal-child-schedule">

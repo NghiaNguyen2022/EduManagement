@@ -1,4 +1,9 @@
-import type { GuardianLinkItem, HocSinhItem } from "../hocSinh/hocSinhTypes";
+import type {
+  DanhGiaItem,
+  GuardianLinkItem,
+  HocSinhItem,
+  ThanhTichItem,
+} from "../hocSinh/hocSinhTypes";
 import type { ThoiKhoaBieuItem } from "../lichHoc/lichHocTypes";
 import type { NguoiGuiVaiTro, KenhLienLac } from "../traoDoi/traoDoiTypes";
 
@@ -73,11 +78,8 @@ export type ParentPortalChild = {
   absences: ParentPortalAbsence[];
   absenceSummary: { unexcused: number };
   donXinPhep: ParentPortalLeaveRequest[];
-  scores: {
-    available: boolean;
-    title: string;
-    detail: string;
-  };
+  thanhTich: ThanhTichItem[];
+  danhGia: DanhGiaItem[];
 };
 
 export type ParentPortalUpcomingSession = {
