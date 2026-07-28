@@ -1,5 +1,23 @@
 # Phân tích chi tiết — D01/D03: Hồ sơ học sinh và phụ huynh
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Mục tiêu nghiệp vụ và actor chính](#1-mục-tiêu-nghiệp-vụ-và-actor-chính)
+- [2. Điểm bắt đầu, điều kiện trước, luồng chính, luồng ngoại lệ, kết quả](#2-điểm-bắt-đầu-điều-kiện-trước-luồng-chính-luồng-ngoại-lệ-kết-quả)
+- [3. Danh sách trạng thái và quy tắc chuyển trạng thái](#3-danh-sách-trạng-thái-và-quy-tắc-chuyển-trạng-thái)
+- [4. Phạm vi dữ liệu theo tenant và thời gian hiệu lực](#4-phạm-vi-dữ-liệu-theo-tenant-và-thời-gian-hiệu-lực)
+- [5. Vai trò được xem/tạo/sửa/hủy](#5-vai-trò-được-xemtạosửahủy)
+- [6. Thông báo phát sinh và đối tượng nhận](#6-thông-báo-phát-sinh-và-đối-tượng-nhận)
+- [7. Chứng từ/báo cáo cần in/xuất](#7-chứng-từbáo-cáo-cần-inxuất)
+- [8. Dữ liệu bắt buộc, uniqueness, validation, audit log](#8-dữ-liệu-bắt-buộc-uniqueness-validation-audit-log)
+- [9. Trường riêng theo loại hình mầm non/ngoại ngữ/tin học](#9-trường-riêng-theo-loại-hình-mầm-nonngoại-ngữtin-học)
+- [10. Checklist test runtime và regression trước khi đóng task](#10-checklist-test-runtime-và-regression-trước-khi-đóng-task)
+- [11. Cập nhật 2026-07-22 — Phụ huynh có con học nhiều đơn vị](#11-cập-nhật-2026-07-22-phụ-huynh-có-con-học-nhiều-đơn-vị)
+
 > Theo khung checklist mục 14 của BPD. Module liên quan: M04 — Hồ sơ học viên (P0).
 > Phạm vi: chỉ hồ sơ học sinh + phụ huynh + liên kết. **Chưa** gồm tài khoản đăng nhập
 > phụ huynh (C07 — bước sau) và **chưa** gồm luồng Lead/tuyển sinh (C01-C06 — bước sau).

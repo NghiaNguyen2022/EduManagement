@@ -1,5 +1,17 @@
 # Phân tích chi tiết — H01/H02: Danh mục khoản thu, Kỳ thu
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Mục tiêu nghiệp vụ và actor chính](#1-mục-tiêu-nghiệp-vụ-và-actor-chính)
+- [2. Điểm bắt đầu, điều kiện trước, luồng chính, kết quả](#2-điểm-bắt-đầu-điều-kiện-trước-luồng-chính-kết-quả)
+- [3. Trạng thái và quy tắc chuyển trạng thái](#3-trạng-thái-và-quy-tắc-chuyển-trạng-thái)
+- [4. Quyết định dữ liệu](#4-quyết-định-dữ-liệu)
+- [5. Mô hình dữ liệu](#5-mô-hình-dữ-liệu)
+
 > Theo khung checklist mục H (Tài chính), Sprint 5. Phạm vi: danh mục khoản thu dùng chung
 > cho toàn đơn vị, kỳ thu (đợt thu tiền) và gán khoản thu áp dụng cho từng kỳ. **Chưa** gồm
 > H03-H09 (sinh khoản phải thu theo lớp/học sinh, thu tiền từng phần, miễn giảm, công nợ,

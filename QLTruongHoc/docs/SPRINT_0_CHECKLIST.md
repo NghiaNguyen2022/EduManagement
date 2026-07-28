@@ -1,5 +1,16 @@
 # Sprint 0 — Nền tảng đa đơn vị
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [Database](#database)
+- [Backend](#backend)
+- [Frontend](#frontend)
+- [Tài liệu và kiểm thử](#tài-liệu-và-kiểm-thử)
+
 > Đối chiếu lại với code thật ngày 2026-07-20. Các mục `[ ]` bên dưới còn dở dang thật,
 > không phải chưa được rà soát.
 

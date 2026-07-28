@@ -1,5 +1,17 @@
 # Phân tích — Vòng 2: sửa lỗi UI Portal quản lý đơn vị + đề xuất quyền duyệt và báo cáo mở rộng
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Lỗi đã sửa](#1-lỗi-đã-sửa)
+- [2. Rà soát quyền duyệt hiện có (trước khi đề xuất thêm)](#2-rà-soát-quyền-duyệt-hiện-có-trước-khi-đề-xuất-thêm)
+- [3. Đề xuất quyền hạn mới cho Quản lý đơn vị](#3-đề-xuất-quyền-hạn-mới-cho-quản-lý-đơn-vị)
+- [4. Đề xuất báo cáo chi tiết](#4-đề-xuất-báo-cáo-chi-tiết)
+- [5. Việc cần quyết định trước khi code tiếp](#5-việc-cần-quyết-định-trước-khi-code-tiếp)
+
 > Tiếp theo `docs/analysis/QUAN_LY_DON_VI_PORTAL.md` (2026-07-27), sau khi người dùng test tay
 > qua ảnh chụp màn hình thật và phản hồi 5 điểm: (1) menu bị "dính" khi chọn, (2) layout "Cần chú
 > ý"/"Tuyển sinh trong tháng" không cân đối, (3) cần thao tác "xem chi tiết" ở các mục xin

@@ -1,5 +1,17 @@
 # Phân tích — Kiến trúc menu theo quyền và theo loại hình đào tạo
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Yêu cầu gốc (người dùng xác nhận lại 2026-07-21)](#1-yêu-cầu-gốc-người-dùng-xác-nhận-lại-2026-07-21)
+- [2. Đối chiếu với code thật](#2-đối-chiếu-với-code-thật)
+- [3. Quyết định kiến trúc (đề xuất, cần code hoá)](#3-quyết-định-kiến-trúc-đề-xuất-cần-code-hoá)
+- [4. Phạm vi áp dụng hiện tại](#4-phạm-vi-áp-dụng-hiện-tại)
+- [5. Checklist test khi code](#5-checklist-test-khi-code)
+
 > Rà soát lại yêu cầu ban đầu (2026-07-21) và đối chiếu với code thật.
 
 ## 1. Yêu cầu gốc (người dùng xác nhận lại 2026-07-21)

@@ -1,78 +1,95 @@
-# QLTruongHoc
+# Hệ thống Quản lý Trường học
 
-Bộ khung chạy ban đầu cho ứng dụng Quản lý Trường học/Trung tâm, kế thừa pattern kết nối MySQL + Drizzle của App Lưu Xá.
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 0.4.0
+**Cập nhật:** 28/07/2026
 
-## 1. Yêu cầu môi trường
+Hệ thống quản lý dùng chung cho trường mầm non và trung tâm đào tạo. Ứng dụng hỗ trợ nhiều
+đơn vị, phân quyền theo vai trò, tuyển sinh, học sinh, lớp học, lịch học, điểm danh, tài chính,
+thông báo và các portal theo người dùng.
 
-- Node.js 20+
-- npm 10+
-- MySQL 8+
-- Database `SchoolCenter`
-- MySQL user `schoolcenter_app@localhost`
+## Mục lục
 
-## 2. Cấu hình
+- [Chức năng chính](#chức-năng-chính)
+- [Yêu cầu môi trường](#yêu-cầu-môi-trường)
+- [Cài đặt](#cài-đặt)
+- [Khởi tạo cơ sở dữ liệu](#khởi-tạo-cơ-sở-dữ-liệu)
+- [Chạy ứng dụng](#chạy-ứng-dụng)
+- [Kiểm tra chất lượng](#kiểm-tra-chất-lượng)
+- [Cấu trúc dự án](#cấu-trúc-dự-án)
+- [Tài liệu](#tài-liệu)
 
-Tại thư mục gốc:
+## Chức năng chính
 
-```bat
-copy .env.example .env.local
+- Quản lý nhiều trường, trung tâm và cơ sở trong cùng hệ thống.
+- Gán vai trò và quyền theo từng đơn vị.
+- Quản lý tuyển sinh, học sinh, phụ huynh, giáo viên, chương trình và lớp học.
+- Lập lịch học, điểm danh, xin phép nghỉ và báo giảng.
+- Quản lý khoản thu, kỳ thu, công nợ, phiếu thu, hoàn phí và báo cáo tài chính.
+- Thông báo theo toàn đơn vị, lớp hoặc học sinh.
+- Portal dành cho phụ huynh, giáo viên, học vụ, kế toán và các vai trò vận hành.
+
+## Yêu cầu môi trường
+
+- Node.js 20 trở lên.
+- pnpm 10 trở lên.
+- MySQL 8 trở lên.
+- Cơ sở dữ liệu `SchoolCenter`.
+
+## Cài đặt
+
+```powershell
+pnpm install
+Copy-Item .env.example .env.local
 ```
 
-Sửa `.env.local`:
+Cập nhật thông tin MySQL trong `.env.local`. Nếu mật khẩu có ký tự đặc biệt, giá trị trong
+`DATABASE_URL` phải được URL encode; `DATABASE_PASSWORD` vẫn giữ mật khẩu gốc.
 
-```env
-DATABASE_HOST="localhost"
-DATABASE_PORT="3306"
-DATABASE_USER="schoolcenter_app"
-DATABASE_PASSWORD="MAT_KHAU_THAT"
-DATABASE_NAME="SchoolCenter"
+## Khởi tạo cơ sở dữ liệu
 
-DATABASE_URL="mysql://schoolcenter_app:MAT_KHAU_DA_URL_ENCODE@localhost:3306/SchoolCenter"
+```powershell
+pnpm db:check
+pnpm db:push
+pnpm db:seed:auth
+pnpm db:seed:sample
 ```
 
-`DATABASE_PASSWORD` giữ mật khẩu thật. Trong `DATABASE_URL`, ký tự đặc biệt phải URL encode, ví dụ `@` thành `%40`.
+`db:push` cần được chạy trong terminal tương tác. Dữ liệu demo dùng mật khẩu tạm
+`Edu@123Qaz`; không sử dụng mật khẩu này ở môi trường thật.
 
-## 3. Cài và chạy
+## Chạy ứng dụng
 
-```bat
-cd \QLTruongHoc
-npm install
-npm run db:check
-npm run dev
+```powershell
+pnpm dev
 ```
 
-- API: http://localhost:3000
-- Health API: http://localhost:3000/api/health
-- Frontend: http://localhost:5173
+- Giao diện phát triển: `http://localhost:5173`
+- API nội bộ: `http://localhost:3100`
+- Kiểm tra API qua giao diện: `http://localhost:5173/api/health`
 
-## 3.1 Dữ liệu mẫu
+## Kiểm tra chất lượng
 
-Sau khi `npm run db:seed:auth` (tài khoản `admin` + đơn vị gốc), chạy thêm:
-
-```bat
-npm run db:seed:sample
+```powershell
+pnpm typecheck
+pnpm test
+pnpm build
 ```
 
-Tạo dữ liệu mẫu cơ bản cho Trung tâm Ngoại ngữ Quận 8 và Trường Mầm non Hoa Nắng: chương
-trình, giáo viên, lớp học, học sinh + phụ huynh đã xếp lớp, lead chưa chuyển đổi, và 4 tài
-khoản demo theo vai trò (mật khẩu tạm `Edu@123Qaz`). An toàn chạy lại nhiều lần — tự bỏ qua
-nếu dữ liệu mẫu đã tồn tại.
-
-## 4. Luồng kết nối
+## Cấu trúc dự án
 
 ```text
-.env.local
-  → server/config/env.ts
-  → server/db/connection.ts
-  → getDb()
-  → repository
-  → service
-  → router
-  → frontend
+client/          Giao diện React
+server/          API, nghiệp vụ và truy cập dữ liệu
+drizzle/         Định nghĩa schema
+database/        Các script SQL triển khai
+tests/           Kiểm thử tự động
+docs/            Tài liệu dự án
 ```
 
-Chỉ `server/db/connection.ts` được phép gọi `mysql.createPool()`.
+Schema trong `drizzle/schema.ts` và `drizzle/schemas/` là nguồn cấu trúc dữ liệu chính thức.
 
-## 5. File cũ phải xoá nếu đã chép các patch trước
+## Tài liệu
 
-Xem `docs/CLEANUP_OLD_FILES.md`.
+Xem [Danh mục tài liệu](docs/README.md) để chọn đúng tài liệu cho người sử dụng, triển khai
+hoặc phát triển hệ thống.

@@ -1,5 +1,17 @@
 # Phân tích — Hoạt động chăm sóc lead thành task thật (hẹn lịch)
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Hiện trạng trước khi sửa](#1-hiện-trạng-trước-khi-sửa)
+- [2. Thiết kế](#2-thiết-kế)
+- [3. Việc đã làm](#3-việc-đã-làm)
+- [4. Test tay qua service layer thật (không qua UI — tránh phụ thuộc mật khẩu tài khoản demo)](#4-test-tay-qua-service-layer-thật-không-qua-ui-tránh-phụ-thuộc-mật-khẩu-tài-khoản-demo)
+- [5. Giới hạn có chủ đích (chưa làm)](#5-giới-hạn-có-chủ-đích-chưa-làm)
+
 > 2026-07-27, theo phản hồi: "Hoạt động chỉ mới tạo và ghi chú, chưa có các hoạt động mang tính
 > task như đặt lịch hẹn, sét lịch và gặp gỡ trao đổi".
 

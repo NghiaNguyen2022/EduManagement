@@ -11,6 +11,7 @@ type FileUploadFieldProps = {
   required?: boolean;
   helpText?: string;
   previewAsImage?: boolean;
+  className?: string;
 };
 
 /** Ô tải lên 1 tệp dùng chung (ảnh, PDF) — lưu URL trả về từ `/api/upload`. */
@@ -22,6 +23,7 @@ export function FileUploadField({
   required = false,
   helpText,
   previewAsImage = true,
+  className,
 }: FileUploadFieldProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -48,7 +50,13 @@ export function FileUploadField({
   }
 
   return (
-    <FormField label={label} required={required} error={error} helpText={helpText}>
+    <FormField
+      label={label}
+      required={required}
+      error={error}
+      helpText={helpText}
+      className={className}
+    >
       <div className="file-upload-field">
         {value ? (
           <div className="file-upload-field__preview">

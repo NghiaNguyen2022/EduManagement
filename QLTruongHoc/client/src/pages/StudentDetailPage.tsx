@@ -12,6 +12,7 @@ import {
 import { ConfirmDialog } from "../components/shared/ConfirmDialog";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
+import { TabBar } from "../components/shared/TabBar";
 import { useAuth } from "../features/auth/AuthContext";
 import {
   addGuardianApi,
@@ -76,6 +77,8 @@ const emptyGuardianForm: GuardianFormInput = {
   nhanThongTinHocPhi: true,
 };
 
+type TabId = "thong-tin" | "phu-huynh" | "lich-su";
+
 export function StudentDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -83,6 +86,7 @@ export function StudentDetailPage() {
 
   const studentId = Number(id);
 
+  const [activeTab, setActiveTab] = useState<TabId>("thong-tin");
   const [detail, setDetail] = useState<HocSinhDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -403,6 +407,18 @@ export function StudentDetailPage() {
       {error ? <div className="form-error">{error}</div> : null}
       {notice ? <div className="form-success">{notice}</div> : null}
 
+      <TabBar
+        tabs={[
+          { id: "thong-tin", label: "Thông tin" },
+          { id: "phu-huynh", label: "Phụ huynh", badge: detail.phuHuynh.length },
+          { id: "lich-su", label: "Lịch sử học tập", badge: timelineEvents.length },
+        ]}
+        activeId={activeTab}
+        onChange={(tabId) => setActiveTab(tabId as TabId)}
+      />
+
+      {activeTab === "thong-tin" ? (
+      <>
       <SectionCard
         title="Trạng thái"
         subtitle={`Hiện tại: ${TRANG_THAI_LABEL[detail.hocSinh.trangThai]}`}
@@ -453,35 +469,19 @@ export function StudentDetailPage() {
         ) : null}
       </SectionCard>
 
-      <SectionCard
-        title="Lịch sử học tập"
-        subtitle={`${timelineEvents.length} sự kiện — gộp lớp học và thay đổi trạng thái theo thời gian`}
-      >
-        {timelineEvents.length === 0 ? (
-          <div className="empty-cell">Chưa có lịch sử học tập.</div>
-        ) : (
-          <ul className="timeline">
-            {timelineEvents.map((event) => (
-              <li
-                key={event.key}
-                className={`timeline__item timeline__item--${event.kind}`}
-              >
-                <span className="timeline__dot" />
-                <div className="timeline__content">
-                  <div className="timeline__date">{event.date}</div>
-                  <div className="timeline__title">{event.title}</div>
-                  {event.detail ? (
-                    <div className="timeline__detail">{event.detail}</div>
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </SectionCard>
-
-      <SectionCard title="Thông tin học sinh" subtitle="Chỉnh sửa hồ sơ cơ bản">
+      <SectionCard title="Thông tin học sinh" subtitle="Chỉnh sửa hồ sơ đầy đủ theo chuẩn hồ sơ đào tạo">
         <form className="user-create-form" onSubmit={handleSaveInfo}>
+          <h3 className="form-section-title">Ảnh & thông tin cơ bản</h3>
+
+          {canManage ? (
+            <FileUploadField
+              label="Ảnh chân dung"
+              value={infoForm.hinhAnhUrl}
+              className="field-span-full"
+              onChange={(value) => setInfoForm({ ...infoForm, hinhAnhUrl: value })}
+            />
+          ) : null}
+
           <TextField
             label="Họ tên"
             value={infoForm.hoTen}
@@ -496,14 +496,6 @@ export function StudentDetailPage() {
             disabled={!canManage}
             onChange={(value) => setInfoForm({ ...infoForm, tenThuongGoi: value })}
           />
-
-          {canManage ? (
-            <FileUploadField
-              label="Ảnh chân dung"
-              value={infoForm.hinhAnhUrl}
-              onChange={(value) => setInfoForm({ ...infoForm, hinhAnhUrl: value })}
-            />
-          ) : null}
 
           <DateField
             label="Ngày sinh"
@@ -545,21 +537,11 @@ export function StudentDetailPage() {
             onChange={(value) => setInfoForm({ ...infoForm, ngayNhapHoc: value })}
           />
 
-          {canManage ? (
-            <button type="submit" className="primary-button" disabled={savingInfo}>
-              {savingInfo ? "Đang lưu..." : "Lưu thay đổi"}
-            </button>
-          ) : null}
-        </form>
-      </SectionCard>
+          <h3 className="form-section-title">Định danh</h3>
 
-      <SectionCard
-        title="Hồ sơ mở rộng"
-        subtitle="Định danh, diện chính sách, sức khoẻ và thông tin chuyển trường — dùng chung nút Lưu với thẻ Thông tin học sinh ở trên."
-      >
-        <form className="user-create-form" onSubmit={handleSaveInfo}>
           <TextField
-            label="Số CCCD / số định danh cá nhân / số giấy khai sinh"
+            label="Số CCCD / định danh cá nhân"
+            helpText="Hoặc số giấy khai sinh nếu chưa có CCCD"
             value={infoForm.soDinhDanh}
             disabled={!canManage}
             onChange={(value) => setInfoForm({ ...infoForm, soDinhDanh: value })}
@@ -603,6 +585,8 @@ export function StudentDetailPage() {
             onChange={(value) => setInfoForm({ ...infoForm, truongLopTruocDo: value })}
           />
 
+          <h3 className="form-section-title">Sức khoẻ &amp; liên hệ khẩn cấp</h3>
+
           <NumberInput
             label="Chiều cao (cm)"
             value={infoForm.chieuCaoCm}
@@ -626,6 +610,7 @@ export function StudentDetailPage() {
             value={infoForm.diUngBenhNen}
             rows={3}
             disabled={!canManage}
+            className="field-span-full"
             onChange={(value) => setInfoForm({ ...infoForm, diUngBenhNen: value })}
           />
 
@@ -651,7 +636,11 @@ export function StudentDetailPage() {
           ) : null}
         </form>
       </SectionCard>
+      </>
+      ) : null}
 
+      {activeTab === "phu-huynh" ? (
+      <>
       <SectionCard
         title="Phụ huynh · Người giám hộ"
         subtitle={`${detail.phuHuynh.length} người liên kết`}
@@ -900,6 +889,37 @@ export function StudentDetailPage() {
             </button>
           </form>
         </SectionCard>
+      ) : null}
+      </>
+      ) : null}
+
+      {activeTab === "lich-su" ? (
+      <SectionCard
+        title="Lịch sử học tập"
+        subtitle={`${timelineEvents.length} sự kiện — gộp lớp học và thay đổi trạng thái theo thời gian`}
+      >
+        {timelineEvents.length === 0 ? (
+          <div className="empty-cell">Chưa có lịch sử học tập.</div>
+        ) : (
+          <ul className="timeline">
+            {timelineEvents.map((event) => (
+              <li
+                key={event.key}
+                className={`timeline__item timeline__item--${event.kind}`}
+              >
+                <span className="timeline__dot" />
+                <div className="timeline__content">
+                  <div className="timeline__date">{event.date}</div>
+                  <div className="timeline__title">{event.title}</div>
+                  {event.detail ? (
+                    <div className="timeline__detail">{event.detail}</div>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
       ) : null}
 
       <ConfirmDialog

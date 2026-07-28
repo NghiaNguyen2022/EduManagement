@@ -1,5 +1,15 @@
 # Nguồn sự thật của Schema
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [Quyết định](#quyết-định)
+- [Vì sao](#vì-sao)
+- [Việc 009 — Khóa tạm đăng nhập sai nhiều lần (2026-07-20)](#việc-009-khóa-tạm-đăng-nhập-sai-nhiều-lần-2026-07-20)
+
 ## Quyết định
 
 - `drizzle/schema.ts` và các file trong `drizzle/schemas/*.ts` là **nguồn sự thật duy nhất** cho cấu trúc bảng.
@@ -8,7 +18,8 @@
 
 ## Vì sao
 
-- Đã từng lệch thật giữa hai nguồn: `docs/FIX_DRIZZLE_ENV.md` ghi nhận lỗi `Unknown column 'laVaiTroHeThong'` vì SQL viết tay không khớp `drizzle/schema.ts` tại thời điểm đó.
+- SQL viết tay có thể lệch so với schema Drizzle và gây lỗi thiếu cột khi chạy ứng dụng. Vì vậy,
+  mọi thay đổi phải bắt đầu từ schema Drizzle trước khi đồng bộ sang cơ sở dữ liệu.
 - `pnpm db:push` yêu cầu terminal tương tác thật (TTY) để xác nhận diff — không chạy được qua script nền/CI không tương tác. Khi thêm cột/bảng mới:
   1. Sửa `drizzle/schemas/*.ts` trước.
   2. Chạy `pnpm db:push` từ terminal cá nhân (không phải qua tiến trình chạy ngầm).

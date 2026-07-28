@@ -4,8 +4,15 @@
 }
 
 .form-field__label {
+  display: block;
+  /* Nhãn dài (2 dòng) không được đẩy ô nhập xuống thấp hơn nhãn 1 dòng cùng
+     hàng trong lưới — đặt chiều cao tối thiểu đủ 2 dòng, giống cách
+     `.form-field__help`/`.form-field__error` đã cố định chiều cao để tránh
+     xô lệch. */
+  min-height: 2.7em;
   font-size: 13px;
   font-weight: 700;
+  line-height: 1.35;
 }
 
 .form-field__label b {

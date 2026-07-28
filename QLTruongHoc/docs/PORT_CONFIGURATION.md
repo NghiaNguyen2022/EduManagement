@@ -1,5 +1,17 @@
 # Cấu hình port
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [App Lưu Xá](#app-lưu-xá)
+- [App Quản lý Trường học](#app-quản-lý-trường-học)
+- [`.env.local`](#envlocal)
+- [Chạy development](#chạy-development)
+- [Chạy production local](#chạy-production-local)
+
 ## App Lưu Xá
 
 ```text

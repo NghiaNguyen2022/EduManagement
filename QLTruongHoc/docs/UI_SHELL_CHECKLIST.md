@@ -1,4 +1,14 @@
-# Checklist UI Khung Sprint 0
+# Checklist khung giao diện
+
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [Tiêu chí giao diện](#tiêu-chí-giao-diện)
+
+## Tiêu chí giao diện
 
 - [x] Header trang đúng 2 dòng.
 - [x] Header không đặt trong card.
@@ -10,13 +20,13 @@
 - [x] Bộ chọn trường/trung tâm trên topbar.
 - [x] Khu vực người dùng và thông báo.
 - [x] Dashboard tổng quan.
-- [x] Placeholder cho module chưa triển khai.
+- [x] Trang thông báo rõ cho chức năng chưa triển khai.
 - [x] Tone trắng/kem/amber.
-- [x] Không thêm dependency mới.
-- [x] Kết nối danh sách đơn vị từ API. (`GET /api/organizations/my`.)
-- [x] Điều hướng bằng URL/router. (`react-router-dom` qua `appRoutes.tsx`.)
-- [x] Menu theo vai trò và quyền. (`appRoutes[].permissions` lọc theo `quyen` của đơn vị hiện tại.)
-- [x] Menu theo loại hình đào tạo. (2026-07-21: `appRoutes[].loaiHinhDaoTao` + lọc trong `Sidebar.tsx`, áp dụng cho cả quản trị hệ thống. Chưa có mục menu nào gán loại hình cụ thể — cơ chế chuẩn bị sẵn cho Sprint 7. Xem `docs/analysis/menu_theo_quyen_va_loai_hinh.md`.)
-- [x] Đăng nhập thật. (Không còn giá trị mặc định điền sẵn trong form — đã gỡ 2026-07-20.)
-- [x] Lưu đơn vị đang làm việc. (`PhienDangNhap.donViHienTaiId`.)
-- [ ] Tách shared style dùng xuyên module. (Đã có `styles/theme.css` dùng chung; chưa rà soát hết các style riêng lẻ theo module mới.)
+- [x] Hạn chế thêm thư viện khi chưa cần thiết.
+- [x] Kết nối danh sách đơn vị từ API.
+- [x] Điều hướng bằng URL.
+- [x] Menu theo vai trò và quyền.
+- [x] Menu theo loại hình đào tạo.
+- [x] Đăng nhập bằng API thật.
+- [x] Lưu đơn vị đang làm việc.
+- [ ] Chuẩn hóa toàn bộ style dùng chung giữa các module.

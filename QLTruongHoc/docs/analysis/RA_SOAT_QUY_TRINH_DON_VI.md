@@ -1,5 +1,16 @@
 # Rà soát full quy trình tại đơn vị — đối chiếu BPD cho 3 luồng: kế toán, tuyển sinh, đào tạo/giáo vụ
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Đã sửa trong đợt này (nhóm b)](#1-đã-sửa-trong-đợt-này-nhóm-b)
+- [2. Đối chiếu chi tiết theo từng flow (đã đúng + còn thiếu)](#2-đối-chiếu-chi-tiết-theo-từng-flow-đã-đúng-còn-thiếu)
+- [3. Đề xuất (nhóm c — phạm vi lớn hoặc cần quyết định, chưa code)](#3-đề-xuất-nhóm-c-phạm-vi-lớn-hoặc-cần-quyết-định-chưa-code)
+- [4. Không phát hiện thêm ở đợt này](#4-không-phát-hiện-thêm-ở-đợt-này)
+
 > Bắt đầu 2026-07-27, theo yêu cầu "đi full quy trình tại đơn vị, học từ các hệ thống khác, nắm
 > bắt nghiệp vụ thật chuẩn". Nguồn chuẩn dùng để đối chiếu: `extracted.txt` (nội dung trích từ
 > `BPD_App_Quan_Ly_Truong_Hoc_Trung_Tam_v0.1.docx`, mục 7 "Quy trình nghiệp vụ cốt lõi" — đây là

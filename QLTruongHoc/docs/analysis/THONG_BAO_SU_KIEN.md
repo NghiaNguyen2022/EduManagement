@@ -1,5 +1,14 @@
 # Thông báo sự kiện tự động (popup/toast) + hoàn thiện luồng tuyển sinh
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [Phần A — Thông báo sự kiện](#phần-a-thông-báo-sự-kiện)
+- [Phần B — Hoàn thiện luồng tuyển sinh](#phần-b-hoàn-thiện-luồng-tuyển-sinh)
+
 > Theo yêu cầu người dùng (2026-07-27): "khi có phát sinh thông báo, cần có popup hiện lên cho
 > người nhận — nếu đang dùng thì popup thông báo liền, nếu không dùng thì khi vừa login vào sẽ
 > nhận thông báo popup. VD: khoản phí kế toán tạo → thông báo cho quản lý đơn vị; quản lý duyệt/từ

@@ -1,4 +1,21 @@
-# Design System Rules
+# Quy chuẩn giao diện
+
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [Nguồn cấu hình](#nguồn-cấu-hình)
+- [Header](#header)
+- [Card thống kê](#card-thống-kê)
+- [Card nội dung](#card-nội-dung)
+- [Popup / Modal](#popup-modal)
+- [Link liên kết giữa các trang](#link-liên-kết-giữa-các-trang)
+- [Phân trang](#phân-trang)
+- [Màu sắc](#màu-sắc)
+- [Shadow](#shadow)
+- [Quy tắc mở rộng](#quy-tắc-mở-rộng)
 
 ## Nguồn cấu hình
 

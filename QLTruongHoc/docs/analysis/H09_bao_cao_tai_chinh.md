@@ -1,5 +1,18 @@
 # Phân tích chi tiết — H09: Báo cáo doanh thu, công nợ, thu theo đơn vị
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Mục tiêu và actor](#1-mục-tiêu-và-actor)
+- [2. Quyết định phạm vi số liệu — cái gì lọc theo ngày, cái gì không](#2-quyết-định-phạm-vi-số-liệu-cái-gì-lọc-theo-ngày-cái-gì-không)
+- [3. Luồng chính](#3-luồng-chính)
+- [4. Mô hình dữ liệu](#4-mô-hình-dữ-liệu)
+- [5. Trạng thái triển khai](#5-trạng-thái-triển-khai)
+- [6. Phạm vi còn lại](#6-phạm-vi-còn-lại)
+
 > Tiếp H03-H07. Phạm vi: báo cáo tổng hợp tài chính — tổng thu trong một khoảng ngày, tổng
 > công nợ hiện tại, và bảng chi tiết theo từng kỳ thu (đơn vị hệ thống xem gộp kèm cột "Đơn
 > vị"). **Chưa** có biểu đồ trực quan hay xuất file — để lại làm bước sau nếu cần.

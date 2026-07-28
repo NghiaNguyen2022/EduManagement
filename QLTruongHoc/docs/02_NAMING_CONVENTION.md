@@ -1,6 +1,16 @@
-# QUY ƯỚC ĐẶT TÊN
+# Quy ước đặt tên
 
-## Database
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [Cơ sở dữ liệu](#cơ-sở-dữ-liệu)
+- [Mã nghiệp vụ](#mã-nghiệp-vụ)
+- [Mã nguồn TypeScript](#mã-nguồn-typescript)
+
+## Cơ sở dữ liệu
 - Bảng: tiếng Việt không dấu, PascalCase, số ít: `HocSinh`, `PhuHuynh`, `LopHoc`.
 - Bảng liên kết: ghép hai thực thể: `HocSinhPhuHuynh`, `LopHocGiaoVien`.
 - Cột: camelCase: `donViId`, `hoTen`, `ngaySinh`, `trangThai`.
@@ -16,7 +26,7 @@
 - Lớp học: cấu hình theo đơn vị, ví dụ `EN-KID-A1-2601`.
 - Phiếu thu: `PT-<DonVi>-<YYYYMM>-<STT>`.
 
-## Code TypeScript
+## Mã nguồn TypeScript
 - Type/interface: PascalCase tiếng Anh hoặc tên miền chuẩn hóa.
 - API route: tiếng Anh, ngắn và ổn định: `/api/students`, `/api/classes`.
 - Nhãn UI: tiếng Việt chuẩn giáo dục.

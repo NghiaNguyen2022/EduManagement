@@ -1,5 +1,17 @@
 # Mã tự sinh — bỏ nhập tay ở 5 danh mục nội bộ
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Phạm vi rà soát](#1-phạm-vi-rà-soát)
+- [2. Cách sinh mã](#2-cách-sinh-mã)
+- [3. Thay đổi ở từng lớp](#3-thay-đổi-ở-từng-lớp)
+- [4. Seed script](#4-seed-script)
+- [5. Kiểm thử](#5-kiểm-thử)
+
 > Theo yêu cầu người dùng (2026-07-27): "rà soát lại các data, mã sẽ tự sinh, người dùng k nhập
 > mã". Rà soát toàn bộ ứng dụng tìm các trường "Mã ..." còn cho người dùng gõ tay ở form tạo mới.
 

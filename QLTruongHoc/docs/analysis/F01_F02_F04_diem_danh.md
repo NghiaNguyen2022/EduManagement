@@ -1,5 +1,22 @@
 # Phân tích chi tiết — F01/F02/F04: Điểm danh theo buổi học
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Mục tiêu nghiệp vụ và actor chính](#1-mục-tiêu-nghiệp-vụ-và-actor-chính)
+- [2. Điểm bắt đầu, điều kiện trước, luồng chính, luồng ngoại lệ, kết quả](#2-điểm-bắt-đầu-điều-kiện-trước-luồng-chính-luồng-ngoại-lệ-kết-quả)
+- [3. Danh sách trạng thái và quy tắc chuyển trạng thái](#3-danh-sách-trạng-thái-và-quy-tắc-chuyển-trạng-thái)
+- [4. Phạm vi dữ liệu theo tenant và thời gian hiệu lực](#4-phạm-vi-dữ-liệu-theo-tenant-và-thời-gian-hiệu-lực)
+- [5. Vai trò được xem/tạo/sửa/hủy](#5-vai-trò-được-xemtạosửahủy)
+- [6. Thông báo phát sinh và đối tượng nhận](#6-thông-báo-phát-sinh-và-đối-tượng-nhận)
+- [7. Chứng từ/báo cáo cần in/xuất](#7-chứng-từbáo-cáo-cần-inxuất)
+- [8. Dữ liệu bắt buộc, uniqueness, validation, audit log](#8-dữ-liệu-bắt-buộc-uniqueness-validation-audit-log)
+- [9. Trường riêng theo loại hình mầm non/ngoại ngữ/tin học](#9-trường-riêng-theo-loại-hình-mầm-nonngoại-ngữtin-học)
+- [10. Checklist test runtime và regression trước khi đóng task](#10-checklist-test-runtime-và-regression-trước-khi-đóng-task)
+
 > Theo khung checklist mục 14 của BPD. Module liên quan: M07 — Điểm danh (P0). Phạm vi:
 > điểm danh học sinh theo từng buổi học cụ thể (`BuoiHoc`, đã có từ E05-E08), các trạng thái
 > điểm danh, giáo viên/nhân viên học vụ ghi nhận. **Chưa** gồm F03 (phụ huynh gửi đơn xin

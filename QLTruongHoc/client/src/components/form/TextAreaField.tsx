@@ -11,6 +11,7 @@ type TextAreaFieldProps = {
   helpText?: string;
   rows?: number;
   name?: string;
+  className?: string;
 };
 
 export function TextAreaField({
@@ -24,9 +25,16 @@ export function TextAreaField({
   helpText,
   rows = 5,
   name,
+  className,
 }: TextAreaFieldProps) {
   return (
-    <FormField label={label} required={required} error={error} helpText={helpText}>
+    <FormField
+      label={label}
+      required={required}
+      error={error}
+      helpText={helpText}
+      className={className}
+    >
       <textarea
         className="form-control"
         value={value}

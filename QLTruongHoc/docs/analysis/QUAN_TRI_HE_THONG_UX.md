@@ -1,5 +1,15 @@
 # Phân tích — Trải nghiệm vai trò Quản trị hệ thống (đơn vị `he_thong`)
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Yêu cầu và hiện trạng trước khi sửa](#1-yêu-cầu-và-hiện-trạng-trước-khi-sửa)
+- [2. Quyết định thiết kế](#2-quyết-định-thiết-kế)
+- [3. Giới hạn còn lại (có chủ đích, chưa làm)](#3-giới-hạn-còn-lại-có-chủ-đích-chưa-làm)
+
 > Rà soát theo từng vai trò để chuẩn bị demo full (2026-07-23). Vai trò đầu tiên: quản trị hệ
 > thống (`quan_tri_he_thong`, đứng ở đơn vị gốc `loaiDonVi = 'he_thong'`). Ghi lại quyết định
 > thiết kế ở đây để không lặp lại tranh luận khi rà soát các vai trò tiếp theo.

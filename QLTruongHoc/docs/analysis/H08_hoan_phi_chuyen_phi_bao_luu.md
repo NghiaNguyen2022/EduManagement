@@ -1,18 +1,31 @@
 # Phân tích chi tiết — H08: Hoàn phí / chuyển phí / bảo lưu
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Mục tiêu nghiệp vụ và vai trò thực hiện](#1-mục-tiêu-nghiệp-vụ-và-vai-trò-thực-hiện)
+- [2. Vì sao cần bảng riêng thay vì sửa thẳng `KhoanPhaiThu`](#2-vì-sao-cần-bảng-riêng-thay-vì-sửa-thẳng-khoanphaithu)
+- [3. Luồng chính, luồng ngoại lệ, kết quả](#3-luồng-chính-luồng-ngoại-lệ-kết-quả)
+- [4. Giới hạn đã biết (để lại có chủ đích)](#4-giới-hạn-đã-biết-để-lại-có-chủ-đích)
+- [5. Mô hình dữ liệu](#5-mô-hình-dữ-liệu)
+- [6. Kịch bản kiểm thử](#6-kịch-bản-kiểm-thử)
+
 > Tiếp H03-H07, H09 (đã xong toàn bộ H01-H07/H09). Phạm vi: yêu cầu điều chỉnh một khoản phải
 > thu (hoàn phí, chuyển phí sang khoản khác, bảo lưu), có bước duyệt tách vai trò trước khi
 > thật sự tác động tới `daThu`/`trangThai`. Đây là mục còn lại cuối cùng của khối Tài chính
 > (mục H), làm sau khi đối chiếu với 4 sản phẩm tham khảo (Easy Edu/CenterOnline/DotB EMS,
 > KidsOnline/OneKids/MISA EMIS, FACTS/OpenEduCat) — cả 4 đều coi đây là tính năng lõi.
 
-## 1. Mục tiêu nghiệp vụ và actor chính
+## 1. Mục tiêu nghiệp vụ và vai trò thực hiện
 
 - Mục tiêu: xử lý 3 tình huống ngoại lệ tài chính không thuộc luồng thu tiền bình thường —
   phụ huynh yêu cầu hoàn lại tiền đã thu (nghỉ học, huỷ đăng ký...), chuyển số tiền đã thu từ
   khoản phải thu này sang khoản khác (thu nhầm kỳ/nhầm khoản, ghép tiền cho khoản khác), hoặc
   bảo lưu (tạm dừng, không truy thu tiếp trong lúc chờ quay lại học).
-- Actor: **Kế toán** (`tai_chinh.quan_ly`) — tạo yêu cầu. **Người duyệt** — vai trò được cấp
+- Vai trò thực hiện: **Kế toán** (`tai_chinh.quan_ly`) tạo yêu cầu. **Người duyệt** được cấp
   quyền mới `tai_chinh.duyet` (ví dụ Quản lý đơn vị, hoặc kế toán trưởng) — duyệt/từ chối.
   Quản trị hệ thống (`he_thong.quan_tri`) có cả hai quyền.
 
@@ -84,27 +97,15 @@ người duyệt, thời điểm), số liệu `KhoanPhaiThu` chỉ đổi sau k
 
 - `DieuChinhKhoanPhaiThu(id, donViId, khoanPhaiThuId, khoanPhaiThuDichId?, loaiDieuChinh,
   soTien, lyDo, trangThai, nguoiTaoId, nguoiDuyetId?, ghiChuDuyet?, createdAt, duyetAt?)`.
-- Quyền mới `tai_chinh.duyet` (`server/scripts/seedAuthFoundation.ts`) — chưa gán sẵn cho vai
-  trò nào ngoài `quan_tri_he_thong` (được mọi quyền theo cơ chế seed hiện có); cần admin tự gán
-  qua `/roles` cho vai trò phù hợp (ví dụ Quản lý đơn vị) khi triển khai thật.
+- Quyền `tai_chinh.duyet` được gán mặc định cho vai trò Quản lý đơn vị. Quản trị hệ thống có
+  đầy đủ quyền nhưng chỉ thao tác trong phạm vi đơn vị hiện tại.
 
-## 6. Test đã chạy
+## 6. Kịch bản kiểm thử
 
-- `pnpm typecheck`, `pnpm build` — PASS.
-- Test tay qua UI thật với tài khoản `demo_ketoan` (có `tai_chinh.quan_ly`, cố tình **không**
-  có `tai_chinh.duyet`):
-  - Mở "Điều chỉnh" trên khoản phải thu của Phạm Gia Hân (Trung tâm Ngoại ngữ Quận 8) — PASS.
-  - Chọn "Bảo lưu", nhập lý do, gửi yêu cầu — tạo thành công, hiện đúng trong lịch sử với
-    trạng thái "Chờ duyệt", không có cột "Thao tác" (đúng vì tài khoản không có
-    `tai_chinh.duyet`) — PASS.
-  - Chọn "Hoàn phí" khi `daThu = 0` — nút "Gửi yêu cầu" tự khoá (disabled) tới khi nhập số tiền
-    hợp lệ — PASS.
-  - Phát hiện và sửa 1 lỗi có sẵn từ trước (không thuộc H08): `KyThuDetailPage.tsx` gọi
-    `listLopHocApi()` không bọc lỗi trong `Promise.all` — vai trò kế toán không có
-    `lop_hoc.xem` nên cả trang chi tiết kỳ thu vỡ hoàn toàn (403) dù có đủ quyền tài chính. Sửa
-    bằng `.catch(() => [])` — không chặn phần còn lại của trang.
-- **Chưa test được**: luồng duyệt/từ chối thật (cần tài khoản thứ hai có `tai_chinh.duyet`,
-  khác tài khoản lập yêu cầu) và hoàn phí/chuyển phí với số tiền thật > 0 (công cụ tự động hoá
-  trình duyệt không nhập ổn định vào `CurrencyInput` trong phiên test này). Logic hai luồng này
-  đã được review kỹ qua code + `pnpm typecheck`, nhưng nên test tay qua UI thật trước khi coi
-  là hoàn toàn xác nhận.
+1. Kế toán tạo yêu cầu hoàn phí, chuyển phí hoặc bảo lưu.
+2. Kiểm tra khoản phải thu chưa thay đổi khi yêu cầu còn ở trạng thái “Chờ duyệt”.
+3. Thử duyệt bằng chính tài khoản đã tạo yêu cầu; hệ thống phải từ chối.
+4. Đăng nhập bằng tài khoản Quản lý đơn vị và duyệt yêu cầu.
+5. Kiểm tra trạng thái yêu cầu chuyển thành “Đã duyệt”.
+6. Kiểm tra số đã thu, số còn lại và báo cáo tài chính được cập nhật đúng.
+7. Thử truy cập yêu cầu của đơn vị khác; hệ thống không được trả về dữ liệu.

@@ -22,7 +22,9 @@
     "db:seed:test:mam-non": "tsx server/scripts/seedMamNonTeacherTest.ts",
     "db:seed:test:ngoai-ngu": "tsx server/scripts/seedMamNonTeacherTest.ts --ngoai-ngu",
     "test": "node --import tsx --test tests/*.test.ts",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit",
+    "docs:format": "node scripts/normalize-docs.mjs",
+    "docs:check": "node scripts/normalize-docs.mjs --check"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

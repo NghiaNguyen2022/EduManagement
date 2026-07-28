@@ -1,5 +1,15 @@
 # Phân tích — Cấu hình duyệt chi theo đơn vị
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Thiết kế](#1-thiết-kế)
+- [2. Việc đã làm](#2-việc-đã-làm)
+- [3. Test tay qua API/service thật (đơn vị TTNN-Q8)](#3-test-tay-qua-apiservice-thật-đơn-vị-ttnn-q8)
+
 > 2026-07-27, theo yêu cầu mục 4: *"Danh mục chi cố định do kế toán tạo và quản trị đơn vị duyệt;
 > Đề xuất chi cũng thế; chi đột xuất cũng vậy; ba phần này phải được cấu hình trong quyền quản
 > trị đơn vị, để cho phép kế toán thao tác không cần duyệt."* Làm rõ qua hỏi đáp trước khi code:

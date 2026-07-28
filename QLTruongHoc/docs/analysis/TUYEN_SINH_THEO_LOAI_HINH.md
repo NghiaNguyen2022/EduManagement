@@ -1,5 +1,17 @@
 # Tách luồng tuyển sinh theo loại hình đào tạo + xếp lớp thuộc về học vụ
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Vì sao đảo ngược "chọn lớp ngay lúc xác nhận đăng ký"](#1-vì-sao-đảo-ngược-chọn-lớp-ngay-lúc-xác-nhận-đăng-ký)
+- [2. Mầm non không có Lead — ghi danh trực tiếp](#2-mầm-non-không-có-lead-ghi-danh-trực-tiếp)
+- [3. Test đầu vào — cấu hình theo TỪNG chương trình, học vụ ghi khi xếp lớp](#3-test-đầu-vào-cấu-hình-theo-từng-chương-trình-học-vụ-ghi-khi-xếp-lớp)
+- [4. Cổng học vụ](#4-cổng-học-vụ)
+- [5. Kiểm thử](#5-kiểm-thử)
+
 > Sửa lại quyết định thiết kế ở đợt trước (`docs/analysis/THONG_BAO_SU_KIEN.md` mục B), sau khi
 > người dùng cho phản hồi nghiệp vụ thực tế và tôi đã tra cứu quy định/thực tiễn mầm non vs trung
 > tâm ngoại ngữ-tin học (xem hội thoại 2026-07-27). Quyết định trước: tuyển sinh chọn lớp ngay lúc

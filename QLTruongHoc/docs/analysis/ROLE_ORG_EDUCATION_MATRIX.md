@@ -1,5 +1,18 @@
 # Ma trận vai trò × cấp đơn vị × loại hình đào tạo
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [Nguyên tắc](#nguyên-tắc)
+- [Vai trò tại đơn vị hệ thống](#vai-trò-tại-đơn-vị-hệ-thống)
+- [Vai trò tại trường/trung tâm/cơ sở](#vai-trò-tại-trườngtrung-tâmcơ-sở)
+- [Khác biệt giáo viên theo loại hình](#khác-biệt-giáo-viên-theo-loại-hình)
+- [Khác biệt kế toán](#khác-biệt-kế-toán)
+- [Quy tắc đã được cưỡng chế trong code](#quy-tắc-đã-được-cưỡng-chế-trong-code)
+
 ## Nguyên tắc
 
 - Quyền luôn gắn với một đơn vị cụ thể.

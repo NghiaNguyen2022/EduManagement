@@ -1,8 +1,18 @@
-# Auth Database Note
+# Xác thực và phân quyền theo cơ sở dữ liệu
+
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [Quyết định hiện tại](#quyết-định-hiện-tại)
+- [Vai trò ban đầu](#vai-trò-ban-đầu)
+- [Quy tắc đa đơn vị](#quy-tắc-đa-đơn-vị)
 
 ## Quyết định hiện tại
 
-Sprint 0B dùng mô hình session lưu database:
+Hệ thống dùng phiên đăng nhập lưu trong cơ sở dữ liệu:
 
 ```text
 PhienDangNhap
@@ -10,11 +20,11 @@ PhienDangNhap
 
 Lý do:
 
-- Có thể logout và vô hiệu hóa phiên ngay.
-- Dễ kiểm soát user bị khóa.
+- Có thể đăng xuất và vô hiệu hóa phiên ngay.
+- Dễ kiểm soát tài khoản bị khóa.
 - Dễ ghi nhận đơn vị hiện tại.
 - Phù hợp hệ thống quản trị nghiệp vụ.
-- Có thể mở rộng cookie httpOnly ở bước API login.
+- Cookie đăng nhập dùng `httpOnly` để giảm nguy cơ bị đọc từ mã JavaScript trên trình duyệt.
 
 ## Vai trò ban đầu
 
@@ -41,7 +51,7 @@ NguoiDung
   → Quyen
 ```
 
-Mỗi request nghiệp vụ phải xác định:
+Mỗi yêu cầu nghiệp vụ phải xác định:
 
 ```text
 nguoiDungId
@@ -49,4 +59,4 @@ donViHienTaiId
 danhSachQuyen
 ```
 
-Backend không được tin `donViId` do frontend tự truyền.
+Máy chủ không được tin `donViId` do giao diện tự truyền.

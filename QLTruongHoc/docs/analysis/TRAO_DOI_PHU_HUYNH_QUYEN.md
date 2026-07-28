@@ -1,5 +1,16 @@
 # Phân tích — Sửa quyền Trao đổi phụ huynh (I04)
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Hiện trạng trước khi sửa](#1-hiện-trạng-trước-khi-sửa)
+- [2. Quyết định sửa](#2-quyết-định-sửa)
+- [3. Việc đã sửa](#3-việc-đã-sửa)
+- [4. Test tay qua API thật](#4-test-tay-qua-api-thật)
+
 > 2026-07-27, theo phản hồi: "Tài khoản cho tuyển sinh — không có quyền vào Trao đổi phụ huynh
 > thì nên ẩn menu đi".
 

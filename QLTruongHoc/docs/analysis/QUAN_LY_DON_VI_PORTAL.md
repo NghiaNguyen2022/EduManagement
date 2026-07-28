@@ -1,11 +1,21 @@
 # Phân tích — Portal, đề xuất tính năng, thông số báo cáo và quản trị cho vai trò Quản lý đơn vị
 
-> Bắt đầu 2026-07-27. Vai trò `quan_ly_don_vi` (giám đốc/hiệu trưởng đứng ở một trường/trung
-> tâm/cơ sở cụ thể) đã có đủ quyền vận hành từ B02 (2026-07-21) nhưng **chưa có Portal riêng**,
-> vẫn tạm dùng `/dashboard` — ghi nhận sẵn ở `docs/worklog/ROLE_PORTAL_AUDIT_2026-07-25.md` mục
-> "Việc nối sâu tiếp theo" nhưng chưa lên kế hoạch cụ thể. Doc này chốt thiết kế Portal +
-> đề xuất tính năng/báo cáo/quản trị cho vai trò này, theo đúng khuôn mẫu đã dùng cho
-> `docs/analysis/QUAN_TRI_HE_THONG_UX.md`.
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Hiện trạng](#1-hiện-trạng)
+- [2. Đề xuất tính năng — Portal cổng quản lý đơn vị](#2-đề-xuất-tính-năng-portal-cổng-quản-lý-đơn-vị)
+- [3. Đề xuất thông số báo cáo](#3-đề-xuất-thông-số-báo-cáo)
+- [4. Đề xuất quản trị (quản trị phạm vi đơn vị)](#4-đề-xuất-quản-trị-quản-trị-phạm-vi-đơn-vị)
+- [5. Việc làm trong đợt này](#5-việc-làm-trong-đợt-này)
+- [6. Giới hạn đã biết (có chủ đích, chưa xử lý)](#6-giới-hạn-đã-biết-có-chủ-đích-chưa-xử-lý)
+
+Tài liệu mô tả portal dành cho quản lý đơn vị như giám đốc hoặc hiệu trưởng tại một trường,
+trung tâm hay cơ sở cụ thể. Nội dung tập trung vào phạm vi quyền, số liệu tổng hợp và các lối
+vào nghiệp vụ cần thiết cho người quản lý.
 
 ## 1. Hiện trạng
 

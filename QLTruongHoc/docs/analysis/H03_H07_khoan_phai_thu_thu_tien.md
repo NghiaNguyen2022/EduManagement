@@ -1,5 +1,17 @@
 # Phân tích chi tiết — H03/H04/H05/H06/H07: Khoản phải thu, miễn giảm, thu tiền, công nợ, biên nhận
 
+**Tác giả:** Nhóm phát triển QLTruongHoc
+**Phiên bản:** 1.0
+**Cập nhật:** 28/07/2026
+
+## Mục lục
+
+- [1. Mục tiêu nghiệp vụ và actor chính](#1-mục-tiêu-nghiệp-vụ-và-actor-chính)
+- [2. Luồng chính, luồng ngoại lệ, kết quả](#2-luồng-chính-luồng-ngoại-lệ-kết-quả)
+- [3. Trạng thái và quy tắc chuyển trạng thái](#3-trạng-thái-và-quy-tắc-chuyển-trạng-thái)
+- [4. Quyết định dữ liệu — đơn giản hoá so với bản nháp](#4-quyết-định-dữ-liệu-đơn-giản-hoá-so-với-bản-nháp)
+- [5. Mô hình dữ liệu](#5-mô-hình-dữ-liệu)
+
 > Tiếp H01/H02 (mục 18.13). Phạm vi: sinh khoản phải thu cho từng học sinh theo lớp, miễn
 > giảm, thu tiền từng phần/nhiều lần, xem công nợ toàn đơn vị, xem lịch sử phiếu thu (biên
 > nhận). **Chưa** gồm H08 (hoàn phí/chuyển phí/bảo lưu) và H09 (báo cáo doanh thu tổng hợp
