@@ -1,0 +1,79 @@
+1
+00:00:00,000 --> 00:00:14,760
+Bước 1. Đăng nhập hệ thống
+
+2
+00:00:14,760 --> 00:00:29,950
+Bước 2. Kiểm tra Portal quản lý đơn vị
+
+3
+00:00:29,950 --> 00:00:46,430
+Bước 3. Tạo tài khoản nhân sự tại đơn vị
+
+4
+00:00:46,430 --> 00:01:02,340
+Bước 4. Tạo hồ sơ giáo viên
+
+5
+00:01:02,340 --> 00:01:18,540
+Bước 5. Liên kết và cấp tài khoản giáo viên
+
+6
+00:01:18,540 --> 00:01:34,330
+Bước 6. Tiếp nhận và chăm sóc tuyển sinh
+
+7
+00:01:34,330 --> 00:01:51,560
+Bước 7. Xác nhận đăng ký và hoàn thiện hồ sơ
+
+8
+00:01:51,560 --> 00:02:07,680
+Bước 8. Tạo chương trình và lớp học
+
+9
+00:02:07,680 --> 00:02:23,320
+Bước 9. Phân công giáo viên và xếp lớp
+
+10
+00:02:23,320 --> 00:02:39,400
+Bước 10. Lập thời khóa biểu và sinh buổi học
+
+11
+00:02:39,400 --> 00:02:54,590
+Bước 11. Bắt đầu buổi học và điểm danh
+
+12
+00:02:54,590 --> 00:03:10,520
+Bước 12. Tiếp nhận và xử lý đơn xin phép
+
+13
+00:03:10,520 --> 00:03:26,620
+Bước 13. Ghi nhận trao đổi với phụ huynh
+
+14
+00:03:26,620 --> 00:03:43,440
+Bước 14. Tạo và gửi thông báo
+
+15
+00:03:43,440 --> 00:04:01,000
+Bước 15. Tạo kỳ thu, công nợ và thu tiền
+
+16
+00:04:01,000 --> 00:04:17,240
+Bước 16. Xử lý điều chỉnh và chi phí
+
+17
+00:04:17,240 --> 00:04:34,250
+Bước 17. Cập nhật kết quả học tập, thi và chứng chỉ
+
+18
+00:04:34,250 --> 00:04:50,880
+Bước 18. Kiểm tra Portal từng vai trò
+
+19
+00:04:50,880 --> 00:05:07,200
+Bước 19. Kiểm tra Portal phụ huynh đa đơn vị
+
+20
+00:05:07,200 --> 00:05:24,500
+Bước 20. Đối chiếu báo cáo và bàn giao dữ liệu demo

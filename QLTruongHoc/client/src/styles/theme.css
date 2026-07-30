@@ -22,12 +22,16 @@
   --edu-radius-pill: 999px;
 
   --edu-shadow-none: none;
-  --edu-shadow-soft: 0 10px 26px rgba(31, 94, 137, 0.07);
-  --edu-shadow-medium: 0 16px 38px rgba(31, 94, 137, 0.10);
-  --edu-shadow-strong: 0 22px 54px rgba(31, 94, 137, 0.16);
+  --edu-shadow-soft: 0 10px 26px rgba(31, 94, 137, 0.08);
+  --edu-shadow-medium: 0 18px 42px rgba(31, 94, 137, 0.12);
+  --edu-shadow-strong: 0 26px 60px rgba(31, 94, 137, 0.18);
+  /* Sheen nhẹ phủ lên card/sidebar/topbar để tạo cảm giác "premium" (kính mờ,
+     có độ bóng) — dùng như background-image phụ, xếp trước màu nền chính. */
+  --edu-sheen-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 46%);
+  --edu-sheen-sidebar: linear-gradient(160deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 40%);
 
-  --edu-color-background: #f3f9fc;
-  --edu-color-background-soft: #eef7fb;
+  --edu-color-background: #f0f7fc;
+  --edu-color-background-soft: #e9f4f6;
   --edu-color-surface: #ffffff;
   --edu-color-surface-soft: #f7fbfd;
   --edu-color-border: #d9eaf2;
@@ -37,13 +41,13 @@
   --edu-color-text-muted: #607483;
   --edu-color-text-soft: #8295a2;
 
-  --edu-color-primary: #2f9ed8;
-  --edu-color-primary-hover: #238bc2;
-  --edu-color-primary-soft: #e6f5fc;
-  --edu-color-primary-strong: #166b9b;
+  --edu-color-primary: #4aa8db;
+  --edu-color-primary-hover: #3595cb;
+  --edu-color-primary-soft: #e8f4fb;
+  --edu-color-primary-strong: #1f75a8;
 
-  --edu-color-secondary: #55b8a6;
-  --edu-color-secondary-soft: #e8f8f4;
+  --edu-color-secondary: #f0965a;
+  --edu-color-secondary-soft: #fdeee1;
 
   --edu-color-success: #2fa76f;
   --edu-color-success-soft: #e8f7ef;
@@ -56,14 +60,29 @@
   --edu-color-info-soft: #edf4fe;
 
   /* Sidebar "xanh giáo dục": kế thừa trực tiếp màu primary/secondary của
-     theme để chỉ cần đổi màu primary phía trên là sidebar đổi theo. */
-  --edu-sidebar-background: var(--edu-color-primary);
-  --edu-sidebar-background-alt: var(--edu-color-primary-strong);
+     theme để chỉ cần đổi màu primary phía trên là sidebar đổi theo — nhưng
+     pha thêm trắng (color-mix) để có tông nhẹ hơn bản primary gốc, đỡ gắt. */
+  /* Tông vàng gold riêng cho sidebar (không pha từ --edu-color-primary xanh
+     dương nữa — trộn xanh dương với vàng qua color-mix chỉ ra màu xám/rêu
+     đục, không ra được tông vàng thật). Vẫn giữ đủ tối để chữ trắng
+     (--edu-sidebar-text) đọc được — nếu cần sáng hơn nữa sẽ phải đổi hẳn
+     sang chữ tối trên nền sáng (đổi cả nhóm màu overlay trắng trong
+     sidebar-balance.css), không chỉ riêng 2 biến này. */
+  --edu-sidebar-background: #d4ab5c;
+  --edu-sidebar-background-alt: #b38e4c;
   --edu-sidebar-text: #ffffff;
-  --edu-sidebar-text-muted: rgba(255, 255, 255, 0.72);
+  --edu-sidebar-text-muted: rgba(255, 255, 255, 0.75);
   --edu-sidebar-hover: rgba(255, 255, 255, 0.16);
   --edu-sidebar-active: #ffffff;
   --edu-sidebar-active-text: var(--edu-color-primary-strong);
   --edu-sidebar-brand-bg: #ffffff;
   --edu-sidebar-brand-text: var(--edu-color-primary-strong);
+
+  /* Gradient tiêu đề trang — điểm nhấn "premium" dùng cho .page-header h1. */
+  --edu-title-accent-gradient: linear-gradient(
+    120deg,
+    var(--edu-color-primary-strong) 0%,
+    var(--edu-color-primary) 45%,
+    var(--edu-color-secondary) 100%
+  );
 }
