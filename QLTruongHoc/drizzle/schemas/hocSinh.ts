@@ -163,6 +163,30 @@ export const hocSinhPhuHuynh = mysqlTable(
   })
 );
 
+// Phiếu xác nhận nhập học — lập khi tiếp nhận học sinh (có thể lập lại nếu
+// thất lạc bản gốc, không giới hạn số lần). Mỗi lần lập là 1 bản ghi bất
+// biến, có số phiếu riêng — xem lại/in lại chỉ đọc bản ghi cũ.
+export const phieuNhapHoc = mysqlTable(
+  "PhieuNhapHoc",
+  {
+    id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
+    donViId: bigint("donViId", { mode: "number", unsigned: true }).notNull(),
+    hocSinhId: bigint("hocSinhId", { mode: "number", unsigned: true }).notNull(),
+    soPhieu: varchar("soPhieu", { length: 50 }).notNull(),
+    ngayNhapHoc: date("ngayNhapHoc", { mode: "string" }).notNull(),
+    nguoiLapId: bigint("nguoiLapId", { mode: "number", unsigned: true }).notNull(),
+    ghiChu: varchar("ghiChu", { length: 500 }),
+    createdAt: datetime("createdAt", { mode: "string" }).notNull(),
+  },
+  (table) => ({
+    donViSoPhieuUq: uniqueIndex("UQ_PhieuNhapHoc_donViId_soPhieu").on(
+      table.donViId,
+      table.soPhieu,
+    ),
+    hocSinhIdx: index("IX_PhieuNhapHoc_hocSinhId").on(table.hocSinhId),
+  }),
+);
+
 // Chứng chỉ/thành tích học sinh đạt được (vd IELTS 8.0) — không gắn với 1
 // lượt xếp lớp cụ thể, không có workflow duyệt (ghi là hiển thị ngay).
 export const hocSinhThanhTich = mysqlTable(

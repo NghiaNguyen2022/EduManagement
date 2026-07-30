@@ -27,6 +27,7 @@ import "./styles/premium-date-picker.css";
 import "./styles/audit-filter-layout.css";
 import "./styles/dialog.css";
 import "./styles/notification.css";
+import "./styles/print.css";
 
 ReactDOM.createRoot(
   document.getElementById(

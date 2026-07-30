@@ -12,6 +12,7 @@ import {
   khoanPhaiThuChiTiet,
   kyThu,
   kyThuKhoanThu,
+  lopHoc,
   nguoiDung,
   phieuThu,
 } from "../../drizzle/schema.js";
@@ -347,13 +348,23 @@ export async function listHocSinhDangHocTrongLop(lopHocId: number) {
 // Khoản phải thu
 // ---------------------------------------------------------------
 
-export async function findKhoanPhaiThuByKyThuHocSinh(kyThuId: number, hocSinhId: number) {
+export async function findKhoanPhaiThuByKyThuHocSinh(
+  kyThuId: number,
+  hocSinhId: number,
+  lopHocId: number,
+) {
   const db = getDb();
 
   const rows = await db
     .select()
     .from(khoanPhaiThu)
-    .where(and(eq(khoanPhaiThu.kyThuId, kyThuId), eq(khoanPhaiThu.hocSinhId, hocSinhId)))
+    .where(
+      and(
+        eq(khoanPhaiThu.kyThuId, kyThuId),
+        eq(khoanPhaiThu.hocSinhId, hocSinhId),
+        eq(khoanPhaiThu.lopHocId, lopHocId),
+      ),
+    )
     .limit(1);
 
   return rows[0] ?? null;
@@ -363,6 +374,7 @@ export async function createKhoanPhaiThu(input: {
   donViId: number;
   kyThuId: number;
   hocSinhId: number;
+  lopHocId: number;
   tongTien: string;
   chiTiet: { danhMucKhoanThuId: number; soTien: string }[];
 }) {
@@ -372,6 +384,7 @@ export async function createKhoanPhaiThu(input: {
     donViId: input.donViId,
     kyThuId: input.kyThuId,
     hocSinhId: input.hocSinhId,
+    lopHocId: input.lopHocId,
     tongTien: input.tongTien,
     giamTru: "0.00",
     daThu: "0.00",
@@ -380,7 +393,11 @@ export async function createKhoanPhaiThu(input: {
     updatedAt: now(),
   });
 
-  const created = await findKhoanPhaiThuByKyThuHocSinh(input.kyThuId, input.hocSinhId);
+  const created = await findKhoanPhaiThuByKyThuHocSinh(
+    input.kyThuId,
+    input.hocSinhId,
+    input.lopHocId,
+  );
 
   if (!created) {
     throw new Error("Không thể tạo khoản phải thu.");
@@ -418,9 +435,10 @@ export async function listKhoanPhaiThuByKyThu(kyThuId: number) {
   const db = getDb();
 
   return db
-    .select({ khoanPhaiThu, hocSinh })
+    .select({ khoanPhaiThu, hocSinh, lopHoc })
     .from(khoanPhaiThu)
     .innerJoin(hocSinh, eq(khoanPhaiThu.hocSinhId, hocSinh.id))
+    .leftJoin(lopHoc, eq(khoanPhaiThu.lopHocId, lopHoc.id))
     .where(eq(khoanPhaiThu.kyThuId, kyThuId))
     .orderBy(hocSinh.hoTen);
 }
@@ -442,10 +460,11 @@ export async function listCongNoByDonVi(donViId: number) {
   const db = getDb();
 
   return db
-    .select({ khoanPhaiThu, hocSinh, kyThu })
+    .select({ khoanPhaiThu, hocSinh, kyThu, lopHoc })
     .from(khoanPhaiThu)
     .innerJoin(hocSinh, eq(khoanPhaiThu.hocSinhId, hocSinh.id))
     .innerJoin(kyThu, eq(khoanPhaiThu.kyThuId, kyThu.id))
+    .leftJoin(lopHoc, eq(khoanPhaiThu.lopHocId, lopHoc.id))
     .where(
       and(
         eq(khoanPhaiThu.donViId, donViId),
@@ -543,6 +562,7 @@ export async function createPhieuThu(input: {
   phuongThuc: "tien_mat" | "chuyen_khoan" | "the" | "khac";
   ghiChu: string | null;
   nguoiThuId: number;
+  ngayThu?: string;
 }) {
   const db = getDb();
 
@@ -555,7 +575,7 @@ export async function createPhieuThu(input: {
     phuongThuc: input.phuongThuc,
     ghiChu: input.ghiChu,
     nguoiThuId: input.nguoiThuId,
-    ngayThu: now(),
+    ngayThu: input.ngayThu ?? now(),
     createdAt: now(),
   });
 
@@ -587,11 +607,15 @@ export async function findPhieuThuById(donViId: number, id: number) {
       hocSinh,
       khoanPhaiThu,
       kyThu,
+      lopHoc,
+      donVi,
     })
     .from(phieuThu)
     .innerJoin(hocSinh, eq(phieuThu.hocSinhId, hocSinh.id))
     .innerJoin(khoanPhaiThu, eq(phieuThu.khoanPhaiThuId, khoanPhaiThu.id))
     .innerJoin(kyThu, eq(khoanPhaiThu.kyThuId, kyThu.id))
+    .leftJoin(lopHoc, eq(khoanPhaiThu.lopHocId, lopHoc.id))
+    .innerJoin(donVi, eq(phieuThu.donViId, donVi.id))
     .where(and(eq(phieuThu.id, id), eq(phieuThu.donViId, donViId)))
     .limit(1);
 

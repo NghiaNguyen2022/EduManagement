@@ -40,6 +40,10 @@ import type {
   PhieuThuItem,
 } from "../features/taiChinh/taiChinhTypes";
 
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 const LOAI_KY_LABEL: Record<LoaiKy, string> = {
   thang: "Theo tháng",
   khoa_hoc: "Theo khóa học",
@@ -131,6 +135,8 @@ export function KyThuDetailPage() {
   const [payAmount, setPayAmount] = useState<number | null>(null);
   const [payMethod, setPayMethod] = useState("tien_mat");
   const [payNote, setPayNote] = useState("");
+  const [payDate, setPayDate] = useState(today());
+  const [thuTienResult, setThuTienResult] = useState<PhieuThuItem | null>(null);
 
   const [discountAmount, setDiscountAmount] = useState<number | null>(null);
 
@@ -367,6 +373,8 @@ export function KyThuDetailPage() {
       setPayAmount(Number(panel.item.conLai));
       setPayMethod("tien_mat");
       setPayNote("");
+      setPayDate(today());
+      setThuTienResult(null);
     } else if (panel.type === "mien_giam") {
       setDiscountAmount(Number(panel.item.giamTru));
     } else if (panel.type === "lich_su") {
@@ -401,13 +409,13 @@ export function KyThuDetailPage() {
     setPanelError("");
 
     try {
-      await thuTienApi(activePanel.item.id, {
+      const result = await thuTienApi(activePanel.item.id, {
         soTien: payAmount,
         phuongThuc: payMethod,
         ghiChu: payNote.trim() || undefined,
+        ngayThu: payDate,
       });
-      setNotice(`Đã ghi nhận thu tiền cho ${activePanel.item.hocSinh.hoTen}.`);
-      closePanel();
+      setThuTienResult(result.phieuThu);
       await loadKhoanPhaiThu();
     } catch (submitError) {
       setPanelError(
@@ -522,7 +530,9 @@ export function KyThuDetailPage() {
       />
 
       {error ? <div className="form-error">{error}</div> : null}
-      {notice ? <div className="form-success">{notice}</div> : null}
+      {notice ? (
+        <div className="form-success">{notice}</div>
+      ) : null}
 
       <SectionCard
         title="Trạng thái"
@@ -771,6 +781,7 @@ export function KyThuDetailPage() {
               <thead>
                 <tr>
                   <th>Học sinh</th>
+                  <th>Lớp học</th>
                   <th>Tổng tiền</th>
                   <th>Giảm trừ</th>
                   <th>Đã thu</th>
@@ -787,6 +798,7 @@ export function KyThuDetailPage() {
                       <strong>{item.hocSinh.hoTen}</strong>
                       <small>{item.hocSinh.maHocSinh}</small>
                     </td>
+                    <td>{item.lopHoc ? `${item.lopHoc.tenLop} (${item.lopHoc.maLop})` : "—"}</td>
                     <td>{formatTien(item.tongTien)}</td>
                     <td>{formatTien(item.giamTru)}</td>
                     <td>{formatTien(item.daThu)}</td>
@@ -870,8 +882,14 @@ export function KyThuDetailPage() {
         >
           {panelError ? <div className="form-error">{panelError}</div> : null}
 
-          {activePanel.type === "thu_tien" ? (
+          {activePanel.type === "thu_tien" && !thuTienResult ? (
             <div className="user-create-form">
+              <p>
+                Học sinh: {activePanel.item.hocSinh.hoTen} · Lớp:{" "}
+                {activePanel.item.lopHoc
+                  ? `${activePanel.item.lopHoc.tenLop} (${activePanel.item.lopHoc.maLop})`
+                  : "—"}
+              </p>
               <p>Còn phải thu: {formatTien(activePanel.item.conLai)}</p>
 
               <CurrencyInput
@@ -880,6 +898,8 @@ export function KyThuDetailPage() {
                 max={Number(activePanel.item.conLai)}
                 onChange={setPayAmount}
               />
+
+              <DateField label="Ngày thu" value={payDate} onChange={setPayDate} required />
 
               <SelectField
                 label="Phương thức"
@@ -891,7 +911,11 @@ export function KyThuDetailPage() {
                 onChange={setPayMethod}
               />
 
-              <TextField label="Ghi chú" value={payNote} onChange={setPayNote} />
+              <TextField
+                label="Nội dung/Lý do thu"
+                value={payNote}
+                onChange={setPayNote}
+              />
 
               <button
                 type="button"
@@ -901,6 +925,39 @@ export function KyThuDetailPage() {
               >
                 {panelBusy ? "Đang lưu..." : "Xác nhận thu tiền"}
               </button>
+            </div>
+          ) : null}
+
+          {activePanel.type === "thu_tien" && thuTienResult ? (
+            <div className="user-create-form">
+              <p className="form-success">
+                Đã ghi nhận thu {formatTien(thuTienResult.soTien)} cho{" "}
+                {activePanel.item.hocSinh.hoTen} — phiếu {thuTienResult.soPhieu}.
+              </p>
+
+              <div className="row-actions">
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() =>
+                    window.open(`/finance/phieu-thu/${thuTienResult.id}?in=1`, "_blank")
+                  }
+                >
+                  In phiếu thu
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => window.open(`/finance/phieu-thu/${thuTienResult.id}`, "_blank")}
+                >
+                  Xem trước khi in
+                </button>
+
+                <button type="button" className="text-button" onClick={closePanel}>
+                  Đóng
+                </button>
+              </div>
             </div>
           ) : null}
 

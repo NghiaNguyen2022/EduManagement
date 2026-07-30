@@ -47,8 +47,10 @@ import {
   upsertCauHinhTaiChinhDonVi,
 } from "../db/taiChinh.repository.js";
 import { findLopHocById } from "../db/lopHoc.repository.js";
+import { getCauHinhMauIn } from "../db/mauIn.repository.js";
 import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
 import { notifyNguoiDung, notifyTheoQuyen } from "./thongBaoSuKien.service.js";
+import { toDatabaseDateTime } from "../utils/dateTime.js";
 
 type LoaiKhoanThu = "hoc_phi" | "tien_an" | "dich_vu" | "tai_lieu" | "khac";
 const LOAI_KHOAN_THU_HOP_LE: LoaiKhoanThu[] = ["hoc_phi", "tien_an", "dich_vu", "tai_lieu", "khac"];
@@ -556,6 +558,7 @@ function toKhoanPhaiThuView(row: {
     trangThai: string;
   };
   hocSinh: { id: number; maHocSinh: string; hoTen: string };
+  lopHoc?: { id: number; maLop: string; tenLop: string } | null;
 }) {
   const tongTien = Number(row.khoanPhaiThu.tongTien);
   const giamTru = Number(row.khoanPhaiThu.giamTru);
@@ -569,6 +572,9 @@ function toKhoanPhaiThuView(row: {
       maHocSinh: row.hocSinh.maHocSinh,
       hoTen: row.hocSinh.hoTen,
     },
+    lopHoc: row.lopHoc
+      ? { id: row.lopHoc.id, maLop: row.lopHoc.maLop, tenLop: row.lopHoc.tenLop }
+      : null,
     tongTien: row.khoanPhaiThu.tongTien,
     giamTru: row.khoanPhaiThu.giamTru,
     daThu: row.khoanPhaiThu.daThu,
@@ -617,7 +623,11 @@ export async function sinhKhoanPhaiThuChoLop(input: {
   let boQua = 0;
 
   for (const row of roster) {
-    const existing = await findKhoanPhaiThuByKyThuHocSinh(input.kyThuId, row.hocSinh.id);
+    const existing = await findKhoanPhaiThuByKyThuHocSinh(
+      input.kyThuId,
+      row.hocSinh.id,
+      input.lopHocId,
+    );
 
     if (existing) {
       boQua += 1;
@@ -628,6 +638,7 @@ export async function sinhKhoanPhaiThuChoLop(input: {
       donViId: input.donViId,
       kyThuId: input.kyThuId,
       hocSinhId: row.hocSinh.id,
+      lopHocId: input.lopHocId,
       tongTien: tongTienKy,
       chiTiet,
     });
@@ -734,6 +745,7 @@ export async function ghiNhanThuTien(input: {
   soTien: number;
   phuongThuc: string;
   ghiChu?: string | null;
+  ngayThu?: string | null;
   actorUserId: number;
   ipAddress?: string;
 }) {
@@ -744,6 +756,13 @@ export async function ghiNhanThuTien(input: {
 
   if (!PHUONG_THUC_HOP_LE.includes(input.phuongThuc as PhuongThucThu)) {
     throw new Error("Phương thức thu tiền không hợp lệ.");
+  }
+
+  // Ngày thu cho phép chỉnh (VD ghi nhận trễ so với lúc thu tiền mặt thực
+  // tế) — nhưng người thu (`nguoiThuId`) vẫn LUÔN lấy theo actor đăng nhập,
+  // không cho chọn, để tránh mạo danh người thu khác.
+  if (input.ngayThu && !/^\d{4}-\d{2}-\d{2}$/.test(input.ngayThu)) {
+    throw new Error("Ngày thu không hợp lệ.");
   }
 
   if (!Number.isFinite(input.soTien) || input.soTien <= 0) {
@@ -773,6 +792,9 @@ export async function ghiNhanThuTien(input: {
     phuongThuc: input.phuongThuc as PhuongThucThu,
     ghiChu: input.ghiChu?.trim() || null,
     nguoiThuId: input.actorUserId,
+    ngayThu: input.ngayThu
+      ? `${input.ngayThu} ${toDatabaseDateTime().slice(11)}`
+      : undefined,
   });
 
   if (!phieu) {
@@ -893,6 +915,8 @@ export async function getPhieuThuDetail(donViId: number, id: number) {
     throw new Error("Không tìm thấy phiếu thu trong đơn vị hiện tại.");
   }
 
+  const mauIn = await getCauHinhMauIn(donViId);
+
   return {
     id: found.phieuThu.id,
     soPhieu: found.phieuThu.soPhieu,
@@ -910,10 +934,28 @@ export async function getPhieuThuDetail(donViId: number, id: number) {
       maKyThu: found.kyThu.maKyThu,
       tenKyThu: found.kyThu.tenKyThu,
     },
+    lopHoc: found.lopHoc
+      ? { id: found.lopHoc.id, maLop: found.lopHoc.maLop, tenLop: found.lopHoc.tenLop }
+      : null,
     khoanPhaiThu: toKhoanPhaiThuView({
       khoanPhaiThu: found.khoanPhaiThu,
       hocSinh: found.hocSinh,
+      lopHoc: found.lopHoc,
     }),
+    donVi: {
+      tenDonVi: found.donVi.tenDonVi,
+      diaChi: found.donVi.diaChi,
+      soDienThoai: found.donVi.soDienThoai,
+      email: found.donVi.email,
+      hinhAnhUrl: found.donVi.hinhAnhUrl,
+    },
+    mauIn: {
+      hienThiLogo: mauIn.hienThiLogo,
+      ghiChuFooter: mauIn.ghiChuFooter,
+      nhanKyNguoiLap: mauIn.nhanKyNguoiLap,
+      nhanKyNguoiNop: mauIn.nhanKyNguoiNop,
+      nhanKyDaiDienDonVi: mauIn.nhanKyDaiDienDonVi,
+    },
   };
 }
 

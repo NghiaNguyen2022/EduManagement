@@ -2,8 +2,10 @@ import type {
   LopHocDetail,
   LopHocFormInput,
   LopHocItem,
+  PhieuXepLopDetail,
   TrangThaiLopHoc,
   VaiTroGiaoVienLop,
+  XepLopVaLapPhieuResult,
 } from "./lopHocTypes";
 
 type ApiResponse<T> = {
@@ -105,9 +107,15 @@ export function endGiaoVienAssignmentApi(
 
 export function xepHocSinhVaoLopApi(
   lopHocId: number,
-  input: { hocSinhId: number; ngayVaoLop: string },
+  input: {
+    hocSinhId: number;
+    ngayVaoLop: string;
+    ghiChuPhieu?: string;
+    kemPhieuNhapHoc?: boolean;
+    ngayNhapHoc?: string;
+  },
 ) {
-  return request(`/api/lop-hoc/${lopHocId}/hoc-sinh`, {
+  return request<XepLopVaLapPhieuResult>(`/api/lop-hoc/${lopHocId}/hoc-sinh`, {
     method: "POST",
     body: JSON.stringify(input),
   });
@@ -142,4 +150,15 @@ export function ketThucXepLopApi(
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+export function lapPhieuXepLopApi(enrollmentId: number, input?: { ghiChu?: string }) {
+  return request<{ id: number }>(`/api/lop-hoc/hoc-sinh/${enrollmentId}/phieu-xep-lop`, {
+    method: "POST",
+    body: JSON.stringify(input ?? {}),
+  });
+}
+
+export function getPhieuXepLopDetailApi(id: number) {
+  return request<PhieuXepLopDetail>(`/api/lop-hoc/phieu-xep-lop/${id}`);
 }

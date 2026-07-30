@@ -7,6 +7,8 @@ import type {
   HocSinhDetail,
   HocSinhFormInput,
   HocSinhItem,
+  PhieuNhapHocDetail,
+  PhieuNhapHocItem,
   PhuHuynhItem,
   ThanhTichFormInput,
   ThanhTichItem,
@@ -235,6 +237,24 @@ export async function removeDanhGiaApi(danhGiaId: number) {
   if (!response.ok || !payload.ok) {
     throw new Error(payload.error || "Không thể xoá kết quả học tập.");
   }
+}
+
+export function lapPhieuNhapHocApi(
+  hocSinhId: number,
+  input: { ngayNhapHoc: string; ghiChu?: string },
+) {
+  return request<PhieuNhapHocItem>(`/api/hoc-sinh/${hocSinhId}/phieu-nhap-hoc`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function getPhieuNhapHocDetailApi(id: number) {
+  return request<PhieuNhapHocDetail>(`/api/hoc-sinh/phieu-nhap-hoc/${id}`);
+}
+
+export function listPhieuNhapHocApi(hocSinhId: number) {
+  return request<PhieuNhapHocItem[]>(`/api/hoc-sinh/${hocSinhId}/phieu-nhap-hoc`);
 }
 
 export async function removeGuardianApi(hocSinhId: number, linkId: number) {

@@ -22,7 +22,10 @@ import type {
   HocSinhItem,
 } from "../features/hocSinh/hocSinhTypes";
 import { listLopHocApi, xepHocSinhVaoLopApi } from "../features/lopHoc/lopHocApi";
-import type { LopHocItem } from "../features/lopHoc/lopHocTypes";
+import type {
+  LopHocItem,
+  XepLopVaLapPhieuResult,
+} from "../features/lopHoc/lopHocTypes";
 import { useUnsavedChangesGuard } from "../features/navigation/UnsavedChangesContext";
 
 const LOP_HOC_CO_THE_XEP = new Set(["chuan_bi", "dang_hoc"]);
@@ -71,7 +74,17 @@ export function StudentsPage() {
   const [ketQuaTestChon, setKetQuaTestChon] = useState<Record<number, string>>(
     {},
   );
-  const [xepLopDangLuu, setXepLopDangLuu] = useState<number | null>(null);
+  const [confirmXepLop, setConfirmXepLop] = useState<{
+    hocSinh: HocSinhItem;
+    lopHocId: string;
+    tenLop: string;
+    ngayVaoLop: string;
+    ghiChu: string;
+    kemPhieuNhapHoc: boolean;
+    ketQuaTest: string;
+  } | null>(null);
+  const [xepLopBusy, setXepLopBusy] = useState(false);
+  const [xepLopResult, setXepLopResult] = useState<XepLopVaLapPhieuResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -168,30 +181,57 @@ export function StudentsPage() {
     );
   }
 
-  async function handleXepLop(hocSinhId: number) {
-    const lopHocId = xepLopChon[hocSinhId];
+  function openConfirmXepLop(student: HocSinhItem) {
+    const lopHocId = xepLopChon[student.id];
 
     if (!lopHocId) {
       setError("Vui lòng chọn lớp trước khi xếp.");
       return;
     }
 
+    const lop = classes.find((item) => String(item.id) === lopHocId);
+
     setError("");
     setNotice("");
-    setXepLopDangLuu(hocSinhId);
+    setXepLopResult(null);
+    setConfirmXepLop({
+      hocSinh: student,
+      lopHocId,
+      tenLop: lop ? `${lop.tenLop} (${lop.maLop})` : "",
+      ngayVaoLop: today(),
+      ghiChu: "",
+      kemPhieuNhapHoc: student.trangThai === "tiep_nhan",
+      ketQuaTest: ketQuaTestChon[student.id] ?? "",
+    });
+  }
+
+  function closeConfirmXepLop() {
+    setConfirmXepLop(null);
+    setXepLopResult(null);
+  }
+
+  async function handleConfirmXepLop() {
+    if (!confirmXepLop) return;
+
+    setError("");
+    setXepLopBusy(true);
 
     try {
-      const ketQuaTest = ketQuaTestChon[hocSinhId]?.trim();
+      const ketQuaTest = confirmXepLop.ketQuaTest.trim();
 
-      if (lopCanTest(lopHocId) && ketQuaTest) {
-        await ghiNhanKetQuaTestDauVaoApi(hocSinhId, ketQuaTest);
+      if (lopCanTest(confirmXepLop.lopHocId) && ketQuaTest) {
+        await ghiNhanKetQuaTestDauVaoApi(confirmXepLop.hocSinh.id, ketQuaTest);
       }
 
-      await xepHocSinhVaoLopApi(Number(lopHocId), {
-        hocSinhId,
-        ngayVaoLop: today(),
+      const result = await xepHocSinhVaoLopApi(Number(confirmXepLop.lopHocId), {
+        hocSinhId: confirmXepLop.hocSinh.id,
+        ngayVaoLop: confirmXepLop.ngayVaoLop,
+        ghiChuPhieu: confirmXepLop.ghiChu.trim() || undefined,
+        kemPhieuNhapHoc: confirmXepLop.kemPhieuNhapHoc,
+        ngayNhapHoc: confirmXepLop.ngayVaoLop,
       });
-      setNotice("Đã xếp học sinh vào lớp.");
+
+      setXepLopResult(result);
       await loadData();
     } catch (xepLopError) {
       setError(
@@ -200,7 +240,7 @@ export function StudentsPage() {
           : "Không thể xếp học sinh vào lớp.",
       );
     } finally {
-      setXepLopDangLuu(null);
+      setXepLopBusy(false);
     }
   }
 
@@ -388,10 +428,9 @@ export function StudentsPage() {
                         <button
                           type="button"
                           className="primary-button"
-                          disabled={xepLopDangLuu === student.id}
-                          onClick={() => handleXepLop(student.id)}
+                          onClick={() => openConfirmXepLop(student)}
                         >
-                          {xepLopDangLuu === student.id ? "Đang xếp..." : "Xếp lớp"}
+                          Xếp lớp
                         </button>
                       </td>
                     </tr>
@@ -400,6 +439,133 @@ export function StudentsPage() {
               </tbody>
             </table>
           </div>
+        </SectionCard>
+      ) : null}
+
+      {confirmXepLop ? (
+        <SectionCard
+          title={`Xác nhận xếp lớp — ${confirmXepLop.hocSinh.hoTen}`}
+          actions={
+            <button type="button" className="text-button" onClick={closeConfirmXepLop}>
+              Đóng
+            </button>
+          }
+        >
+          {!xepLopResult ? (
+            <div className="user-create-form">
+              <TextField label="Học sinh" value={confirmXepLop.hocSinh.hoTen} disabled onChange={() => {}} />
+              <TextField label="Lớp" value={confirmXepLop.tenLop} disabled onChange={() => {}} />
+
+              <DateField
+                label="Ngày vào lớp"
+                value={confirmXepLop.ngayVaoLop}
+                required
+                onChange={(value) =>
+                  setConfirmXepLop({ ...confirmXepLop, ngayVaoLop: value })
+                }
+              />
+
+              {lopCanTest(confirmXepLop.lopHocId) ? (
+                <TextField
+                  label="Kết quả test đầu vào"
+                  value={confirmXepLop.ketQuaTest}
+                  placeholder="VD: A2 - Elementary"
+                  onChange={(value) =>
+                    setConfirmXepLop({ ...confirmXepLop, ketQuaTest: value })
+                  }
+                />
+              ) : null}
+
+              <TextField
+                label="Ghi chú"
+                value={confirmXepLop.ghiChu}
+                onChange={(value) => setConfirmXepLop({ ...confirmXepLop, ghiChu: value })}
+              />
+
+              <label className="checkbox-inline field-span-full">
+                <input
+                  type="checkbox"
+                  checked={confirmXepLop.kemPhieuNhapHoc}
+                  onChange={(event) =>
+                    setConfirmXepLop({ ...confirmXepLop, kemPhieuNhapHoc: event.target.checked })
+                  }
+                />
+                Kèm phiếu xác nhận nhập học
+              </label>
+
+              <button
+                type="button"
+                className="primary-button"
+                disabled={xepLopBusy}
+                onClick={() => void handleConfirmXepLop()}
+              >
+                {xepLopBusy ? "Đang lưu..." : "Xác nhận xếp lớp"}
+              </button>
+            </div>
+          ) : (
+            <div className="user-create-form">
+              <p className="form-success">
+                Đã xếp {confirmXepLop.hocSinh.hoTen} vào lớp {confirmXepLop.tenLop} — phiếu{" "}
+                {xepLopResult.phieuXepLop.soPhieu}
+                {xepLopResult.phieuNhapHoc
+                  ? ` · phiếu nhập học ${xepLopResult.phieuNhapHoc.soPhieu}`
+                  : ""}
+                .
+              </p>
+
+              <div className="row-actions">
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() =>
+                    window.open(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}?in=1`, "_blank")
+                  }
+                >
+                  In phiếu xếp lớp
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() =>
+                    window.open(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}`, "_blank")
+                  }
+                >
+                  Xem trước
+                </button>
+
+                {xepLopResult.phieuNhapHoc ? (
+                  <>
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={() =>
+                        window.open(
+                          `/students/phieu-nhap-hoc/${xepLopResult.phieuNhapHoc!.id}?in=1`,
+                          "_blank",
+                        )
+                      }
+                    >
+                      In phiếu nhập học
+                    </button>
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() =>
+                        window.open(
+                          `/students/phieu-nhap-hoc/${xepLopResult.phieuNhapHoc!.id}`,
+                          "_blank",
+                        )
+                      }
+                    >
+                      Xem trước
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            </div>
+          )}
         </SectionCard>
       ) : null}
 

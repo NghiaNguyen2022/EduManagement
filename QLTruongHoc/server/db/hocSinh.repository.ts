@@ -5,6 +5,8 @@ import {
   hocSinh,
   hocSinhLopHoc,
   hocSinhTrangThaiLichSu,
+  nguoiDung,
+  phieuNhapHoc,
 } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
@@ -352,4 +354,78 @@ export async function listTrangThaiLichSuByHocSinh(hocSinhId: number) {
     .from(hocSinhTrangThaiLichSu)
     .where(eq(hocSinhTrangThaiLichSu.hocSinhId, hocSinhId))
     .orderBy(desc(hocSinhTrangThaiLichSu.createdAt));
+}
+
+// ---------------------------------------------------------------
+// Phiếu xác nhận nhập học
+// ---------------------------------------------------------------
+
+export async function countPhieuNhapHocTheoPrefix(donViId: number, prefix: string) {
+  const db = getDb();
+
+  const rows = await db
+    .select({ total: count() })
+    .from(phieuNhapHoc)
+    .where(and(eq(phieuNhapHoc.donViId, donViId), like(phieuNhapHoc.soPhieu, `${prefix}%`)));
+
+  return rows[0]?.total ?? 0;
+}
+
+export async function createPhieuNhapHoc(input: {
+  donViId: number;
+  hocSinhId: number;
+  soPhieu: string;
+  ngayNhapHoc: string;
+  nguoiLapId: number;
+  ghiChu: string | null;
+}) {
+  const db = getDb();
+
+  await db.insert(phieuNhapHoc).values({
+    donViId: input.donViId,
+    hocSinhId: input.hocSinhId,
+    soPhieu: input.soPhieu,
+    ngayNhapHoc: input.ngayNhapHoc,
+    nguoiLapId: input.nguoiLapId,
+    ghiChu: input.ghiChu,
+    createdAt: now(),
+  });
+
+  const rows = await db
+    .select()
+    .from(phieuNhapHoc)
+    .where(and(eq(phieuNhapHoc.donViId, input.donViId), eq(phieuNhapHoc.soPhieu, input.soPhieu)))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function findPhieuNhapHocById(donViId: number, id: number) {
+  const db = getDb();
+
+  const rows = await db
+    .select({
+      phieuNhapHoc,
+      hocSinh,
+      nguoiLap: { id: nguoiDung.id, hoTen: nguoiDung.hoTen },
+      donVi,
+    })
+    .from(phieuNhapHoc)
+    .innerJoin(hocSinh, eq(phieuNhapHoc.hocSinhId, hocSinh.id))
+    .innerJoin(nguoiDung, eq(phieuNhapHoc.nguoiLapId, nguoiDung.id))
+    .innerJoin(donVi, eq(phieuNhapHoc.donViId, donVi.id))
+    .where(and(eq(phieuNhapHoc.id, id), eq(phieuNhapHoc.donViId, donViId)))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function listPhieuNhapHocByHocSinh(hocSinhId: number) {
+  const db = getDb();
+
+  return db
+    .select()
+    .from(phieuNhapHoc)
+    .where(eq(phieuNhapHoc.hocSinhId, hocSinhId))
+    .orderBy(desc(phieuNhapHoc.createdAt));
 }

@@ -1,0 +1,201 @@
+/* Khổ in dùng chung cho các trang phiếu (phiếu thu, phiếu nhập học, phiếu xếp
+   lớp) — ẩn khung sườn (sidebar/topbar) và các nút thao tác, chỉ in phần nội
+   dung phiếu. Dùng class `no-print` trên nút bấm không cần xuất hiện khi in. */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  .sidebar,
+  .sidebar-backdrop,
+  .topbar,
+  .toast-stack,
+  .no-print {
+    display: none !important;
+  }
+
+  .app-shell__main {
+    margin-left: 0 !important;
+  }
+
+  .content-area {
+    padding: 0 !important;
+  }
+
+  .phieu-slip {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+/*
+ * "Tờ giấy" phiếu in — dùng chung cho PhieuThuDetailPage/PhieuNhapHocDetailPage/
+ * PhieuXepLopDetailPage. Ở chế độ xem thường (không in) cũng hiển thị giống
+ * 1 trang tài liệu (nền trắng, bóng đổ, khổ gần A4) để trang chi tiết tự
+ * đóng luôn vai trò "xem trước khi in" — không cần màn hình preview riêng.
+ */
+.phieu-slip {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 48px;
+  background: var(--edu-color-surface);
+  border: 1px solid var(--edu-color-border);
+  border-radius: var(--edu-radius-medium);
+  box-shadow: var(--edu-shadow-medium);
+  color: var(--edu-color-text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.phieu-slip__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid var(--edu-color-text);
+}
+
+.phieu-slip__logo {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  border-radius: var(--edu-radius-small);
+}
+
+.phieu-slip__donvi {
+  min-width: 0;
+}
+
+.phieu-slip__donvi strong {
+  display: block;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+
+.phieu-slip__donvi span {
+  display: block;
+  margin-top: 2px;
+  color: var(--edu-color-text-muted);
+  font-size: 12.5px;
+}
+
+.phieu-slip__title {
+  margin: 22px 0 24px;
+  text-align: center;
+}
+
+.phieu-slip__title h1 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.phieu-slip__title p {
+  margin: 6px 0 0;
+  color: var(--edu-color-text-muted);
+  font-size: 13px;
+}
+
+.phieu-slip__body {
+  display: grid;
+  gap: 2px;
+}
+
+.phieu-slip__row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px dotted var(--edu-color-border-strong);
+}
+
+.phieu-slip__row-label {
+  flex: 0 0 auto;
+  min-width: 170px;
+  color: var(--edu-color-text-muted);
+}
+
+.phieu-slip__row-value {
+  flex: 1;
+  font-weight: 650;
+  text-align: right;
+}
+
+.phieu-slip__amount-words {
+  margin-top: 8px;
+  font-style: italic;
+  color: var(--edu-color-text-muted);
+  font-size: 13px;
+}
+
+.phieu-slip__footer-note {
+  margin-top: 24px;
+  padding-top: 14px;
+  border-top: 1px solid var(--edu-color-border);
+  color: var(--edu-color-text-muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.phieu-slip__signatures {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 40px;
+  text-align: center;
+}
+
+.phieu-slip__signature {
+  flex: 1;
+  min-width: 0;
+}
+
+.phieu-slip__signature strong {
+  display: block;
+  font-size: 13.5px;
+}
+
+.phieu-slip__signature small {
+  display: block;
+  margin-top: 2px;
+  color: var(--edu-color-text-muted);
+  font-size: 11.5px;
+  font-style: italic;
+}
+
+.phieu-slip__signature-space {
+  height: 64px;
+}
+
+.phieu-slip__signature-name {
+  font-weight: 650;
+}
+
+@media (max-width: 680px) {
+  .phieu-slip {
+    padding: 24px 20px;
+  }
+
+  .phieu-slip__row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .phieu-slip__row-value {
+    text-align: left;
+  }
+
+  .phieu-slip__signatures {
+    flex-direction: column;
+    gap: 28px;
+  }
+}

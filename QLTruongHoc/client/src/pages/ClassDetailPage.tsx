@@ -53,6 +53,7 @@ import type {
   LopHocItem,
   TrangThaiLopHoc,
   VaiTroGiaoVienLop,
+  XepLopVaLapPhieuResult,
 } from "../features/lopHoc/lopHocTypes";
 import { createTraoDoiApi, listTraoDoiApi } from "../features/traoDoi/traoDoiApi";
 import type {
@@ -224,6 +225,7 @@ export function ClassDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [xepLopResult, setXepLopResult] = useState<XepLopVaLapPhieuResult | null>(null);
   const [infoForm, setInfoForm] = useState<LopHocFormInput | null>(
     null,
   );
@@ -240,6 +242,8 @@ export function ClassDetailPage() {
   const [enrollForm, setEnrollForm] = useState({
     hocSinhId: "",
     ngayVaoLop: "",
+    ghiChu: "",
+    kemPhieuNhapHoc: false,
   });
   const [savingEnroll, setSavingEnroll] = useState(false);
 
@@ -598,12 +602,16 @@ export function ClassDetailPage() {
     setSavingEnroll(true);
 
     try {
-      await xepHocSinhVaoLopApi(classId, {
-        hocSinhId: Number(enrollForm.hocSinhId),
+      const hocSinhId = Number(enrollForm.hocSinhId);
+      const result = await xepHocSinhVaoLopApi(classId, {
+        hocSinhId,
         ngayVaoLop: enrollForm.ngayVaoLop,
+        ghiChuPhieu: enrollForm.ghiChu.trim() || undefined,
+        kemPhieuNhapHoc: enrollForm.kemPhieuNhapHoc,
+        ngayNhapHoc: enrollForm.ngayVaoLop,
       });
-      setNotice("Đã xếp học sinh vào lớp.");
-      setEnrollForm({ hocSinhId: "", ngayVaoLop: "" });
+      setXepLopResult(result);
+      setEnrollForm({ hocSinhId: "", ngayVaoLop: "", ghiChu: "", kemPhieuNhapHoc: false });
       await loadDetail();
     } catch (enrollError) {
       setError(
@@ -1366,7 +1374,7 @@ export function ClassDetailPage() {
           </form>
         ) : null}
 
-        {canManage ? (
+        {canManage && !xepLopResult ? (
           <form className="user-create-form" onSubmit={handleEnroll}>
             <SelectField
               label="Học sinh"
@@ -1377,9 +1385,14 @@ export function ClassDetailPage() {
                 value: String(student.id),
                 label: `${student.hoTen} (${student.maHocSinh})`,
               }))}
-              onChange={(value) =>
-                setEnrollForm({ ...enrollForm, hocSinhId: value })
-              }
+              onChange={(value) => {
+                const student = students.find((item) => String(item.id) === value);
+                setEnrollForm({
+                  ...enrollForm,
+                  hocSinhId: value,
+                  kemPhieuNhapHoc: student?.trangThai === "tiep_nhan",
+                });
+              }}
             />
 
             <DateField
@@ -1391,6 +1404,23 @@ export function ClassDetailPage() {
               }
             />
 
+            <TextField
+              label="Ghi chú"
+              value={enrollForm.ghiChu}
+              onChange={(value) => setEnrollForm({ ...enrollForm, ghiChu: value })}
+            />
+
+            <label className="checkbox-inline field-span-full">
+              <input
+                type="checkbox"
+                checked={enrollForm.kemPhieuNhapHoc}
+                onChange={(event) =>
+                  setEnrollForm({ ...enrollForm, kemPhieuNhapHoc: event.target.checked })
+                }
+              />
+              Kèm phiếu xác nhận nhập học
+            </label>
+
             <button
               type="submit"
               className="primary-button"
@@ -1399,6 +1429,78 @@ export function ClassDetailPage() {
               {savingEnroll ? "Đang lưu..." : "Xếp vào lớp"}
             </button>
           </form>
+        ) : null}
+
+        {xepLopResult ? (
+          <div className="user-create-form">
+            <p className="form-success">
+              Đã xếp học sinh vào lớp — phiếu {xepLopResult.phieuXepLop.soPhieu}
+              {xepLopResult.phieuNhapHoc
+                ? ` · phiếu nhập học ${xepLopResult.phieuNhapHoc.soPhieu}`
+                : ""}
+              .
+            </p>
+
+            <div className="row-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() =>
+                  window.open(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}?in=1`, "_blank")
+                }
+              >
+                In phiếu xếp lớp
+              </button>
+
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() =>
+                  window.open(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}`, "_blank")
+                }
+              >
+                Xem trước
+              </button>
+
+              {xepLopResult.phieuNhapHoc ? (
+                <>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={() =>
+                      window.open(
+                        `/students/phieu-nhap-hoc/${xepLopResult.phieuNhapHoc!.id}?in=1`,
+                        "_blank",
+                      )
+                    }
+                  >
+                    In phiếu nhập học
+                  </button>
+
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() =>
+                      window.open(
+                        `/students/phieu-nhap-hoc/${xepLopResult.phieuNhapHoc!.id}`,
+                        "_blank",
+                      )
+                    }
+                  >
+                    Xem trước
+                  </button>
+                </>
+              ) : null}
+
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => setXepLopResult(null)}
+              >
+                Xếp học sinh khác
+              </button>
+            </div>
+          </div>
         ) : null}
       </SectionCard>
 

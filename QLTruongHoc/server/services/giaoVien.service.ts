@@ -1,6 +1,6 @@
 import { hash } from "bcryptjs";
 
-import { normalizeTeacherUsername } from "../domain/teacher-account.js";
+import { buildTeacherUsername } from "../domain/teacher-account.js";
 import {
   createAuditLog,
 } from "../db/audit.repository.js";
@@ -185,14 +185,13 @@ export async function setGiaoVienStatus(input: {
   return updated;
 }
 
-async function sinhTenDangNhapGiaoVien(dienThoai: string | null) {
-  const base = normalizeTeacherUsername(dienThoai);
-  let candidate = base;
-  let attempt = 1;
+async function sinhTenDangNhapGiaoVien(hoTen: string) {
+  let soThuTu = 0;
+  let candidate = buildTeacherUsername(hoTen, soThuTu);
 
   while (await findUserByUsername(candidate)) {
-    attempt += 1;
-    candidate = `${base}-${attempt}`;
+    soThuTu += 1;
+    candidate = buildTeacherUsername(hoTen, soThuTu);
   }
 
   return candidate;
@@ -235,7 +234,7 @@ export async function createGiaoVienAccount(input: {
     throw new Error("Chưa cấu hình vai trò giáo viên trong hệ thống.");
   }
 
-  const tenDangNhap = await sinhTenDangNhapGiaoVien(teacher.dienThoai);
+  const tenDangNhap = await sinhTenDangNhapGiaoVien(teacher.hoTen);
   const temporaryPassword = createTemporaryPassword();
   const passwordHash = await hash(temporaryPassword, 12);
 

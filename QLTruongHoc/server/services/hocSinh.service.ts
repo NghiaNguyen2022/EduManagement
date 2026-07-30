@@ -3,17 +3,22 @@ import {
 } from "../db/audit.repository.js";
 import {
   countHocSinhTheoMaPrefix,
+  countPhieuNhapHocTheoPrefix,
   createHocSinh,
+  createPhieuNhapHoc,
   createTrangThaiLichSu,
   findHocSinhById,
+  findPhieuNhapHocById,
   listHocSinhAllDonVi,
   listHocSinhByDonVi,
   listHocSinhChoXepLop,
+  listPhieuNhapHocByHocSinh,
   listTrangThaiLichSuByHocSinh,
   updateHocSinh,
   updateHocSinhTrangThai,
   updateKetQuaTestDauVao,
 } from "../db/hocSinh.repository.js";
+import { getCauHinhMauIn } from "../db/mauIn.repository.js";
 import {
   closeEnrollment,
   listActiveEnrollmentsByHocSinh,
@@ -474,4 +479,119 @@ export async function setHocSinhTrangThai(input: {
   });
 
   return updated;
+}
+
+// ---------------------------------------------------------------
+// Phiếu xác nhận nhập học
+// ---------------------------------------------------------------
+
+async function sinhSoPhieuNhapHoc(donViId: number) {
+  const nam = new Date().getFullYear();
+  const prefix = `NH${nam}`;
+  const total = await countPhieuNhapHocTheoPrefix(donViId, prefix);
+
+  return `${prefix}${String(total + 1).padStart(5, "0")}`;
+}
+
+export async function lapPhieuNhapHoc(input: {
+  donViId: number;
+  hocSinhId: number;
+  ngayNhapHoc: string;
+  ghiChu?: string | null;
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  const existing = await findHocSinhById(input.donViId, input.hocSinhId);
+
+  if (!existing) {
+    throw new Error("Không tìm thấy học sinh trong đơn vị hiện tại.");
+  }
+
+  if (!input.ngayNhapHoc) {
+    throw new Error("Vui lòng nhập ngày nhập học.");
+  }
+
+  const soPhieu = await sinhSoPhieuNhapHoc(input.donViId);
+
+  const phieu = await createPhieuNhapHoc({
+    donViId: input.donViId,
+    hocSinhId: input.hocSinhId,
+    soPhieu,
+    ngayNhapHoc: input.ngayNhapHoc,
+    nguoiLapId: input.actorUserId,
+    ghiChu: input.ghiChu?.trim() || null,
+  });
+
+  if (!phieu) {
+    throw new Error("Không thể lập phiếu xác nhận nhập học.");
+  }
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "phieu_nhap_hoc.create",
+    objectType: "PhieuNhapHoc",
+    objectId: String(phieu.id),
+    content: `Lập phiếu xác nhận nhập học ${phieu.soPhieu} cho học sinh ${existing.hoTen} (${existing.maHocSinh}).`,
+    ipAddress: input.ipAddress,
+  });
+
+  return phieu;
+}
+
+export async function getPhieuNhapHocDetail(donViId: number, id: number) {
+  const found = await findPhieuNhapHocById(donViId, id);
+
+  if (!found) {
+    throw new Error("Không tìm thấy phiếu nhập học trong đơn vị hiện tại.");
+  }
+
+  const guardianLinks = await listGuardianLinksByHocSinh(found.hocSinh.id);
+  const lienHeChinh = guardianLinks.find((row) => row.lienKet.laLienHeChinh) ?? guardianLinks[0];
+  const mauIn = await getCauHinhMauIn(donViId);
+
+  return {
+    id: found.phieuNhapHoc.id,
+    soPhieu: found.phieuNhapHoc.soPhieu,
+    ngayNhapHoc: found.phieuNhapHoc.ngayNhapHoc,
+    ghiChu: found.phieuNhapHoc.ghiChu,
+    hocSinh: {
+      id: found.hocSinh.id,
+      maHocSinh: found.hocSinh.maHocSinh,
+      hoTen: found.hocSinh.hoTen,
+      ngaySinh: found.hocSinh.ngaySinh,
+    },
+    phuHuynh: lienHeChinh
+      ? {
+          hoTen: lienHeChinh.phuHuynh.hoTen,
+          dienThoai: lienHeChinh.phuHuynh.dienThoai,
+          moiQuanHe: lienHeChinh.lienKet.moiQuanHe,
+        }
+      : null,
+    nguoiLap: found.nguoiLap,
+    donVi: {
+      tenDonVi: found.donVi.tenDonVi,
+      diaChi: found.donVi.diaChi,
+      soDienThoai: found.donVi.soDienThoai,
+      email: found.donVi.email,
+      hinhAnhUrl: found.donVi.hinhAnhUrl,
+    },
+    mauIn: {
+      hienThiLogo: mauIn.hienThiLogo,
+      ghiChuFooter: mauIn.ghiChuFooter,
+      nhanKyNguoiLap: mauIn.nhanKyNguoiLap,
+      nhanKyNguoiNop: mauIn.nhanKyNguoiNop,
+      nhanKyDaiDienDonVi: mauIn.nhanKyDaiDienDonVi,
+    },
+  };
+}
+
+export async function listPhieuNhapHocTheoHocSinh(donViId: number, hocSinhId: number) {
+  const existing = await findHocSinhById(donViId, hocSinhId);
+
+  if (!existing) {
+    throw new Error("Không tìm thấy học sinh trong đơn vị hiện tại.");
+  }
+
+  return listPhieuNhapHocByHocSinh(hocSinhId);
 }

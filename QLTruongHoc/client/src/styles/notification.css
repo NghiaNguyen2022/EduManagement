@@ -206,3 +206,21 @@
 .toast__close:hover {
   color: var(--edu-color-text);
 }
+
+@media (max-width: 480px) {
+  .notification-dropdown {
+    position: fixed;
+    top: 64px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+  }
+
+  .toast-stack {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-width: none;
+  }
+}

@@ -65,3 +65,49 @@ export type LopHocDetail = {
   giaoVien: PhanCongGiaoVienItem[];
   hocSinh: EnrollmentItem[];
 };
+
+// Bản ghi HocSinhLopHoc thô trả về ngay sau khi xếp lớp (khác `EnrollmentItem`,
+// vốn là dạng đã join kèm `hocSinh` dùng để hiển thị danh sách) — đủ để lấy
+// `id` (enrollmentId) gọi lập phiếu xếp lớp ngay mà không cần tải lại danh sách.
+export type EnrollmentCreateResult = {
+  id: number;
+  hocSinhId: number;
+  lopHocId: number;
+  ngayVaoLop: string;
+  trangThai: string;
+};
+
+export type DonViInPhieu = {
+  tenDonVi: string;
+  diaChi: string | null;
+  soDienThoai: string | null;
+  email: string | null;
+  hinhAnhUrl: string | null;
+};
+
+export type MauInPhieu = {
+  hienThiLogo: boolean;
+  ghiChuFooter: string | null;
+  nhanKyNguoiLap: string;
+  nhanKyNguoiNop: string;
+  nhanKyDaiDienDonVi: string;
+};
+
+export type XepLopVaLapPhieuResult = {
+  enrollment: EnrollmentCreateResult;
+  phieuXepLop: { id: number; soPhieu: string };
+  phieuNhapHoc: { id: number; soPhieu: string } | null;
+};
+
+export type PhieuXepLopDetail = {
+  id: number;
+  soPhieu: string;
+  ghiChu: string | null;
+  hocSinh: { id: number; maHocSinh: string; hoTen: string };
+  lopHoc: { id: number; maLop: string; tenLop: string; phongHoc: string | null };
+  ngayVaoLop: string;
+  ketQuaTestDauVao: string | null;
+  nguoiLap: { id: number; hoTen: string };
+  donVi: DonViInPhieu;
+  mauIn: MauInPhieu;
+};

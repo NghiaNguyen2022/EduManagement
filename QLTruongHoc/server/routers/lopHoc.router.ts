@@ -13,11 +13,13 @@ import {
   createLopHocMoi,
   endGiaoVienAssignment,
   getLopHocDetail,
+  getPhieuXepLopDetail,
   ketThucXepLop,
+  lapPhieuXepLop,
   listLopHoc,
   setLopHocStatus,
   updateLopHocThongTin,
-  xepHocSinhVaoLop,
+  xepHocSinhVaoLopVaLapPhieu,
 } from "../services/lopHoc.service.js";
 
 export const lopHocRouter = Router();
@@ -222,11 +224,14 @@ lopHocRouter.post(
   requirePermission("lop_hoc.quan_ly"),
   async (req, res) => {
     try {
-      const created = await xepHocSinhVaoLop({
+      const created = await xepHocSinhVaoLopVaLapPhieu({
         donViId: req.auth!.currentOrganization!.id,
         lopHocId: Number(req.params.id),
         hocSinhId: Number(req.body?.hocSinhId),
         ngayVaoLop: String(req.body?.ngayVaoLop ?? ""),
+        ghiChuPhieu: req.body?.ghiChuPhieu ? String(req.body.ghiChuPhieu) : null,
+        kemPhieuNhapHoc: Boolean(req.body?.kemPhieuNhapHoc),
+        ngayNhapHoc: req.body?.ngayNhapHoc ? String(req.body.ngayNhapHoc) : null,
         coQuyenVuotSiSo: coQuyenVuotSiSo(req),
         actorUserId: req.auth!.user.id,
         ipAddress: req.ip,
@@ -282,6 +287,43 @@ lopHocRouter.post(
       res.json({ ok: true });
     } catch (error) {
       handleError(res, error, "Không thể kết thúc xếp lớp.");
+    }
+  },
+);
+
+lopHocRouter.post(
+  "/hoc-sinh/:enrollmentId/phieu-xep-lop",
+  requirePermission("lop_hoc.quan_ly"),
+  async (req, res) => {
+    try {
+      const created = await lapPhieuXepLop({
+        donViId: req.auth!.currentOrganization!.id,
+        enrollmentId: Number(req.params.enrollmentId),
+        ghiChu: req.body?.ghiChu ? String(req.body.ghiChu) : null,
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.status(201).json({ ok: true, data: created });
+    } catch (error) {
+      handleError(res, error, "Không thể lập phiếu xếp lớp.");
+    }
+  },
+);
+
+lopHocRouter.get(
+  "/phieu-xep-lop/:id",
+  requirePermission("lop_hoc.xem"),
+  async (req, res) => {
+    try {
+      const detail = await getPhieuXepLopDetail(
+        req.auth!.currentOrganization!.id,
+        Number(req.params.id),
+      );
+
+      res.json({ ok: true, data: detail });
+    } catch (error) {
+      handleError(res, error, "Không thể tải phiếu xếp lớp.");
     }
   },
 );

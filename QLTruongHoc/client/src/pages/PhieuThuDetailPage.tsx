@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 
-import { TextField } from "../components/form";
 import { GuardedLink } from "../components/shared/GuardedLink";
 import { PageHeader } from "../components/shared/PageHeader";
-import { SectionCard } from "../components/shared/SectionCard";
 import { getPhieuThuDetailApi } from "../features/taiChinh/taiChinhApi";
 import type { PhieuThuDetail } from "../features/taiChinh/taiChinhTypes";
+import { soTienBangChu } from "../utils/soTienBangChu";
 
 const PHUONG_THUC_LABEL: Record<string, string> = {
   tien_mat: "Tiền mặt",
@@ -19,10 +18,10 @@ function formatTien(value: string) {
   return `${Number(value).toLocaleString("vi-VN")} ₫`;
 }
 
-const noop = () => {};
-
 export function PhieuThuDetailPage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const autoPrint = searchParams.get("in") === "1";
 
   const [detail, setDetail] = useState<PhieuThuDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,6 +45,12 @@ export function PhieuThuDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    if (autoPrint && detail) {
+      window.print();
+    }
+  }, [autoPrint, detail]);
+
   if (loading || !detail) {
     return (
       <div className="page-stack">
@@ -60,10 +65,9 @@ export function PhieuThuDetailPage() {
   return (
     <div className="page-stack">
       <PageHeader
-        title={`Phiếu thu ${detail.soPhieu}`}
-        subtitle={`Kỳ thu ${detail.kyThu.tenKyThu}`}
+        title="Phiếu thu học phí"
         action={
-          <div className="row-actions">
+          <div className="row-actions no-print">
             <button
               type="button"
               className="text-button"
@@ -82,90 +86,92 @@ export function PhieuThuDetailPage() {
         }
       />
 
-      {error ? <div className="form-error">{error}</div> : null}
+      {error ? <div className="form-error no-print">{error}</div> : null}
 
-      <SectionCard title="Thông tin phiếu thu">
-        <div className="user-create-form">
-          <TextField label="Số phiếu" value={detail.soPhieu} disabled onChange={noop} />
+      <div className="phieu-slip">
+        <div className="phieu-slip__header">
+          {detail.mauIn.hienThiLogo && detail.donVi.hinhAnhUrl ? (
+            <img src={detail.donVi.hinhAnhUrl} alt="" className="phieu-slip__logo" />
+          ) : null}
 
-          <TextField
-            label="Học sinh"
-            value={`${detail.hocSinh.hoTen} (${detail.hocSinh.maHocSinh})`}
-            disabled
-            onChange={noop}
-          />
-
-          <TextField
-            label="Kỳ thu"
-            value={`${detail.kyThu.tenKyThu} (${detail.kyThu.maKyThu})`}
-            disabled
-            onChange={noop}
-          />
-
-          <TextField
-            label="Số tiền"
-            value={formatTien(detail.soTien)}
-            disabled
-            onChange={noop}
-          />
-
-          <TextField
-            label="Phương thức"
-            value={PHUONG_THUC_LABEL[detail.phuongThuc]}
-            disabled
-            onChange={noop}
-          />
-
-          <TextField
-            label="Ngày thu"
-            value={detail.ngayThu}
-            disabled
-            onChange={noop}
-          />
-
-          <TextField
-            label="Ghi chú"
-            value={detail.ghiChu || "—"}
-            disabled
-            onChange={noop}
-          />
+          <div className="phieu-slip__donvi">
+            <strong>{detail.donVi.tenDonVi}</strong>
+            {detail.donVi.diaChi ? <span>{detail.donVi.diaChi}</span> : null}
+            {detail.donVi.soDienThoai || detail.donVi.email ? (
+              <span>
+                {[detail.donVi.soDienThoai, detail.donVi.email].filter(Boolean).join(" · ")}
+              </span>
+            ) : null}
+          </div>
         </div>
-      </SectionCard>
 
-      <SectionCard
-        title="Khoản phải thu liên quan"
-        subtitle="Số dư tại thời điểm hiện tại (không phải tại thời điểm lập phiếu)"
-      >
-        <div className="user-create-form">
-          <TextField
-            label="Tổng tiền"
-            value={formatTien(detail.khoanPhaiThu.tongTien)}
-            disabled
-            onChange={noop}
-          />
-
-          <TextField
-            label="Giảm trừ"
-            value={formatTien(detail.khoanPhaiThu.giamTru)}
-            disabled
-            onChange={noop}
-          />
-
-          <TextField
-            label="Đã thu"
-            value={formatTien(detail.khoanPhaiThu.daThu)}
-            disabled
-            onChange={noop}
-          />
-
-          <TextField
-            label="Còn lại"
-            value={formatTien(detail.khoanPhaiThu.conLai)}
-            disabled
-            onChange={noop}
-          />
+        <div className="phieu-slip__title">
+          <h1>Phiếu thu học phí</h1>
+          <p>
+            Số phiếu: {detail.soPhieu} · Ngày lập: {detail.ngayThu}
+          </p>
         </div>
-      </SectionCard>
+
+        <div className="phieu-slip__body">
+          <div className="phieu-slip__row">
+            <span className="phieu-slip__row-label">Học sinh</span>
+            <span className="phieu-slip__row-value">
+              {detail.hocSinh.hoTen} ({detail.hocSinh.maHocSinh})
+            </span>
+          </div>
+
+          <div className="phieu-slip__row">
+            <span className="phieu-slip__row-label">Lớp học</span>
+            <span className="phieu-slip__row-value">
+              {detail.lopHoc ? `${detail.lopHoc.tenLop} (${detail.lopHoc.maLop})` : "—"}
+            </span>
+          </div>
+
+          <div className="phieu-slip__row">
+            <span className="phieu-slip__row-label">Kỳ thu</span>
+            <span className="phieu-slip__row-value">
+              {detail.kyThu.tenKyThu} ({detail.kyThu.maKyThu})
+            </span>
+          </div>
+
+          <div className="phieu-slip__row">
+            <span className="phieu-slip__row-label">Số tiền</span>
+            <span className="phieu-slip__row-value">{formatTien(detail.soTien)}</span>
+          </div>
+
+          <div className="phieu-slip__row">
+            <span className="phieu-slip__row-label">Phương thức</span>
+            <span className="phieu-slip__row-value">{PHUONG_THUC_LABEL[detail.phuongThuc]}</span>
+          </div>
+
+          <div className="phieu-slip__row">
+            <span className="phieu-slip__row-label">Nội dung</span>
+            <span className="phieu-slip__row-value">{detail.ghiChu || "—"}</span>
+          </div>
+        </div>
+
+        <p className="phieu-slip__amount-words">
+          Bằng chữ: {soTienBangChu(Number(detail.soTien))}
+        </p>
+
+        {detail.mauIn.ghiChuFooter ? (
+          <p className="phieu-slip__footer-note">{detail.mauIn.ghiChuFooter}</p>
+        ) : null}
+
+        <div className="phieu-slip__signatures">
+          <div className="phieu-slip__signature">
+            <strong>{detail.mauIn.nhanKyNguoiNop}</strong>
+            <small>(Ký, ghi rõ họ tên)</small>
+            <div className="phieu-slip__signature-space" />
+          </div>
+
+          <div className="phieu-slip__signature">
+            <strong>{detail.mauIn.nhanKyNguoiLap}</strong>
+            <small>(Ký, ghi rõ họ tên)</small>
+            <div className="phieu-slip__signature-space" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -7,6 +7,8 @@ import {
   hocSinhLopHoc,
   lopHoc,
   lopHocGiaoVien,
+  nguoiDung,
+  phieuXepLop,
 } from "../../drizzle/schema.js";
 import { getDb } from "./connection.js";
 
@@ -528,4 +530,74 @@ export async function setEnrollmentTrangThai(input: {
       updatedAt: now(),
     })
     .where(eq(hocSinhLopHoc.id, input.id));
+}
+
+// ---------------------------------------------------------------
+// Phiếu xếp lớp
+// ---------------------------------------------------------------
+
+export async function countPhieuXepLopTheoPrefix(donViId: number, prefix: string) {
+  const db = getDb();
+
+  const rows = await db
+    .select({ total: count() })
+    .from(phieuXepLop)
+    .where(and(eq(phieuXepLop.donViId, donViId), like(phieuXepLop.soPhieu, `${prefix}%`)));
+
+  return rows[0]?.total ?? 0;
+}
+
+export async function createPhieuXepLop(input: {
+  donViId: number;
+  enrollmentId: number;
+  hocSinhId: number;
+  lopHocId: number;
+  soPhieu: string;
+  nguoiLapId: number;
+  ghiChu: string | null;
+}) {
+  const db = getDb();
+
+  await db.insert(phieuXepLop).values({
+    donViId: input.donViId,
+    enrollmentId: input.enrollmentId,
+    hocSinhId: input.hocSinhId,
+    lopHocId: input.lopHocId,
+    soPhieu: input.soPhieu,
+    nguoiLapId: input.nguoiLapId,
+    ghiChu: input.ghiChu,
+    createdAt: now(),
+  });
+
+  const rows = await db
+    .select()
+    .from(phieuXepLop)
+    .where(and(eq(phieuXepLop.donViId, input.donViId), eq(phieuXepLop.soPhieu, input.soPhieu)))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function findPhieuXepLopById(donViId: number, id: number) {
+  const db = getDb();
+
+  const rows = await db
+    .select({
+      phieuXepLop,
+      hocSinh,
+      lopHoc,
+      enrollment: hocSinhLopHoc,
+      nguoiLap: { id: nguoiDung.id, hoTen: nguoiDung.hoTen },
+      donVi,
+    })
+    .from(phieuXepLop)
+    .innerJoin(hocSinh, eq(phieuXepLop.hocSinhId, hocSinh.id))
+    .innerJoin(lopHoc, eq(phieuXepLop.lopHocId, lopHoc.id))
+    .innerJoin(hocSinhLopHoc, eq(phieuXepLop.enrollmentId, hocSinhLopHoc.id))
+    .innerJoin(nguoiDung, eq(phieuXepLop.nguoiLapId, nguoiDung.id))
+    .innerJoin(donVi, eq(phieuXepLop.donViId, donVi.id))
+    .where(and(eq(phieuXepLop.id, id), eq(phieuXepLop.donViId, donViId)))
+    .limit(1);
+
+  return rows[0] ?? null;
 }

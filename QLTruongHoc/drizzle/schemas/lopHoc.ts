@@ -163,6 +163,32 @@ export const hocSinhLopHoc = mysqlTable(
   })
 );
 
+// Phiếu xếp lớp — lập mỗi lần xếp lớp/chuyển lớp, gắn với 1 dòng
+// HocSinhLopHoc cụ thể (1 học sinh có nhiều lượt qua nhiều lớp). Mỗi lần lập
+// là 1 bản ghi bất biến, có số phiếu riêng — xem lại/in lại chỉ đọc bản ghi cũ.
+export const phieuXepLop = mysqlTable(
+  "PhieuXepLop",
+  {
+    id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
+    donViId: bigint("donViId", { mode: "number", unsigned: true }).notNull(),
+    enrollmentId: bigint("enrollmentId", { mode: "number", unsigned: true }).notNull(),
+    hocSinhId: bigint("hocSinhId", { mode: "number", unsigned: true }).notNull(),
+    lopHocId: bigint("lopHocId", { mode: "number", unsigned: true }).notNull(),
+    soPhieu: varchar("soPhieu", { length: 50 }).notNull(),
+    nguoiLapId: bigint("nguoiLapId", { mode: "number", unsigned: true }).notNull(),
+    ghiChu: varchar("ghiChu", { length: 500 }),
+    createdAt: datetime("createdAt", { mode: "string" }).notNull(),
+  },
+  (table) => ({
+    donViSoPhieuUq: uniqueIndex("UQ_PhieuXepLop_donViId_soPhieu").on(
+      table.donViId,
+      table.soPhieu,
+    ),
+    enrollmentIdx: index("IX_PhieuXepLop_enrollmentId").on(table.enrollmentId),
+    hocSinhIdx: index("IX_PhieuXepLop_hocSinhId").on(table.hocSinhId),
+  }),
+);
+
 // Kết quả học tập theo từng lượt xếp lớp — cho phép nhiều lần đánh giá/lượt
 // xếp lớp (giữa kỳ, cuối kỳ...), khác `HocSinhThanhTich` (chứng chỉ/thành
 // tích không gắn với 1 lớp cụ thể của trung tâm).

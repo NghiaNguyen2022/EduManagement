@@ -9,19 +9,23 @@ import {
   updateHocSinhTrangThai,
 } from "../db/hocSinh.repository.js";
 import { assertDonViChoPhepNghiepVu } from "./donVi.service.js";
+import { lapPhieuNhapHoc } from "./hocSinh.service.js";
 import {
   closeEnrollment,
   countHocSinhDangHocTrongLop,
   countLopHocTheoMaPrefix,
+  countPhieuXepLopTheoPrefix,
   createEnrollment,
   createLopHoc,
   createPhanCongGiaoVien,
+  createPhieuXepLop,
   endPhanCongGiaoVien,
   findEnrollmentById,
   findEnrollmentDangHoc,
   findGiaoVienChinhDangHoatDong,
   findLopHocById,
   findPhanCongGiaoVienById,
+  findPhieuXepLopById,
   listActiveEnrollmentsByHocSinh,
   listHocSinhTrongLop,
   listLopHocAllDonVi,
@@ -30,6 +34,7 @@ import {
   setLopHocTrangThai,
   updateLopHoc,
 } from "../db/lopHoc.repository.js";
+import { getCauHinhMauIn } from "../db/mauIn.repository.js";
 
 async function sinhMaLopHoc(donViId: number) {
   const total = await countLopHocTheoMaPrefix(donViId, "LOP");
@@ -486,6 +491,65 @@ export async function xepHocSinhVaoLop(input: {
   return created;
 }
 
+/**
+ * Gộp "xếp lớp" + "lập phiếu xếp lớp" (và tuỳ chọn phiếu xác nhận nhập học)
+ * thành 1 bước — đúng luồng UI mới: người dùng xác nhận 1 lần trên panel là
+ * xong cả lưu lẫn có phiếu để in ngay, không cần thao tác lập phiếu riêng.
+ */
+export async function xepHocSinhVaoLopVaLapPhieu(input: {
+  donViId: number;
+  lopHocId: number;
+  hocSinhId: number;
+  ngayVaoLop: string;
+  ghiChuPhieu?: string | null;
+  kemPhieuNhapHoc?: boolean;
+  ngayNhapHoc?: string | null;
+  coQuyenVuotSiSo?: boolean;
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  const enrollment = await xepHocSinhVaoLop({
+    donViId: input.donViId,
+    lopHocId: input.lopHocId,
+    hocSinhId: input.hocSinhId,
+    ngayVaoLop: input.ngayVaoLop,
+    coQuyenVuotSiSo: input.coQuyenVuotSiSo,
+    actorUserId: input.actorUserId,
+    ipAddress: input.ipAddress,
+  });
+
+  if (!enrollment) {
+    throw new Error("Không thể xếp học sinh vào lớp.");
+  }
+
+  const phieuXepLopMoi = await lapPhieuXepLop({
+    donViId: input.donViId,
+    enrollmentId: enrollment.id,
+    ghiChu: input.ghiChuPhieu,
+    actorUserId: input.actorUserId,
+    ipAddress: input.ipAddress,
+  });
+
+  let phieuNhapHocMoi = null;
+
+  if (input.kemPhieuNhapHoc) {
+    phieuNhapHocMoi = await lapPhieuNhapHoc({
+      donViId: input.donViId,
+      hocSinhId: input.hocSinhId,
+      ngayNhapHoc: input.ngayNhapHoc || input.ngayVaoLop,
+      ghiChu: null,
+      actorUserId: input.actorUserId,
+      ipAddress: input.ipAddress,
+    });
+  }
+
+  return {
+    enrollment,
+    phieuXepLop: phieuXepLopMoi,
+    phieuNhapHoc: phieuNhapHocMoi,
+  };
+}
+
 export async function chuyenLopHocSinh(input: {
   donViId: number;
   enrollmentId: number;
@@ -625,4 +689,102 @@ export async function ketThucXepLop(input: {
     content: `Kết thúc xếp lớp, trạng thái ${input.trangThai}.`,
     ipAddress: input.ipAddress,
   });
+}
+
+// ---------------------------------------------------------------
+// Phiếu xếp lớp
+// ---------------------------------------------------------------
+
+async function sinhSoPhieuXepLop(donViId: number) {
+  const nam = new Date().getFullYear();
+  const prefix = `XL${nam}`;
+  const total = await countPhieuXepLopTheoPrefix(donViId, prefix);
+
+  return `${prefix}${String(total + 1).padStart(5, "0")}`;
+}
+
+export async function lapPhieuXepLop(input: {
+  donViId: number;
+  enrollmentId: number;
+  ghiChu?: string | null;
+  actorUserId: number;
+  ipAddress?: string;
+}) {
+  const found = await findEnrollmentById(input.enrollmentId);
+
+  if (!found || found.donViId !== input.donViId) {
+    throw new Error("Không tìm thấy hồ sơ xếp lớp.");
+  }
+
+  const soPhieu = await sinhSoPhieuXepLop(input.donViId);
+
+  const phieu = await createPhieuXepLop({
+    donViId: input.donViId,
+    enrollmentId: input.enrollmentId,
+    hocSinhId: found.enrollment.hocSinhId,
+    lopHocId: found.enrollment.lopHocId,
+    soPhieu,
+    nguoiLapId: input.actorUserId,
+    ghiChu: input.ghiChu?.trim() || null,
+  });
+
+  if (!phieu) {
+    throw new Error("Không thể lập phiếu xếp lớp.");
+  }
+
+  await createAuditLog({
+    userId: input.actorUserId,
+    organizationId: input.donViId,
+    action: "phieu_xep_lop.create",
+    objectType: "PhieuXepLop",
+    objectId: String(phieu.id),
+    content: `Lập phiếu xếp lớp ${phieu.soPhieu} cho hồ sơ xếp lớp #${input.enrollmentId}.`,
+    ipAddress: input.ipAddress,
+  });
+
+  return phieu;
+}
+
+export async function getPhieuXepLopDetail(donViId: number, id: number) {
+  const found = await findPhieuXepLopById(donViId, id);
+
+  if (!found) {
+    throw new Error("Không tìm thấy phiếu xếp lớp trong đơn vị hiện tại.");
+  }
+
+  const mauIn = await getCauHinhMauIn(donViId);
+
+  return {
+    id: found.phieuXepLop.id,
+    soPhieu: found.phieuXepLop.soPhieu,
+    ghiChu: found.phieuXepLop.ghiChu,
+    hocSinh: {
+      id: found.hocSinh.id,
+      maHocSinh: found.hocSinh.maHocSinh,
+      hoTen: found.hocSinh.hoTen,
+    },
+    lopHoc: {
+      id: found.lopHoc.id,
+      maLop: found.lopHoc.maLop,
+      tenLop: found.lopHoc.tenLop,
+      phongHoc: found.lopHoc.phongHoc,
+    },
+    ngayVaoLop: found.enrollment.ngayVaoLop,
+    ketQuaTestDauVao: found.hocSinh.ketQuaTestDauVao,
+    nguoiLap: found.nguoiLap,
+    donVi: {
+      tenDonVi: found.donVi.tenDonVi,
+      diaChi: found.donVi.diaChi,
+      soDienThoai: found.donVi.soDienThoai,
+      email: found.donVi.email,
+      hinhAnhUrl: found.donVi.hinhAnhUrl,
+    },
+    mauIn: {
+      hienThiLogo: mauIn.hienThiLogo,
+      ghiChuFooter: mauIn.ghiChuFooter,
+      nhanKyNguoiLap: mauIn.nhanKyNguoiLap,
+      nhanKyNguoiNop: mauIn.nhanKyNguoiNop,
+      nhanKyDaiDienDonVi: mauIn.nhanKyDaiDienDonVi,
+    },
+  };
 }

@@ -340,6 +340,7 @@ taiChinhRouter.post(
         soTien: Number(req.body?.soTien),
         phuongThuc: String(req.body?.phuongThuc ?? ""),
         ghiChu: req.body?.ghiChu ? String(req.body.ghiChu) : null,
+        ngayThu: req.body?.ngayThu ? String(req.body.ngayThu) : null,
         actorUserId: req.auth!.user.id,
         ipAddress: req.ip,
       });

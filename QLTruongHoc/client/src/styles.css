@@ -1446,7 +1446,7 @@ button {
     transform: translateX(-100%);
   }
 
-  .sidebar.is-mobile-open {
+  .sidebar.sidebar--mobile-open {
     transform: translateX(0);
   }
 
@@ -1504,8 +1504,16 @@ button {
     width: min(64vw, 360px);
   }
 
-  .summary-grid {
+  .summary-grid,
+  .summary-grid--compact,
+  .portal-link-grid,
+  .portal-action-grid {
     grid-template-columns: 1fr;
+  }
+
+  .portal-upcoming-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 
   .page-header {

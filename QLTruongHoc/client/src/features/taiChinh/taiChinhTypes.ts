@@ -112,6 +112,7 @@ export type KhoanPhaiThuItem = {
   id: number;
   kyThuId: number;
   hocSinh: { id: number; maHocSinh: string; hoTen: string };
+  lopHoc: { id: number; maLop: string; tenLop: string } | null;
   tongTien: string;
   giamTru: string;
   daThu: string;
@@ -160,6 +161,22 @@ export type BaoCaoTaiChinh = {
   theoKyThu: BaoCaoKyThuItem[];
 };
 
+export type DonViInPhieu = {
+  tenDonVi: string;
+  diaChi: string | null;
+  soDienThoai: string | null;
+  email: string | null;
+  hinhAnhUrl: string | null;
+};
+
+export type MauInPhieu = {
+  hienThiLogo: boolean;
+  ghiChuFooter: string | null;
+  nhanKyNguoiLap: string;
+  nhanKyNguoiNop: string;
+  nhanKyDaiDienDonVi: string;
+};
+
 export type PhieuThuDetail = {
   id: number;
   soPhieu: string;
@@ -169,7 +186,10 @@ export type PhieuThuDetail = {
   ngayThu: string;
   hocSinh: { id: number; maHocSinh: string; hoTen: string };
   kyThu: { id: number; maKyThu: string; tenKyThu: string };
+  lopHoc: { id: number; maLop: string; tenLop: string } | null;
   khoanPhaiThu: KhoanPhaiThuItem;
+  donVi: DonViInPhieu;
+  mauIn: MauInPhieu;
 };
 
 export type LoaiDieuChinh = "hoan_phi" | "chuyen_phi" | "bao_luu";

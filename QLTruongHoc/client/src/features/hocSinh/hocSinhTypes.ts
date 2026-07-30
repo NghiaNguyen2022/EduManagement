@@ -194,6 +194,45 @@ export type GhiDanhTrucTiepFormInput = {
   moiQuanHe: MoiQuanHe | "";
 };
 
+export type PhieuNhapHocItem = {
+  id: number;
+  donViId: number;
+  hocSinhId: number;
+  soPhieu: string;
+  ngayNhapHoc: string;
+  nguoiLapId: number;
+  ghiChu: string | null;
+  createdAt: string;
+};
+
+export type DonViInPhieu = {
+  tenDonVi: string;
+  diaChi: string | null;
+  soDienThoai: string | null;
+  email: string | null;
+  hinhAnhUrl: string | null;
+};
+
+export type MauInPhieu = {
+  hienThiLogo: boolean;
+  ghiChuFooter: string | null;
+  nhanKyNguoiLap: string;
+  nhanKyNguoiNop: string;
+  nhanKyDaiDienDonVi: string;
+};
+
+export type PhieuNhapHocDetail = {
+  id: number;
+  soPhieu: string;
+  ngayNhapHoc: string;
+  ghiChu: string | null;
+  hocSinh: { id: number; maHocSinh: string; hoTen: string; ngaySinh: string | null };
+  phuHuynh: { hoTen: string; dienThoai: string; moiQuanHe: MoiQuanHe } | null;
+  nguoiLap: { id: number; hoTen: string };
+  donVi: DonViInPhieu;
+  mauIn: MauInPhieu;
+};
+
 export type GuardianFormInput = {
   dienThoai: string;
   hoTen: string;

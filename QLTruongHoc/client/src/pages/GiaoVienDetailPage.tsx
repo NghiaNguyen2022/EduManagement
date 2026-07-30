@@ -285,8 +285,10 @@ export function GiaoVienDetailPage() {
           <p>Hãy kích hoạt lại giáo viên trước khi tạo tài khoản.</p>
         ) : (
           <p>
-            Tên đăng nhập sẽ được tạo từ số điện thoại; người dùng phải đổi
-            mật khẩu khi đăng nhập lần đầu.
+            Tên đăng nhập được tạo từ họ tên theo dạng <strong>gv_ten.ho</strong>;
+            nếu bị trùng, hệ thống thêm số thứ tự sau phần tên, ví dụ{" "}
+            <strong>gv_ten1.ho</strong>. Người dùng phải đổi mật khẩu khi đăng
+            nhập lần đầu.
           </p>
         )}
       </SectionCard>

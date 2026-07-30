@@ -87,6 +87,12 @@ export const khoanPhaiThu = mysqlTable(
     donViId: bigint("donViId", { mode: "number", unsigned: true }).notNull(),
     kyThuId: bigint("kyThuId", { mode: "number", unsigned: true }).notNull(),
     hocSinhId: bigint("hocSinhId", { mode: "number", unsigned: true }).notNull(),
+    // Nullable: dữ liệu tạo trước migration 037 không thể suy ngược chính xác
+    // 100% nếu học sinh từng học nhiều lớp cùng lúc. Mọi khoản phải thu tạo
+    // MỚI (qua sinhKhoanPhaiThuChoLop) luôn phải có giá trị này — bắt buộc ở
+    // tầng service, không phải ở DB — để tách đúng theo lớp, tránh trùng
+    // khoá và bỏ sót học phí khi 1 học sinh học nhiều lớp trong cùng kỳ thu.
+    lopHocId: bigint("lopHocId", { mode: "number", unsigned: true }),
     tongTien: decimal("tongTien", { precision: 18, scale: 2 }).notNull(),
     giamTru: decimal("giamTru", { precision: 18, scale: 2 }).notNull().default("0.00"),
     daThu: decimal("daThu", { precision: 18, scale: 2 }).notNull().default("0.00"),
@@ -97,9 +103,10 @@ export const khoanPhaiThu = mysqlTable(
     updatedAt: datetime("updatedAt", { mode: "string" }).notNull(),
   },
   (table) => ({
-    kyThuHocSinhUq: uniqueIndex("UQ_KhoanPhaiThu_kyThuId_hocSinhId").on(
+    kyThuHocSinhLopUq: uniqueIndex("UQ_KhoanPhaiThu_kyThuId_hocSinhId_lopHocId").on(
       table.kyThuId,
       table.hocSinhId,
+      table.lopHocId,
     ),
     donViTrangThaiIdx: index("IX_KhoanPhaiThu_donViId_trangThai").on(
       table.donViId,

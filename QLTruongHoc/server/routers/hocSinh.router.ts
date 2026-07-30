@@ -11,9 +11,12 @@ import {
   createHocSinhMoi,
   getHocSinhChoXepLop,
   getHocSinhDetail,
+  getPhieuNhapHocDetail,
   ghiNhanHoSoHocSinh,
   ghiNhanKetQuaTestDauVao,
+  lapPhieuNhapHoc,
   listHocSinh,
+  listPhieuNhapHocTheoHocSinh,
   setHocSinhTrangThai,
   updateHocSinhInfo,
 } from "../services/hocSinh.service.js";
@@ -131,6 +134,72 @@ hocSinhRouter.patch(
           error instanceof Error
             ? error.message
             : "Không thể ghi nhận kết quả test đầu vào.",
+      });
+    }
+  },
+);
+
+// Phiếu xác nhận nhập học — đặt TRƯỚC "/:id" (dù không thật sự trùng do khác
+// số đoạn path, vẫn khai báo trước cho rõ ràng/an toàn khi sửa route sau này).
+hocSinhRouter.get(
+  "/phieu-nhap-hoc/:id",
+  requirePermission("hoc_sinh.xem"),
+  async (req, res) => {
+    try {
+      const detail = await getPhieuNhapHocDetail(
+        req.auth!.currentOrganization!.id,
+        Number(req.params.id),
+      );
+
+      res.json({ ok: true, data: detail });
+    } catch (error) {
+      res.status(404).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Không thể tải phiếu nhập học.",
+      });
+    }
+  },
+);
+
+hocSinhRouter.post(
+  "/:id/phieu-nhap-hoc",
+  requirePermission("hoc_sinh.quan_ly"),
+  async (req, res) => {
+    try {
+      const created = await lapPhieuNhapHoc({
+        donViId: req.auth!.currentOrganization!.id,
+        hocSinhId: Number(req.params.id),
+        ngayNhapHoc: String(req.body?.ngayNhapHoc ?? ""),
+        ghiChu: req.body?.ghiChu ? String(req.body.ghiChu) : null,
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.status(201).json({ ok: true, data: created });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Không thể lập phiếu xác nhận nhập học.",
+      });
+    }
+  },
+);
+
+hocSinhRouter.get(
+  "/:id/phieu-nhap-hoc",
+  requirePermission("hoc_sinh.xem"),
+  async (req, res) => {
+    try {
+      const rows = await listPhieuNhapHocTheoHocSinh(
+        req.auth!.currentOrganization!.id,
+        Number(req.params.id),
+      );
+
+      res.json({ ok: true, data: rows });
+    } catch (error) {
+      res.status(404).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Không thể tải danh sách phiếu nhập học.",
       });
     }
   },

@@ -161,7 +161,7 @@ export function capNhatGiamTruApi(khoanPhaiThuId: number, giamTru: number) {
 
 export function thuTienApi(
   khoanPhaiThuId: number,
-  input: { soTien: number; phuongThuc: string; ghiChu?: string },
+  input: { soTien: number; phuongThuc: string; ghiChu?: string; ngayThu?: string },
 ) {
   return request<{ phieuThu: PhieuThuItem; khoanPhaiThu: KhoanPhaiThuItem }>(
     `/api/tai-chinh/khoan-phai-thu/${khoanPhaiThuId}/thu-tien`,

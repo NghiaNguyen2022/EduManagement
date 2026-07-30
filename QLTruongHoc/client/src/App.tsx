@@ -27,6 +27,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { MyProfilePage } from "./pages/MyProfilePage";
 import { OpenInOrganizationPage } from "./pages/OpenInOrganizationPage";
 import { OrganizationTreePage } from "./pages/OrganizationTreePage";
+import { PhieuNhapHocDetailPage } from "./pages/PhieuNhapHocDetailPage";
+import { PhieuXepLopDetailPage } from "./pages/PhieuXepLopDetailPage";
 import { PortalLandingPage } from "./pages/PortalLandingPage";
 import { RolePermissionPage } from "./pages/RolePermissionPage";
 import { SchedulePage } from "./pages/SchedulePage";
@@ -113,6 +115,8 @@ function ProtectedApp() {
 
         <Route path="/students/:id" element={<StudentDetailPage />} />
 
+        <Route path="/students/phieu-nhap-hoc/:id" element={<PhieuNhapHocDetailPage />} />
+
         <Route path="/teachers" element={<TeachersPage />} />
 
         <Route path="/teachers/:id" element={<GiaoVienDetailPage />} />
@@ -120,6 +124,8 @@ function ProtectedApp() {
         <Route path="/classes" element={<ClassesPage />} />
 
         <Route path="/classes/:id" element={<ClassDetailPage />} />
+
+        <Route path="/classes/phieu-xep-lop/:id" element={<PhieuXepLopDetailPage />} />
 
         <Route path="/chuong-trinh/:id" element={<ChuongTrinhDetailPage />} />
 
