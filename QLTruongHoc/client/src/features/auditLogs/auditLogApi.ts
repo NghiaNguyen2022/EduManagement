@@ -1,3 +1,4 @@
+import { fetchApp } from "../../utils/appUrl";
 import type {
   AuditLogDetail,
   AuditLogListResult,
@@ -12,7 +13,7 @@ type ApiResponse<T> = {
 async function request<T>(
   url: string,
 ): Promise<T> {
-  const response = await fetch(url, {
+  const response = await fetchApp(url, {
     credentials: "include",
   });
 

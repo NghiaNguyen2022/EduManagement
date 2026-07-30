@@ -38,6 +38,41 @@ import { xinPhepRouter } from "./routers/xinPhep.router.js";
 const app = express();
 
 app.set("trust proxy", 1);
+
+// CloudLinux Passenger có thể giữ nguyên Application URI khi chuyển request
+// vào Express, trong khi Nginx proxy_pass thường bỏ tiền tố này. Chuẩn hóa
+// req.url giúp cùng một build chạy đúng trong cả hai mô hình triển khai.
+app.use((req, _res, next) => {
+  if (env.appBasePath === "/") {
+    next();
+    return;
+  }
+
+  const queryIndex = req.url.indexOf("?");
+  const requestPath =
+    queryIndex >= 0
+      ? req.url.slice(0, queryIndex)
+      : req.url;
+  const query =
+    queryIndex >= 0
+      ? req.url.slice(queryIndex)
+      : "";
+
+  if (
+    requestPath === env.appBasePath ||
+    requestPath.startsWith(
+      `${env.appBasePath}/`,
+    )
+  ) {
+    req.url =
+      (requestPath.slice(
+        env.appBasePath.length,
+      ) || "/") + query;
+  }
+
+  next();
+});
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -105,8 +140,8 @@ if (env.nodeEnv === "production") {
 async function startServer(): Promise<void> {
   await checkDbConnection();
 
-  app.listen(env.port, "0.0.0.0", () => {
-    console.log(`QLTruongHoc đang chạy tại http://0.0.0.0:${env.port}`);
+  app.listen(env.port, env.host, () => {
+    console.log(`QLTruongHoc đang chạy tại http://${env.host}:${env.port}`);
   });
 }
 

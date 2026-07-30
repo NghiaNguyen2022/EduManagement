@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { appUrl } from "../../utils/appUrl";
 
 import { NotificationBell } from "./NotificationBell";
 import {
@@ -89,7 +90,7 @@ export function Topbar({
           >
             {userAvatarUrl ? (
               <img
-                src={userAvatarUrl}
+                src={appUrl(userAvatarUrl)}
                 alt=""
                 className="user-menu__avatar user-menu__avatar--image"
               />

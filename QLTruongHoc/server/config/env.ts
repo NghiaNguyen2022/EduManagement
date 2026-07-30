@@ -78,6 +78,19 @@ function getPositiveIntegerEnv(
   return value;
 }
 
+function normalizeCookiePath(value: string | undefined) {
+  const pathValue = value?.trim() || "/";
+  const withLeadingSlash = pathValue.startsWith("/")
+    ? pathValue
+    : `/${pathValue}`;
+
+  if (withLeadingSlash === "/") {
+    return withLeadingSlash;
+  }
+
+  return withLeadingSlash.replace(/\/+$/, "");
+}
+
 export const env = {
   nodeEnv:
     process.env.NODE_ENV?.trim() ||
@@ -86,6 +99,23 @@ export const env = {
   port: getPositiveIntegerEnv(
     "PORT",
     3100,
+  ),
+
+  host:
+    process.env.HOST?.trim() ||
+    "127.0.0.1",
+
+  authCookieName:
+    process.env.AUTH_COOKIE_NAME?.trim() ||
+    "qlth_session",
+
+  cookiePath: normalizeCookiePath(
+    process.env.COOKIE_PATH,
+  ),
+
+  appBasePath: normalizeCookiePath(
+    process.env.APP_BASE_PATH ??
+      process.env.COOKIE_PATH,
   ),
 
   database: {

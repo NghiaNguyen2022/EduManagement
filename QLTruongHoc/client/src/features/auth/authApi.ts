@@ -1,3 +1,4 @@
+import { fetchApp } from "../../utils/appUrl";
 import type {
   AuthContextData,
 } from "./authTypes";
@@ -39,7 +40,7 @@ async function request<T>(
   let response: Response;
 
   try {
-    response = await fetch(url, {
+    response = await fetchApp(url, {
       credentials: "include",
       headers: {
         "Content-Type":
@@ -99,7 +100,7 @@ export async function logoutApi() {
   let response: Response;
 
   try {
-    response = await fetch(
+    response = await fetchApp(
       "/api/auth/logout",
       {
         method: "POST",

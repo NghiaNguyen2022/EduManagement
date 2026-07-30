@@ -1,3 +1,4 @@
+import { openAppWindow } from "../utils/appUrl";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 
@@ -940,7 +941,7 @@ export function KyThuDetailPage() {
                   type="button"
                   className="primary-button"
                   onClick={() =>
-                    window.open(`/finance/phieu-thu/${thuTienResult.id}?in=1`, "_blank")
+                    openAppWindow(`/finance/phieu-thu/${thuTienResult.id}?in=1`, "_blank")
                   }
                 >
                   In phiếu thu
@@ -949,7 +950,7 @@ export function KyThuDetailPage() {
                 <button
                   type="button"
                   className="secondary-button"
-                  onClick={() => window.open(`/finance/phieu-thu/${thuTienResult.id}`, "_blank")}
+                  onClick={() => openAppWindow(`/finance/phieu-thu/${thuTienResult.id}`, "_blank")}
                 >
                   Xem trước khi in
                 </button>

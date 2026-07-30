@@ -1,3 +1,4 @@
+import { fetchApp } from "../../utils/appUrl";
 type ApiResponse<T> = {
   ok: boolean;
   data?: T;
@@ -8,7 +9,7 @@ export async function uploadFileApi(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch("/api/upload", {
+  const response = await fetchApp("/api/upload", {
     method: "POST",
     credentials: "include",
     body: formData,

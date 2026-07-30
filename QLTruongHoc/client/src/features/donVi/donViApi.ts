@@ -1,3 +1,4 @@
+import { fetchApp } from "../../utils/appUrl";
 import type {
   DonViFormInput,
   DonViItem,
@@ -14,7 +15,7 @@ async function request<T>(
   url: string,
   options?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(url, {
+  const response = await fetchApp(url, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",

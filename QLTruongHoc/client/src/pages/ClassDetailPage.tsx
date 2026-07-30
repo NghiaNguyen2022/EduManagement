@@ -1,3 +1,4 @@
+import { openAppWindow } from "../utils/appUrl";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -1446,7 +1447,7 @@ export function ClassDetailPage() {
                 type="button"
                 className="primary-button"
                 onClick={() =>
-                  window.open(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}?in=1`, "_blank")
+                  openAppWindow(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}?in=1`, "_blank")
                 }
               >
                 In phiếu xếp lớp
@@ -1456,7 +1457,7 @@ export function ClassDetailPage() {
                 type="button"
                 className="secondary-button"
                 onClick={() =>
-                  window.open(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}`, "_blank")
+                  openAppWindow(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}`, "_blank")
                 }
               >
                 Xem trước
@@ -1468,7 +1469,7 @@ export function ClassDetailPage() {
                     type="button"
                     className="primary-button"
                     onClick={() =>
-                      window.open(
+                      openAppWindow(
                         `/students/phieu-nhap-hoc/${xepLopResult.phieuNhapHoc!.id}?in=1`,
                         "_blank",
                       )
@@ -1481,7 +1482,7 @@ export function ClassDetailPage() {
                     type="button"
                     className="secondary-button"
                     onClick={() =>
-                      window.open(
+                      openAppWindow(
                         `/students/phieu-nhap-hoc/${xepLopResult.phieuNhapHoc!.id}`,
                         "_blank",
                       )

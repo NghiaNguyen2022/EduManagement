@@ -1,3 +1,4 @@
+import { fetchApp } from "../../utils/appUrl";
 import type { DashboardSummary } from "./dashboardTypes";
 
 type ApiResponse<T> = {
@@ -7,7 +8,7 @@ type ApiResponse<T> = {
 };
 
 async function request<T>(url: string): Promise<T> {
-  const response = await fetch(url, { credentials: "include" });
+  const response = await fetchApp(url, { credentials: "include" });
   const payload = (await response.json()) as ApiResponse<T>;
 
   if (!response.ok || !payload.ok || payload.data === undefined) {

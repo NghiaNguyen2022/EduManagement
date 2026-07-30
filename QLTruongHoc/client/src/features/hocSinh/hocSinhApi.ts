@@ -1,3 +1,4 @@
+import { fetchApp } from "../../utils/appUrl";
 import type {
   DanhGiaFormInput,
   DanhGiaItem,
@@ -22,7 +23,7 @@ type ApiResponse<T> = {
 };
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
+  const response = await fetchApp(url, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
@@ -125,7 +126,7 @@ export async function addGuardianApi(
   hocSinhId: number,
   input: GuardianFormInput & { confirmCrossOrgReuse?: boolean },
 ) {
-  const response = await fetch(`/api/hoc-sinh/${hocSinhId}/phu-huynh`, {
+  const response = await fetchApp(`/api/hoc-sinh/${hocSinhId}/phu-huynh`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -192,7 +193,7 @@ export function addThanhTichApi(hocSinhId: number, input: ThanhTichFormInput) {
 }
 
 export async function removeThanhTichApi(thanhTichId: number) {
-  const response = await fetch(`/api/hoc-sinh/thanh-tich/${thanhTichId}`, {
+  const response = await fetchApp(`/api/hoc-sinh/thanh-tich/${thanhTichId}`, {
     method: "DELETE",
     credentials: "include",
   });
@@ -227,7 +228,7 @@ export function addDanhGiaApi(hocSinhId: number, input: DanhGiaFormInput) {
 }
 
 export async function removeDanhGiaApi(danhGiaId: number) {
-  const response = await fetch(`/api/hoc-sinh/danh-gia/${danhGiaId}`, {
+  const response = await fetchApp(`/api/hoc-sinh/danh-gia/${danhGiaId}`, {
     method: "DELETE",
     credentials: "include",
   });
@@ -258,7 +259,7 @@ export function listPhieuNhapHocApi(hocSinhId: number) {
 }
 
 export async function removeGuardianApi(hocSinhId: number, linkId: number) {
-  const response = await fetch(`/api/hoc-sinh/${hocSinhId}/phu-huynh/${linkId}`, {
+  const response = await fetchApp(`/api/hoc-sinh/${hocSinhId}/phu-huynh/${linkId}`, {
     method: "DELETE",
     credentials: "include",
   });

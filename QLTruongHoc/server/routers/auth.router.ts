@@ -11,6 +11,7 @@ import {
   logout,
   updateOwnProfile,
 } from "../services/auth.service.js";
+import { env } from "../config/env.js";
 
 export const authRouter = Router();
 
@@ -29,7 +30,7 @@ authRouter.post("/login", async (req, res) => {
       secure: process.env.NODE_ENV === "production",
       maxAge:
         AUTH_SESSION_DAYS * 24 * 60 * 60 * 1000,
-      path: "/",
+      path: env.cookiePath,
     });
 
     res.json({
@@ -60,7 +61,10 @@ authRouter.post("/logout", async (req, res) => {
   });
 
   res.clearCookie(AUTH_COOKIE_NAME, {
-    path: "/",
+    path: env.cookiePath,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
   });
 
   res.json({

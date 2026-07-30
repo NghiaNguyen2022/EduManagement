@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { appUrl } from "../../utils/appUrl";
 
 import { uploadFileApi } from "../../features/upload/uploadApi";
 import { FormField } from "./FormField";
@@ -61,9 +62,9 @@ export function FileUploadField({
         {value ? (
           <div className="file-upload-field__preview">
             {previewAsImage ? (
-              <img src={value} alt="" className="file-upload-field__thumb" />
+              <img src={appUrl(value)} alt="" className="file-upload-field__thumb" />
             ) : (
-              <a href={value} target="_blank" rel="noreferrer" className="text-button">
+              <a href={appUrl(value)} target="_blank" rel="noreferrer" className="text-button">
                 Xem tệp đã tải lên
               </a>
             )}

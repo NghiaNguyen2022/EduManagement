@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { appUrl } from "../utils/appUrl";
 
 import {
   DateField,
@@ -548,7 +549,7 @@ export function StudentDetailPage() {
       <div className="profile-header">
         {detail.hocSinh.hinhAnhUrl ? (
           <img
-            src={detail.hocSinh.hinhAnhUrl}
+            src={appUrl(detail.hocSinh.hinhAnhUrl)}
             alt=""
             className="profile-avatar"
           />
@@ -1122,7 +1123,7 @@ export function StudentDetailPage() {
                   <td>
                     {item.tepMinhChungUrl ? (
                       <a
-                        href={item.tepMinhChungUrl}
+                        href={appUrl(item.tepMinhChungUrl)}
                         target="_blank"
                         rel="noreferrer"
                         className="text-button"

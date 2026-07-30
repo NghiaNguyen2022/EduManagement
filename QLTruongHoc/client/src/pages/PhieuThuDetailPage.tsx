@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { appUrl } from "../utils/appUrl";
 
 import { GuardedLink } from "../components/shared/GuardedLink";
 import { PageHeader } from "../components/shared/PageHeader";
@@ -91,7 +92,7 @@ export function PhieuThuDetailPage() {
       <div className="phieu-slip">
         <div className="phieu-slip__header">
           {detail.mauIn.hienThiLogo && detail.donVi.hinhAnhUrl ? (
-            <img src={detail.donVi.hinhAnhUrl} alt="" className="phieu-slip__logo" />
+            <img src={appUrl(detail.donVi.hinhAnhUrl)} alt="" className="phieu-slip__logo" />
           ) : null}
 
           <div className="phieu-slip__donvi">

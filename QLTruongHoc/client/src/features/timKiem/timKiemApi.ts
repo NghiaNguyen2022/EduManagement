@@ -1,3 +1,4 @@
+import { fetchApp } from "../../utils/appUrl";
 import type { GiaoVienItem } from "../giaoVien/giaoVienTypes";
 import type { HocSinhItem } from "../hocSinh/hocSinhTypes";
 import type { LopHocItem } from "../lopHoc/lopHocTypes";
@@ -9,7 +10,7 @@ type ApiResponse<T> = {
 };
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
+  const response = await fetchApp(url, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",

@@ -1,3 +1,4 @@
+import { appUrl, openAppWindow } from "../utils/appUrl";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -518,7 +519,7 @@ export function StudentsPage() {
                   type="button"
                   className="primary-button"
                   onClick={() =>
-                    window.open(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}?in=1`, "_blank")
+                    openAppWindow(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}?in=1`, "_blank")
                   }
                 >
                   In phiếu xếp lớp
@@ -528,7 +529,7 @@ export function StudentsPage() {
                   type="button"
                   className="secondary-button"
                   onClick={() =>
-                    window.open(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}`, "_blank")
+                    openAppWindow(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}`, "_blank")
                   }
                 >
                   Xem trước
@@ -540,7 +541,7 @@ export function StudentsPage() {
                       type="button"
                       className="primary-button"
                       onClick={() =>
-                        window.open(
+                        openAppWindow(
                           `/students/phieu-nhap-hoc/${xepLopResult.phieuNhapHoc!.id}?in=1`,
                           "_blank",
                         )
@@ -553,7 +554,7 @@ export function StudentsPage() {
                       type="button"
                       className="secondary-button"
                       onClick={() =>
-                        window.open(
+                        openAppWindow(
                           `/students/phieu-nhap-hoc/${xepLopResult.phieuNhapHoc!.id}`,
                           "_blank",
                         )
@@ -605,7 +606,7 @@ export function StudentsPage() {
                     <div className="student-row-identity">
                       {student.hinhAnhUrl ? (
                         <img
-                          src={student.hinhAnhUrl}
+                          src={appUrl(student.hinhAnhUrl)}
                           alt=""
                           className="profile-avatar profile-avatar--sm"
                         />

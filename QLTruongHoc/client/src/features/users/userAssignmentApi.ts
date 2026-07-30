@@ -1,3 +1,4 @@
+import { fetchApp } from "../../utils/appUrl";
 import type {
   AuthOrganization,
 } from "../auth/authTypes";
@@ -15,7 +16,7 @@ async function request<T>(
   url: string,
   options?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(url, {
+  const response = await fetchApp(url, {
     credentials: "include",
     headers: {
       "Content-Type":
@@ -84,7 +85,7 @@ export async function removeAssignmentApi(
   userId: number,
   assignmentId: number,
 ) {
-  const response = await fetch(
+  const response = await fetchApp(
     `/api/users/${userId}/assignments/${assignmentId}`,
     {
       method: "DELETE",

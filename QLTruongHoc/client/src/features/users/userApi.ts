@@ -1,3 +1,4 @@
+import { fetchApp } from "../../utils/appUrl";
 import type {
   RoleOption,
   UserDetail,
@@ -14,7 +15,7 @@ async function request<T>(
   url: string,
   options?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(url, {
+  const response = await fetchApp(url, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
@@ -73,7 +74,7 @@ export async function updateUserStatusApi(
   userId: number,
   status: "hoat_dong" | "tam_khoa",
 ) {
-  const response = await fetch(
+  const response = await fetchApp(
     `/api/users/${userId}/status`,
     {
       method: "PATCH",

@@ -13,6 +13,9 @@ import {
 import {
   UnsavedChangesProvider,
 } from "./features/navigation/UnsavedChangesContext";
+import {
+  routerBasename,
+} from "./utils/appUrl";
 import "./styles/theme.css";
 import "./styles.css";
 import "./styles/auth.css";
@@ -35,7 +38,7 @@ ReactDOM.createRoot(
   )!,
 ).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename}>
       <AuthProvider>
         <UnsavedChangesProvider>
           <App />

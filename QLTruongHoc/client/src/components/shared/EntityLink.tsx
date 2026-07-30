@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { appUrl } from "../../utils/appUrl";
 
 import { useAuth } from "../../features/auth/AuthContext";
 import { GuardedLink } from "./GuardedLink";
@@ -15,7 +16,7 @@ function buildOrgTabHref(donViId: number, to: string) {
     to,
   });
 
-  return `/mo-don-vi?${params.toString()}`;
+  return appUrl(`/mo-don-vi?${params.toString()}`);
 }
 
 /**

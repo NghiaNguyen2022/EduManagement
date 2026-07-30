@@ -1,4 +1,5 @@
 import type { MouseEvent, ReactNode } from "react";
+import { appUrl } from "../../utils/appUrl";
 
 import { useGuardedNavigate } from "../../features/navigation/UnsavedChangesContext";
 
@@ -40,7 +41,7 @@ export function GuardedLink({
   }
 
   return (
-    <a href={to} className={className} title={title} onClick={handleClick}>
+    <a href={appUrl(to)} className={className} title={title} onClick={handleClick}>
       {children}
     </a>
   );

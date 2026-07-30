@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { appUrl } from "../utils/appUrl";
 
 import { SelectField, TextAreaField, TextField } from "../components/form";
 import { OrgLink } from "../components/shared/EntityLink";
@@ -351,7 +352,7 @@ export function ThongBaoPage() {
                     {item.tepDinhKemUrl ? (
                       <small className="thong-bao-table__attachment">
                         <a
-                          href={item.tepDinhKemUrl}
+                          href={appUrl(item.tepDinhKemUrl)}
                           target="_blank"
                           rel="noreferrer"
                           className="thong-bao-attachment-link"
