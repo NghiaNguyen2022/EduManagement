@@ -9,3 +9,8 @@ dist-server/
 .DS_Store
 coverage/
 uploads/
+.claude/
+.npm-cache-deploy/
+.pnpm-store/
+.tmp/
+.video-tools/
