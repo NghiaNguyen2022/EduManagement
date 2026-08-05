@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 
-import { DateField, SelectField, TextAreaField } from "../components/form";
 import { EntityLink } from "../components/shared/EntityLink";
 import { GuardedLink } from "../components/shared/GuardedLink";
 import { PageHeader } from "../components/shared/PageHeader";
@@ -31,11 +30,9 @@ import {
       loadTeacherPortalOverviewApi,
 } from "../features/portal/portalApi";
 import type {
-      ParentPortalChild,
       ParentPortalOverview,
       TeacherPortalOverview,
 } from "../features/portal/portalTypes";
-import { createDonXinPhepApi } from "../features/xinPhep/xinPhepApi";
 
 function RoleLink({ label, description, to }: { label: string; description: string; to: string }) {
       return (
@@ -115,398 +112,6 @@ function groupBaoCaoKyThuTheoDonVi(
       );
 }
 
-const KHOAN_PHAI_THU_TRANG_THAI_LABEL: Record<string, string> = {
-      chua_thu: "Chưa thu",
-      thu_mot_phan: "Thu một phần",
-      da_thu_du: "Đã thu đủ",
-};
-
-const NGUOI_GUI_LABEL: Record<string, string> = {
-      giao_vien: "Giáo viên",
-      phu_huynh: "Phụ huynh",
-      hoc_vu: "Học vụ",
-      khac: "Khác",
-};
-
-const XIN_PHEP_TRANG_THAI_LABEL: Record<string, string> = {
-      cho_duyet: "Chờ duyệt",
-      da_duyet: "Đã duyệt",
-      tu_choi: "Từ chối",
-};
-
-const LOAI_DANH_GIA_LABEL: Record<string, string> = {
-      giua_ky: "Giữa kỳ",
-      cuoi_ky: "Cuối kỳ",
-      khac: "Khác",
-      theo_thang: "Theo tháng",
-      theo_quy: "Theo quý",
-      theo_nam: "Theo năm",
-};
-
-const LINH_VUC_PHAT_TRIEN_LABEL: Record<string, string> = {
-      the_chat: "Thể chất",
-      nhan_thuc: "Nhận thức",
-      ngon_ngu: "Ngôn ngữ",
-      tinh_cam_ky_nang_xa_hoi: "Tình cảm - Kỹ năng xã hội",
-      tham_my: "Thẩm mỹ",
-};
-
-const TRANG_THAI_HOC_SINH_LABEL: Record<string, string> = {
-      tiep_nhan: "Tiếp nhận",
-      dang_hoc: "Đang học",
-      bao_luu: "Bảo lưu",
-      ngung_hoc: "Ngừng học",
-      hoan_thanh: "Hoàn thành",
-};
-
-function ChildLeaveRequestForm({
-      hocSinhId,
-      activeClasses,
-      onCreated,
-}: {
-      hocSinhId: number;
-      activeClasses: ParentPortalChild["activeClasses"];
-      onCreated: () => void;
-}) {
-      const [open, setOpen] = useState(false);
-      const [lopHocId, setLopHocId] = useState("");
-      const [tuNgay, setTuNgay] = useState("");
-      const [denNgay, setDenNgay] = useState("");
-      const [lyDo, setLyDo] = useState("");
-      const [submitting, setSubmitting] = useState(false);
-      const [error, setError] = useState("");
-
-      const lopHocOptions = activeClasses.map((item) => ({
-            value: item.lopHoc.id,
-            label: item.lopHoc.tenLop,
-      }));
-
-      async function handleSubmit() {
-            setSubmitting(true);
-            setError("");
-
-            try {
-                  await createDonXinPhepApi({
-                        hocSinhId,
-                        lopHocId: Number(lopHocId),
-                        tuNgay,
-                        denNgay,
-                        lyDo,
-                  });
-                  setLopHocId("");
-                  setTuNgay("");
-                  setDenNgay("");
-                  setLyDo("");
-                  setOpen(false);
-                  onCreated();
-            } catch (submitError) {
-                  setError(
-                        submitError instanceof Error ? submitError.message : "Không thể gửi đơn xin phép.",
-                  );
-            } finally {
-                  setSubmitting(false);
-            }
-      }
-
-      if (!open) {
-            return (
-                  <button type="button" className="text-button" onClick={() => setOpen(true)}>
-                        + Gửi đơn xin phép mới
-                  </button>
-            );
-      }
-
-      return (
-            <div className="portal-leave-form">
-                  {error ? <div className="form-error">{error}</div> : null}
-
-                  <SelectField
-                        label="Lớp"
-                        required
-                        value={lopHocId}
-                        options={lopHocOptions}
-                        placeholder="-- Chọn lớp --"
-                        onChange={setLopHocId}
-                  />
-
-                  <DateField label="Từ ngày" value={tuNgay} onChange={setTuNgay} />
-                  <DateField
-                        label="Đến ngày"
-                        value={denNgay}
-                        onChange={setDenNgay}
-                        min={tuNgay || undefined}
-                  />
-
-                  <TextAreaField label="Lý do" value={lyDo} onChange={setLyDo} rows={2} />
-
-                  <div className="portal-leave-form__actions">
-                        <button
-                              type="button"
-                              className="text-button"
-                              disabled={submitting}
-                              onClick={() => setOpen(false)}
-                        >
-                              Huỷ
-                        </button>
-                        <button
-                              type="button"
-                              className="primary-button"
-                              disabled={submitting || !lopHocId || !tuNgay || !denNgay || !lyDo.trim()}
-                              onClick={() => void handleSubmit()}
-                        >
-                              {submitting ? "Đang gửi..." : "Gửi đơn"}
-                        </button>
-                  </div>
-            </div>
-      );
-}
-
-type ParentChildTabId = "hoc-tap" | "hoc-phi" | "xin-phep" | "trao-doi";
-
-const PARENT_CHILD_TABS: Array<{ id: ParentChildTabId; label: string }> = [
-      { id: "hoc-tap", label: "Học tập" },
-      { id: "hoc-phi", label: "Học phí" },
-      { id: "xin-phep", label: "Xin phép" },
-      { id: "trao-doi", label: "Trao đổi" },
-];
-
-function ParentChildCard({
-      child,
-      onLeaveRequestCreated,
-}: {
-      child: ParentPortalChild;
-      onLeaveRequestCreated: () => void;
-}) {
-      const [activeTab, setActiveTab] = useState<ParentChildTabId>("hoc-tap");
-
-      const tabBadges: Record<ParentChildTabId, number> = {
-            "hoc-tap": child.thanhTich.length + child.danhGia.length,
-            "hoc-phi": child.khoanPhaiThu.length,
-            "xin-phep": child.donXinPhep.length,
-            "trao-doi": child.traoDoi.length,
-      };
-
-      return (
-            <article className="portal-child-card">
-                  <header className="portal-child-card__header">
-                        <div>
-                              <strong>{child.hocSinh.hoTen}</strong>
-                              <small>{child.hocSinh.maHocSinh}</small>
-                        </div>
-                        <span>
-                              {child.lienKet.laLienHeChinh ? "Liên hệ chính" : "Liên hệ phụ"}
-                        </span>
-                  </header>
-
-                  <div className="portal-child-card__meta">
-                        <span>Ngày sinh: {child.hocSinh.ngaySinh || "—"}</span>
-                        <span>
-                              Trạng thái:{" "}
-                              {TRANG_THAI_HOC_SINH_LABEL[child.hocSinh.trangThai] ??
-                                    child.hocSinh.trangThai}
-                        </span>
-                        <span>Đón trẻ: {child.lienKet.duocDonTre ? "Có" : "Không"}</span>
-                  </div>
-
-                  {child.absenceSummary.unexcused > 0 ? (
-                        <div className="notice-banner notice-banner--danger">
-                              <span className="notice-banner__icon" aria-hidden="true">
-                                    ⚠️
-                              </span>
-                              <div>
-                                    <strong>
-                                          Con vắng học {child.absenceSummary.unexcused} buổi chưa rõ lý do
-                                          gần đây
-                                    </strong>
-                                    <p>
-                                          {child.absences
-                                                .filter((item) => item.trangThai === "vang_khong_phep")
-                                                .slice(0, 5)
-                                                .map((item) => `${item.ngayHoc} · ${item.tenLop}`)
-                                                .join(" — ")}
-                                    </p>
-                              </div>
-                        </div>
-                  ) : null}
-
-                  <div className="portal-class-list">
-                        {child.activeClasses.length === 0 ? (
-                              <div className="empty-cell">Chưa có lớp đang học.</div>
-                        ) : (
-                              child.activeClasses.map((item) => (
-                                    <div className="portal-class-chip" key={item.enrollmentId}>
-                                          <strong>{item.lopHoc.tenLop}</strong>
-                                          <span>{item.lopHoc.maLop}</span>
-                                          <small>
-                                                {item.ngayVaoLop} · {item.trangThai}
-                                          </small>
-                                    </div>
-                              ))
-                        )}
-                  </div>
-
-                  <div className="portal-child-schedule">
-                        <strong>Lịch học gần tới</strong>
-                        {child.schedules.length === 0 ? (
-                              <div className="empty-cell">
-                                    Chưa có lịch học được sinh cho các lớp của con.
-                              </div>
-                        ) : (
-                              child.schedules.slice(0, 4).map((item) => (
-                                    <div className="portal-schedule-row" key={item.buoiHoc.id}>
-                                          <span>{formatDay(item.buoiHoc.ngayHoc)}</span>
-                                          <strong>
-                                                {item.buoiHoc.gioBatDau.slice(0, 5)} -{" "}
-                                                {item.buoiHoc.gioKetThuc.slice(0, 5)} · {item.lopHocTenLop}
-                                          </strong>
-                                          <small>
-                                                {item.giaoVienHoTen || "Chưa phân công"} ·{" "}
-                                                {item.buoiHoc.phongHoc || "—"}
-                                          </small>
-                                    </div>
-                              ))
-                        )}
-                  </div>
-
-                  <TabBar
-                        tabs={PARENT_CHILD_TABS.map((tab) => ({
-                              ...tab,
-                              badge: tabBadges[tab.id],
-                        }))}
-                        activeId={activeTab}
-                        onChange={(id) => setActiveTab(id as ParentChildTabId)}
-                  />
-
-                  {activeTab === "hoc-tap" ? (
-                        <>
-                              <div
-                                    className="portal-fee-box parent-portal-anchor"
-                                    id={`thanh-tich-${child.hocSinh.id}`}
-                              >
-                                    <strong>Chứng chỉ / Thành tích</strong>
-                                    {child.thanhTich.length === 0 ? (
-                                          <div className="empty-cell">Chưa có chứng chỉ/thành tích nào.</div>
-                                    ) : (
-                                          child.thanhTich.map((item) => (
-                                                <div className="portal-fee-row" key={item.id}>
-                                                      <span>{item.tenThanhTich}</span>
-                                                      <strong>{item.ketQua || "—"}</strong>
-                                                      <small>
-                                                            {item.ngayDat || "—"}
-                                                            {item.noiCap ? ` · ${item.noiCap}` : ""}
-                                                      </small>
-                                                </div>
-                                          ))
-                                    )}
-                              </div>
-
-                              <div
-                                    className="portal-fee-box parent-portal-anchor"
-                                    id={`ket-qua-${child.hocSinh.id}`}
-                              >
-                                    <strong>Kết quả học tập</strong>
-                                    {child.danhGia.length === 0 ? (
-                                          <div className="empty-cell">Chưa có kết quả học tập nào.</div>
-                                    ) : (
-                                          child.danhGia.map((item) => (
-                                                <div className="portal-fee-row" key={item.id}>
-                                                      <span>
-                                                            {item.lopHoc.tenLop} · {LOAI_DANH_GIA_LABEL[item.loaiDanhGia]}
-                                                            {item.linhVucPhatTrien
-                                                                  ? ` · ${LINH_VUC_PHAT_TRIEN_LABEL[item.linhVucPhatTrien]}`
-                                                                  : ""}
-                                                      </span>
-                                                      <strong>
-                                                            {item.diemSo ? `${item.diemSo} điểm` : item.xepLoai || "—"}
-                                                      </strong>
-                                                      <small>
-                                                            {item.ngayDanhGia}
-                                                            {item.nhanXet ? ` · ${item.nhanXet}` : ""}
-                                                      </small>
-                                                </div>
-                                          ))
-                                    )}
-                              </div>
-                        </>
-                  ) : null}
-
-                  {activeTab === "hoc-phi" ? (
-                        <div
-                              className="portal-fee-box parent-portal-anchor"
-                              id={`hoc-phi-${child.hocSinh.id}`}
-                        >
-                              {child.khoanPhaiThu.length === 0 ? (
-                                    <div className="empty-cell">Chưa có khoản phải thu nào.</div>
-                              ) : (
-                                    child.khoanPhaiThu.map((item) => {
-                                          const conLai =
-                                                Number(item.tongTien) - Number(item.giamTru) - Number(item.daThu);
-
-                                          return (
-                                                <div className="portal-fee-row" key={item.id}>
-                                                      <span>{item.tenKyThu}</span>
-                                                      <strong>{formatTien(item.tongTien)}</strong>
-                                                      <small>
-                                                            {KHOAN_PHAI_THU_TRANG_THAI_LABEL[item.trangThai]}
-                                                            {conLai > 0 ? ` · Còn lại ${formatTien(String(conLai))}` : ""}
-                                                      </small>
-                                                </div>
-                                          );
-                                    })
-                              )}
-                        </div>
-                  ) : null}
-
-                  {activeTab === "xin-phep" ? (
-                        <div
-                              className="portal-fee-box parent-portal-anchor"
-                              id={`xin-phep-${child.hocSinh.id}`}
-                        >
-                              {child.donXinPhep.length === 0 ? (
-                                    <div className="empty-cell">Chưa gửi đơn xin phép nào.</div>
-                              ) : (
-                                    child.donXinPhep.map((item) => (
-                                          <div className="portal-fee-row" key={item.id}>
-                                                <span>
-                                                      {item.tenLop} · {item.tuNgay} - {item.denNgay}
-                                                </span>
-                                                <strong>{item.lyDo}</strong>
-                                                <small>{XIN_PHEP_TRANG_THAI_LABEL[item.trangThai]}</small>
-                                          </div>
-                                    ))
-                              )}
-                              <ChildLeaveRequestForm
-                                    hocSinhId={child.hocSinh.id}
-                                    activeClasses={child.activeClasses}
-                                    onCreated={onLeaveRequestCreated}
-                              />
-                        </div>
-                  ) : null}
-
-                  {activeTab === "trao-doi" ? (
-                        <div
-                              className="portal-exchange-box parent-portal-anchor"
-                              id={`trao-doi-${child.hocSinh.id}`}
-                        >
-                              {child.traoDoi.length === 0 ? (
-                                    <div className="empty-cell">Chưa có trao đổi nào.</div>
-                              ) : (
-                                    child.traoDoi.map((item) => (
-                                          <div className="portal-exchange-row" key={item.id}>
-                                                <span>{formatDateTime(item.createdAt)}</span>
-                                                <strong>
-                                                      {NGUOI_GUI_LABEL[item.nguoiGuiVaiTro] ?? item.nguoiGuiVaiTro}
-                                                </strong>
-                                                <small>{item.noiDung}</small>
-                                          </div>
-                                    ))
-                              )}
-                        </div>
-                  ) : null}
-            </article>
-      );
-}
-
 export function PortalLandingPage() {
       const { auth } = useAuth();
       const { roleSlug } = useParams();
@@ -525,17 +130,6 @@ export function PortalLandingPage() {
 
       const portalRole = roleSlug ? findPortalRole(roleSlug) : null;
       const isParentPortal = portalRole?.slug === "parent";
-
-      async function refreshOverview() {
-            try {
-                  const data = await loadParentPortalOverviewApi();
-                  setParentOverview(data);
-            } catch (error) {
-                  setParentError(
-                        error instanceof Error ? error.message : "Không thể tải portal phụ huynh.",
-                  );
-            }
-      }
 
       useEffect(() => {
             if (!isParentPortal) {
@@ -708,6 +302,14 @@ export function PortalLandingPage() {
                         icon: "📊",
                         tone: "info" as const,
                   },
+                  {
+                        title: "Nhắn tin",
+                        value: "Mở hộp thư",
+                        note: "Xem tất cả hội thoại với nhà trường ở 1 chỗ",
+                        icon: "💬",
+                        tone: "secondary" as const,
+                        to: "/portal/parent/nhan-tin",
+                  },
             ];
 
             return (
@@ -722,16 +324,28 @@ export function PortalLandingPage() {
                         {parentError ? <div className="form-error">{parentError}</div> : null}
 
                         <section className="summary-grid parent-portal-anchor" id="tong-quan">
-                              {stats.map((stat) => (
-                                    <StatCard
-                                          key={stat.title}
-                                          title={stat.title}
-                                          value={stat.value}
-                                          note={stat.note}
-                                          icon={stat.icon}
-                                          tone={stat.tone}
-                                    />
-                              ))}
+                              {stats.map((stat) =>
+                                    "to" in stat && stat.to ? (
+                                          <Link key={stat.title} to={stat.to} className="stat-card-link">
+                                                <StatCard
+                                                      title={stat.title}
+                                                      value={stat.value}
+                                                      note={stat.note}
+                                                      icon={stat.icon}
+                                                      tone={stat.tone}
+                                                />
+                                          </Link>
+                                    ) : (
+                                          <StatCard
+                                                key={stat.title}
+                                                title={stat.title}
+                                                value={stat.value}
+                                                note={stat.note}
+                                                icon={stat.icon}
+                                                tone={stat.tone}
+                                          />
+                                    ),
+                              )}
                         </section>
 
                         {parentLoading ? (
@@ -818,18 +432,55 @@ export function PortalLandingPage() {
                                                             title={group.donVi.tenDonVi}
                                                             subtitle={
                                                                   group.children.length > 1
-                                                                        ? `${group.children.length} con đang theo học tại đơn vị này`
-                                                                        : "Chi tiết con đang theo học tại đơn vị này"
+                                                                        ? `${group.children.length} con đang theo học tại đơn vị này — chọn 1 con để xem đầy đủ`
+                                                                        : "Chọn con để xem đầy đủ thông tin"
                                                             }
                                                             className="section-card--wide"
                                                       >
                                                             <div className="portal-child-grid">
                                                                   {group.children.map((child) => (
-                                                                        <ParentChildCard
+                                                                        <Link
                                                                               key={child.hocSinh.id}
-                                                                              child={child}
-                                                                              onLeaveRequestCreated={() => void refreshOverview()}
-                                                                        />
+                                                                              to={`/portal/parent/con/${child.hocSinh.id}`}
+                                                                              className="portal-child-card portal-child-card--link"
+                                                                        >
+                                                                              <header className="portal-child-card__header">
+                                                                                    <div>
+                                                                                          <strong>{child.hocSinh.hoTen}</strong>
+                                                                                          <small>{child.hocSinh.maHocSinh}</small>
+                                                                                    </div>
+                                                                                    <span>
+                                                                                          {child.lienKet.laLienHeChinh ? "Liên hệ chính" : "Liên hệ phụ"}
+                                                                                    </span>
+                                                                              </header>
+
+                                                                              <div className="portal-child-card__meta">
+                                                                                    <span>
+                                                                                          {child.activeClasses[0]?.lopHoc.tenLop ?? "Chưa có lớp"}
+                                                                                    </span>
+                                                                              </div>
+
+                                                                              {child.absenceSummary.unexcused > 0 ? (
+                                                                                    <div className="notice-banner notice-banner--danger">
+                                                                                          <span className="notice-banner__icon" aria-hidden="true">
+                                                                                                ⚠️
+                                                                                          </span>
+                                                                                          <strong>
+                                                                                                Vắng {child.absenceSummary.unexcused} buổi chưa rõ lý do
+                                                                                          </strong>
+                                                                                    </div>
+                                                                              ) : null}
+
+                                                                              <div className="portal-child-summary-card__stats">
+                                                                                    <span>
+                                                                                          📊 {child.thanhTich.length + child.danhGia.length} kết quả
+                                                                                    </span>
+                                                                                    <span>🩺 {child.sucKhoe.length} bản ghi sức khỏe</span>
+                                                                                    <span>📷 {child.hoatDong.length} hoạt động</span>
+                                                                              </div>
+
+                                                                              <span className="text-button">Xem chi tiết →</span>
+                                                                        </Link>
                                                                   ))}
                                                             </div>
                                                       </SectionCard>

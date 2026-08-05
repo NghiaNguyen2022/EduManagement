@@ -4,12 +4,14 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import {
   DateField,
+  MultiFileUploadField,
   NumberInput,
   SelectField,
   TextAreaField,
   TextField,
 } from "../components/form";
 import { PageHeader } from "../components/shared/PageHeader";
+import { PhotoGallery } from "../components/shared/PhotoGallery";
 import { SectionCard } from "../components/shared/SectionCard";
 import { TabBar } from "../components/shared/TabBar";
 import { useAuth } from "../features/auth/AuthContext";
@@ -17,6 +19,12 @@ import { listChuongTrinhApi } from "../features/chuongTrinh/chuongTrinhApi";
 import type { ChuongTrinhItem } from "../features/chuongTrinh/chuongTrinhTypes";
 import { listGiaoVienApi } from "../features/giaoVien/giaoVienApi";
 import type { GiaoVienItem } from "../features/giaoVien/giaoVienTypes";
+import {
+  addHoatDongApi,
+  listHoatDongByLopHocApi,
+  removeHoatDongApi,
+} from "../features/hoatDong/hoatDongApi";
+import type { HoatDongFormInput, HoatDongItem } from "../features/hoatDong/hoatDongTypes";
 import { addDanhGiaApi, listHocSinhApi } from "../features/hocSinh/hocSinhApi";
 import type {
   HocSinhItem,
@@ -208,7 +216,17 @@ type TabId =
   | "hoc-sinh"
   | "lich-hoc"
   | "buoi-hoc"
-  | "trao-doi";
+  | "trao-doi"
+  | "hoat-dong";
+
+const emptyHoatDongForm: HoatDongFormInput = {
+  lopHocId: "",
+  ngayHoatDong: todayIso(),
+  tieuDe: "",
+  moTa: "",
+  urls: [],
+  hocSinhIds: [],
+};
 
 export function ClassDetailPage() {
   const { id } = useParams();
@@ -272,6 +290,14 @@ export function ClassDetailPage() {
     emptyTraoDoiForm,
   );
   const [savingTraoDoi, setSavingTraoDoi] = useState(false);
+
+  const [hoatDongList, setHoatDongList] = useState<HoatDongItem[]>([]);
+  const [loadingHoatDong, setLoadingHoatDong] = useState(false);
+  const [hoatDongForm, setHoatDongForm] = useState<HoatDongFormInput>(
+    emptyHoatDongForm,
+  );
+  const [savingHoatDong, setSavingHoatDong] = useState(false);
+  const [removingHoatDongId, setRemovingHoatDongId] = useState<number | null>(null);
 
   const [lichHocList, setLichHocList] = useState<LichHocItem[]>([]);
   const [lichHocForm, setLichHocForm] = useState<LichHocFormInput>(
@@ -412,6 +438,63 @@ export function ClassDetailPage() {
       );
     } finally {
       setSavingTraoDoi(false);
+    }
+  }
+
+  async function loadHoatDong() {
+    setLoadingHoatDong(true);
+
+    try {
+      const rows = await listHoatDongByLopHocApi(classId);
+      setHoatDongList(rows);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error ? loadError.message : "Không thể tải album hoạt động.",
+      );
+    } finally {
+      setLoadingHoatDong(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadHoatDong();
+  }, [classId, auth?.currentOrganization?.id]);
+
+  async function handleAddHoatDong(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    setSavingHoatDong(true);
+
+    try {
+      await addHoatDongApi({ ...hoatDongForm, lopHocId: String(classId) });
+      setNotice("Đã đăng ảnh hoạt động.");
+      setHoatDongForm({ ...emptyHoatDongForm, ngayHoatDong: todayIso() });
+      await loadHoatDong();
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error ? submitError.message : "Không thể đăng ảnh hoạt động.",
+      );
+    } finally {
+      setSavingHoatDong(false);
+    }
+  }
+
+  async function handleRemoveHoatDong(item: HoatDongItem) {
+    setError("");
+    setNotice("");
+    setRemovingHoatDongId(item.hoatDong.id);
+
+    try {
+      await removeHoatDongApi(item.hoatDong.id);
+      setNotice("Đã xoá hoạt động.");
+      await loadHoatDong();
+    } catch (removeError) {
+      setError(
+        removeError instanceof Error ? removeError.message : "Không thể xoá hoạt động.",
+      );
+    } finally {
+      setRemovingHoatDongId(null);
     }
   }
 
@@ -975,6 +1058,7 @@ export function ClassDetailPage() {
           { id: "lich-hoc", label: "Lịch học", badge: lichHocList.length },
           { id: "buoi-hoc", label: "Buổi học", badge: buoiHocList.length },
           { id: "trao-doi", label: "Trao đổi", badge: traoDoiItems.length },
+          { id: "hoat-dong", label: "Ảnh hoạt động", badge: hoatDongList.length },
         ]}
         activeId={activeTab}
         onChange={(tabId) => setActiveTab(tabId as TabId)}
@@ -1789,6 +1873,93 @@ export function ClassDetailPage() {
             </tbody>
           </table>
         </div>
+      </SectionCard>
+      ) : null}
+
+      {activeTab === "hoat-dong" ? (
+      <SectionCard
+        title="Ảnh hoạt động lớp"
+        subtitle={
+          loadingHoatDong
+            ? "Đang tải dữ liệu..."
+            : `${hoatDongList.length} hoạt động đã đăng — phụ huynh xem trong Portal`
+        }
+      >
+        {canManageTraoDoi ? (
+          <form className="user-create-form" onSubmit={handleAddHoatDong}>
+            <TextField
+              label="Tiêu đề hoạt động"
+              value={hoatDongForm.tieuDe}
+              required
+              placeholder="VD: Giờ hoạt động ngoài trời"
+              onChange={(value) => setHoatDongForm({ ...hoatDongForm, tieuDe: value })}
+            />
+
+            <DateField
+              label="Ngày hoạt động"
+              value={hoatDongForm.ngayHoatDong}
+              required
+              onChange={(value) => setHoatDongForm({ ...hoatDongForm, ngayHoatDong: value })}
+            />
+
+            <TextAreaField
+              label="Mô tả"
+              value={hoatDongForm.moTa}
+              rows={2}
+              className="field-span-full"
+              onChange={(value) => setHoatDongForm({ ...hoatDongForm, moTa: value })}
+            />
+
+            <div className="field-span-full">
+              <MultiFileUploadField
+                label="Ảnh hoạt động"
+                required
+                value={hoatDongForm.urls}
+                onChange={(urls) => setHoatDongForm({ ...hoatDongForm, urls })}
+              />
+            </div>
+
+            <div className="field-span-full">
+              <span className="form-field__label">
+                Gắn thẻ học sinh cụ thể (không bắt buộc — để trống nghĩa là áp dụng cả lớp)
+              </span>
+              <div className="checkbox-list">
+                {detail.hocSinh.map((item) => (
+                  <label key={item.hocSinh.id} className="checkbox-inline">
+                    <input
+                      type="checkbox"
+                      checked={hoatDongForm.hocSinhIds.includes(item.hocSinh.id)}
+                      onChange={(event) =>
+                        setHoatDongForm({
+                          ...hoatDongForm,
+                          hocSinhIds: event.target.checked
+                            ? [...hoatDongForm.hocSinhIds, item.hocSinh.id]
+                            : hoatDongForm.hocSinhIds.filter((id) => id !== item.hocSinh.id),
+                        })
+                      }
+                    />
+                    {item.hocSinh.hoTen}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <button type="submit" className="primary-button" disabled={savingHoatDong}>
+              {savingHoatDong ? "Đang đăng..." : "Đăng ảnh hoạt động"}
+            </button>
+          </form>
+        ) : null}
+
+        {loadingHoatDong ? (
+          <div className="empty-cell">Đang tải dữ liệu...</div>
+        ) : (
+          <PhotoGallery
+            items={hoatDongList}
+            emptyMessage="Chưa có ảnh hoạt động nào trong lớp này."
+            onDelete={canManageTraoDoi ? (item) => void handleRemoveHoatDong(item) : undefined}
+            deletingId={removingHoatDongId}
+          />
+        )}
       </SectionCard>
       ) : null}
 

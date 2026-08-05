@@ -14,6 +14,7 @@ import {
   findGuardianLinkById,
   findPhuHuynhById,
   findPhuHuynhByPhoneGlobal,
+  listGuardianLinksByHocSinh,
   listHocSinhByPhuHuynhId,
   listGuardianNotificationScopeRows,
   listPhuHuynhByNguoiDungId,
@@ -24,6 +25,7 @@ import { findRoleByCode } from "../db/role.repository.js";
 import { createUserWithRole, findUserById, findUserByUsername } from "../db/user.repository.js";
 import { createTemporaryPassword } from "./user.service.js";
 import { collectGuardianOrganizationIds } from "../domain/guardian-scope.js";
+import { notifyNguoiDung } from "./thongBaoSuKien.service.js";
 
 /**
  * Danh sách đơn vị mà tài khoản này là phụ huynh (có con đang học), dùng để
@@ -62,6 +64,43 @@ export async function getGuardianNotificationScope(userId: number) {
 }
 
 /**
+ * Báo cho (các) tài khoản phụ huynh đã liên kết của 1 học sinh khi có bản ghi
+ * mới đáng quan tâm (sổ sức khỏe, kết quả học tập/đánh giá phát triển, ảnh
+ * hoạt động lớp) — dùng chung `ThongBaoSuKien` + polling 20s có sẵn
+ * (`NotificationContext.tsx`), không tự chế thêm kênh thông báo riêng.
+ * Phụ huynh chưa liên kết tài khoản (`nguoiDungId` null) sẽ không nhận được
+ * gì ở đây — họ chỉ xem qua Portal khi đã có tài khoản.
+ */
+export async function notifyGuardiansOfHocSinh(input: {
+  donViId: number;
+  hocSinhId: number;
+  loaiSuKien: string;
+  tieuDe: string;
+  noiDung: string;
+}) {
+  const guardianLinks = await listGuardianLinksByHocSinh(input.hocSinhId);
+  const nguoiNhanIds = new Set<number>();
+
+  for (const link of guardianLinks) {
+    if (link.phuHuynh.nguoiDungId) {
+      nguoiNhanIds.add(link.phuHuynh.nguoiDungId);
+    }
+  }
+
+  await Promise.all(
+    [...nguoiNhanIds].map((nguoiNhanId) =>
+      notifyNguoiDung({
+        donViId: input.donViId,
+        nguoiNhanId,
+        loaiSuKien: input.loaiSuKien,
+        tieuDe: input.tieuDe,
+        noiDung: input.noiDung,
+      }),
+    ),
+  );
+}
+
+/**
  * Tìm đúng học sinh (kèm `donViId` thật của học sinh, không phải đơn vị neo
  * phiên của phụ huynh) trong số các con của tài khoản phụ huynh này — dùng để
  * xác thực quyền thao tác trước khi cho phụ huynh gửi đơn xin phép (F03) cho
@@ -80,6 +119,23 @@ export async function findGuardianChildByHocSinhId(userId: number, hocSinhId: nu
   }
 
   return null;
+}
+
+/**
+ * Toàn bộ con của tài khoản phụ huynh này, gộp và khử trùng lặp qua mọi hồ
+ * sơ `PhuHuynh` liên kết (một tài khoản có thể có nhiều hồ sơ ở nhiều đơn
+ * vị — xem `getParentPortalOverview`). Dùng cho các chỗ chỉ cần danh sách
+ * con (VD: hộp thư nhắn tin tổng hợp), không cần đầy đủ dữ liệu như overview.
+ */
+export async function listGuardianChildren(userId: number) {
+  const guardians = await listPhuHuynhByNguoiDungId(userId);
+  const rows = (
+    await Promise.all(guardians.map((guardian) => listHocSinhByPhuHuynhId(guardian.id)))
+  ).flat();
+
+  const children = new Map(rows.map((row) => [row.hocSinh.id, row.hocSinh]));
+
+  return [...children.values()];
 }
 
 /**

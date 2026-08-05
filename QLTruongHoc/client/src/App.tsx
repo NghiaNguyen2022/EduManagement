@@ -16,6 +16,7 @@ import { DonViDetailPage } from "./pages/DonViDetailPage";
 import { GiaoVienDetailPage } from "./pages/GiaoVienDetailPage";
 import { FinancePage } from "./pages/FinancePage";
 import { FinanceReportPage } from "./pages/FinanceReportPage";
+import { TinNhanInboxPage } from "./pages/TinNhanInboxPage";
 import { TraoDoiPage } from "./pages/TraoDoiPage";
 import { ThongBaoPage } from "./pages/ThongBaoPage";
 import { KyThuDetailPage } from "./pages/KyThuDetailPage";
@@ -29,6 +30,8 @@ import { OpenInOrganizationPage } from "./pages/OpenInOrganizationPage";
 import { OrganizationTreePage } from "./pages/OrganizationTreePage";
 import { PhieuNhapHocDetailPage } from "./pages/PhieuNhapHocDetailPage";
 import { PhieuXepLopDetailPage } from "./pages/PhieuXepLopDetailPage";
+import { ParentChildDetailPage } from "./pages/ParentChildDetailPage";
+import { ParentMessagesPage } from "./pages/ParentMessagesPage";
 import { PortalLandingPage } from "./pages/PortalLandingPage";
 import { RolePermissionPage } from "./pages/RolePermissionPage";
 import { SchedulePage } from "./pages/SchedulePage";
@@ -140,6 +143,7 @@ function ProtectedApp() {
         <Route path="/notifications" element={<ThongBaoPage />} />
 
         <Route path="/communications" element={<TraoDoiPage />} />
+        <Route path="/tin-nhan" element={<TinNhanInboxPage />} />
 
         <Route path="/thong-bao" element={<Navigate to="/notifications" replace />} />
 
@@ -162,6 +166,10 @@ function ProtectedApp() {
         <Route path="/portal" element={<Navigate to={defaultPortalPath} replace />} />
 
         <Route path="/portal/phu-huynh" element={<Navigate to="/portal/parent" replace />} />
+
+        <Route path="/portal/parent/con/:hocSinhId" element={<ParentChildDetailPage />} />
+
+        <Route path="/portal/parent/nhan-tin" element={<ParentMessagesPage />} />
 
         <Route path="/portal/:roleSlug" element={<PortalLandingPage />} />
 

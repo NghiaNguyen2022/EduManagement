@@ -92,6 +92,49 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     return () => window.clearInterval(timer);
   }, [donViId, pollNew]);
 
+  // Nhấp nháy tiêu đề tab như Facebook khi có thông báo chưa đọc và người
+  // dùng đang ở tab khác — dừng lại và hiện số lượng cố định ngay khi quay
+  // lại tab này, không làm phiền khi đang thao tác trong app.
+  const originalTitleRef = useRef(document.title);
+
+  useEffect(() => {
+    const originalTitle = originalTitleRef.current;
+
+    if (soChuaDoc === 0) {
+      document.title = originalTitle;
+      return;
+    }
+
+    const countTitle = `(${soChuaDoc}) ${originalTitle}`;
+
+    if (!document.hidden) {
+      document.title = countTitle;
+      return;
+    }
+
+    let flashing = false;
+    document.title = countTitle;
+
+    const flashTimer = window.setInterval(() => {
+      flashing = !flashing;
+      document.title = flashing ? "🔔 Có thông báo mới" : countTitle;
+    }, 1000);
+
+    function handleVisibilityChange() {
+      if (!document.hidden) {
+        window.clearInterval(flashTimer);
+        document.title = countTitle;
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(flashTimer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [soChuaDoc]);
+
   const markRead = useCallback((id: number) => {
     setItems((current) =>
       current.map((item) => (item.id === id ? { ...item, daDoc: true } : item)),

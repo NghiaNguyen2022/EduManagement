@@ -80,6 +80,12 @@ export function Sidebar({
       group: "Cổng phụ huynh",
     },
     {
+      id: "parent-messages",
+      path: "/portal/parent/nhan-tin",
+      label: "Nhắn tin",
+      group: "Cổng phụ huynh",
+    },
+    {
       id: "notifications",
       path: "/notifications",
       label: "Thông báo",

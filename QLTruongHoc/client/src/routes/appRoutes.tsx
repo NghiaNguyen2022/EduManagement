@@ -228,6 +228,17 @@ export const appRoutes: AppRouteDefinition[] = [
             hideAtHeThong: true,
       },
       {
+            id: "tin-nhan-inbox",
+            path: "/tin-nhan",
+            label: "Hộp thư",
+            group: "Tổng quan",
+            // Hộp thư nhắn tin tổng hợp — cùng nhóm quyền ghi/xem như trao đổi
+            // phụ huynh, để giáo viên/học vụ tra cứu nhanh nhiều học sinh cùng
+            // lúc thay vì mở từng học sinh một.
+            permissions: ["lop_hoc.xem", "lop_hoc.quan_ly", "hoc_tap.ghi_nhan"],
+            hideAtHeThong: true,
+      },
+      {
             id: "organizations",
             path: "/organizations",
             label: "Danh mục đơn vị",

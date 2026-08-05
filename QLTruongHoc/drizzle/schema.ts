@@ -1,6 +1,7 @@
 export * from "./schemas/core.js";
 export * from "./schemas/auth.js";
 export * from "./schemas/hocSinh.js";
+export * from "./schemas/hoatDong.js";
 export * from "./schemas/thongBao.js";
 export * from "./schemas/thongBaoSuKien.js";
 export * from "./schemas/traoDoi.js";

@@ -11,6 +11,8 @@ import type {
   PhieuNhapHocDetail,
   PhieuNhapHocItem,
   PhuHuynhItem,
+  SucKhoeFormInput,
+  SucKhoeItem,
   ThanhTichFormInput,
   ThanhTichItem,
   TrangThaiHocSinh,
@@ -205,11 +207,34 @@ export async function removeThanhTichApi(thanhTichId: number) {
   }
 }
 
+export function listSucKhoeApi(hocSinhId: number) {
+  return request<SucKhoeItem[]>(`/api/hoc-sinh/${hocSinhId}/suc-khoe`);
+}
+
+export function addSucKhoeApi(hocSinhId: number, input: SucKhoeFormInput) {
+  return request<SucKhoeItem>(`/api/hoc-sinh/${hocSinhId}/suc-khoe`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function removeSucKhoeApi(sucKhoeId: number) {
+  const response = await fetchApp(`/api/hoc-sinh/suc-khoe/${sucKhoeId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  const payload = (await response.json()) as ApiResponse<unknown>;
+
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.error || "Không thể xoá bản ghi sổ sức khỏe.");
+  }
+}
+
 export async function listDanhGiaApi(hocSinhId: number) {
   const rows = await request<
     {
       danhGia: Omit<DanhGiaItem, "lopHoc">;
-      enrollmentId: number;
       lopHoc: DanhGiaItem["lopHoc"];
     }[]
   >(`/api/hoc-sinh/${hocSinhId}/danh-gia`);
@@ -222,6 +247,7 @@ export function addDanhGiaApi(hocSinhId: number, input: DanhGiaFormInput) {
     method: "POST",
     body: JSON.stringify({
       ...input,
+      enrollmentId: input.enrollmentId || null,
       diemSo: input.diemSo !== null ? String(input.diemSo) : null,
     }),
   });

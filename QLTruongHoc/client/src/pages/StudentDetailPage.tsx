@@ -10,6 +10,7 @@ import {
   TextAreaField,
   TextField,
 } from "../components/form";
+import { ChatPanel } from "../components/shared/ChatPanel";
 import { ConfirmDialog } from "../components/shared/ConfirmDialog";
 import { PageHeader } from "../components/shared/PageHeader";
 import { SectionCard } from "../components/shared/SectionCard";
@@ -18,14 +19,17 @@ import { useAuth } from "../features/auth/AuthContext";
 import {
   addDanhGiaApi,
   addGuardianApi,
+  addSucKhoeApi,
   addThanhTichApi,
   createGuardianAccountApi,
   CrossOrgGuardianConfirmError,
   getHocSinhDetailApi,
   listDanhGiaApi,
+  listSucKhoeApi,
   listThanhTichApi,
   removeDanhGiaApi,
   removeGuardianApi,
+  removeSucKhoeApi,
   removeThanhTichApi,
   setHocSinhTrangThaiApi,
   updateGuardianApi,
@@ -41,6 +45,9 @@ import type {
   HocSinhFormInput,
   LinhVucPhatTrien,
   LoaiDanhGia,
+  LoaiGhiNhanSucKhoe,
+  SucKhoeFormInput,
+  SucKhoeItem,
   ThanhTichFormInput,
   ThanhTichItem,
   TrangThaiHocSinh,
@@ -126,7 +133,23 @@ const LINH_VUC_PHAT_TRIEN_LABEL: Record<LinhVucPhatTrien, string> = {
   tham_my: "Thẩm mỹ",
 };
 
-type TabId = "thong-tin" | "phu-huynh" | "lich-su" | "thanh-tich";
+const emptySucKhoeForm: SucKhoeFormInput = {
+  ngayGhiNhan: todayIso(),
+  loaiGhiNhan: "theo_tuan",
+  chieuCaoCm: "",
+  canNangKg: "",
+  diUngBenhNen: "",
+  ghiChu: "",
+};
+
+const LOAI_GHI_NHAN_SUC_KHOE_LABEL: Record<LoaiGhiNhanSucKhoe, string> = {
+  theo_tuan: "Theo tuần",
+  theo_thang: "Theo tháng",
+  theo_quy: "Theo quý",
+  khac: "Khác",
+};
+
+type TabId = "thong-tin" | "phu-huynh" | "lich-su" | "thanh-tich" | "nhan-tin";
 
 export function StudentDetailPage() {
   const { id } = useParams();
@@ -166,6 +189,11 @@ export function StudentDetailPage() {
   const [danhGiaForm, setDanhGiaForm] = useState<DanhGiaFormInput>(emptyDanhGiaForm);
   const [savingDanhGia, setSavingDanhGia] = useState(false);
   const [removingDanhGiaId, setRemovingDanhGiaId] = useState<number | null>(null);
+
+  const [sucKhoeList, setSucKhoeList] = useState<SucKhoeItem[]>([]);
+  const [sucKhoeForm, setSucKhoeForm] = useState<SucKhoeFormInput>(emptySucKhoeForm);
+  const [savingSucKhoe, setSavingSucKhoe] = useState(false);
+  const [removingSucKhoeId, setRemovingSucKhoeId] = useState<number | null>(null);
 
   const canManage = useMemo(() => {
     const permissions = auth?.currentOrganization?.quyen ?? [];
@@ -226,6 +254,28 @@ export function StudentDetailPage() {
       a.date < b.date ? 1 : a.date > b.date ? -1 : 0,
     );
   }, [detail]);
+
+  // Lượt xếp lớp đang hoạt động — dùng làm giá trị mặc định khi ghi đánh giá
+  // định kỳ, để giáo viên không phải chọn lại lớp mỗi lần ghi (mỗi tuần).
+  const defaultEnrollmentId = useMemo(() => {
+    if (!detail) return "";
+    const active = detail.lopHoc.find((item) => item.trangThai === "dang_hoc");
+    return active ? String(active.enrollmentId) : "";
+  }, [detail]);
+
+  const activeLopHocId = useMemo(() => {
+    if (!detail) return null;
+    const active = detail.lopHoc.find((item) => item.trangThai === "dang_hoc");
+    return active ? active.lopHoc.id : null;
+  }, [detail]);
+
+  useEffect(() => {
+    if (defaultEnrollmentId) {
+      setDanhGiaForm((current) =>
+        current.enrollmentId ? current : { ...current, enrollmentId: defaultEnrollmentId },
+      );
+    }
+  }, [defaultEnrollmentId]);
 
   const canCreateGuardianAccount = useMemo(() => {
     const permissions = auth?.currentOrganization?.quyen ?? [];
@@ -301,6 +351,21 @@ export function StudentDetailPage() {
   useEffect(() => {
     if (Number.isInteger(studentId) && studentId > 0) {
       void loadThanhTichVaDanhGia();
+    }
+  }, [studentId, auth?.currentOrganization?.id]);
+
+  async function loadSucKhoe() {
+    try {
+      const rows = await listSucKhoeApi(studentId);
+      setSucKhoeList(rows);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Không thể tải sổ sức khỏe.");
+    }
+  }
+
+  useEffect(() => {
+    if (Number.isInteger(studentId) && studentId > 0) {
+      void loadSucKhoe();
     }
   }, [studentId, auth?.currentOrganization?.id]);
 
@@ -498,7 +563,7 @@ export function StudentDetailPage() {
   async function handleAddDanhGia(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!danhGiaForm.enrollmentId || !danhGiaForm.loaiDanhGia) return;
+    if (!danhGiaForm.loaiDanhGia) return;
 
     setError("");
     setNotice("");
@@ -507,7 +572,7 @@ export function StudentDetailPage() {
     try {
       await addDanhGiaApi(studentId, danhGiaForm);
       setNotice("Đã ghi nhận kết quả học tập.");
-      setDanhGiaForm(emptyDanhGiaForm);
+      setDanhGiaForm({ ...emptyDanhGiaForm, enrollmentId: defaultEnrollmentId });
       await loadThanhTichVaDanhGia();
     } catch (addError) {
       setError(
@@ -533,6 +598,50 @@ export function StudentDetailPage() {
       );
     } finally {
       setRemovingDanhGiaId(null);
+    }
+  }
+
+  async function handleAddSucKhoe(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!sucKhoeForm.ngayGhiNhan) return;
+
+    setError("");
+    setNotice("");
+    setSavingSucKhoe(true);
+
+    try {
+      await addSucKhoeApi(studentId, sucKhoeForm);
+      setNotice("Đã ghi nhận sổ sức khỏe.");
+      setSucKhoeForm({ ...emptySucKhoeForm, loaiGhiNhan: sucKhoeForm.loaiGhiNhan });
+      await loadSucKhoe();
+      await loadDetail();
+    } catch (addError) {
+      setError(
+        addError instanceof Error ? addError.message : "Không thể ghi nhận sổ sức khỏe.",
+      );
+    } finally {
+      setSavingSucKhoe(false);
+    }
+  }
+
+  async function handleRemoveSucKhoe(item: SucKhoeItem) {
+    setError("");
+    setNotice("");
+    setRemovingSucKhoeId(item.id);
+
+    try {
+      await removeSucKhoeApi(item.id);
+      setNotice("Đã xoá bản ghi sổ sức khỏe.");
+      await loadSucKhoe();
+    } catch (removeError) {
+      setError(
+        removeError instanceof Error
+          ? removeError.message
+          : "Không thể xoá bản ghi sổ sức khỏe.",
+      );
+    } finally {
+      setRemovingSucKhoeId(null);
     }
   }
 
@@ -578,9 +687,10 @@ export function StudentDetailPage() {
           { id: "lich-su", label: "Lịch sử học tập", badge: timelineEvents.length },
           {
             id: "thanh-tich",
-            label: "Thành tích",
-            badge: thanhTichList.length + danhGiaList.length,
+            label: "Thành tích & Sức khỏe",
+            badge: thanhTichList.length + danhGiaList.length + sucKhoeList.length,
           },
+          { id: "nhan-tin", label: "Nhắn tin" },
         ]}
         activeId={activeTab}
         onChange={(tabId) => setActiveTab(tabId as TabId)}
@@ -1240,8 +1350,14 @@ export function StudentDetailPage() {
               {danhGiaList.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    <strong>{item.lopHoc.tenLop}</strong>
-                    <small>{item.lopHoc.maLop}</small>
+                    {item.lopHoc ? (
+                      <>
+                        <strong>{item.lopHoc.tenLop}</strong>
+                        <small>{item.lopHoc.maLop}</small>
+                      </>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td>{LOAI_DANH_GIA_LABEL[item.loaiDanhGia]}</td>
                   <td>
@@ -1281,11 +1397,27 @@ export function StudentDetailPage() {
 
         {canGhiNhanHocTap ? (
           <form className="user-create-form" onSubmit={handleAddDanhGia}>
+            <div className="field-span-full">
+              <button
+                type="button"
+                className="text-button"
+                onClick={() =>
+                  setDanhGiaForm({
+                    ...emptyDanhGiaForm,
+                    enrollmentId: defaultEnrollmentId,
+                    loaiDanhGia: "theo_thang",
+                    ngayDanhGia: todayIso(),
+                  })
+                }
+              >
+                Ghi nhận đánh giá tuần này
+              </button>
+            </div>
+
             <SelectField
-              label="Lớp"
+              label="Lớp (không bắt buộc)"
               value={danhGiaForm.enrollmentId}
-              required
-              placeholder="Chọn lượt xếp lớp"
+              placeholder="-- Không gắn lượt xếp lớp cụ thể --"
               options={detail.lopHoc.map((item) => ({
                 value: String(item.enrollmentId),
                 label: `${item.lopHoc.tenLop} (${item.lopHoc.maLop}) — ${item.ngayVaoLop}`,
@@ -1364,7 +1496,132 @@ export function StudentDetailPage() {
           </form>
         ) : null}
       </SectionCard>
+
+      <SectionCard
+        title="Sổ sức khỏe"
+        subtitle={`${sucKhoeList.length} lần ghi nhận — chiều cao/cân nặng/dị ứng theo tuần/tháng/quý`}
+      >
+        <div className="user-table-wrap">
+          <table className="user-table">
+            <thead>
+              <tr>
+                <th>Ngày</th>
+                <th>Kỳ ghi nhận</th>
+                <th>Chiều cao (cm)</th>
+                <th>Cân nặng (kg)</th>
+                <th>Dị ứng / bệnh nền</th>
+                <th>Ghi chú</th>
+                {canGhiNhanHocTap ? <th>Thao tác</th> : null}
+              </tr>
+            </thead>
+
+            <tbody>
+              {sucKhoeList.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.ngayGhiNhan}</td>
+                  <td>{LOAI_GHI_NHAN_SUC_KHOE_LABEL[item.loaiGhiNhan]}</td>
+                  <td>{item.chieuCaoCm ?? "—"}</td>
+                  <td>{item.canNangKg ?? "—"}</td>
+                  <td>{item.diUngBenhNen || "—"}</td>
+                  <td>{item.ghiChu || "—"}</td>
+                  {canGhiNhanHocTap ? (
+                    <td>
+                      <button
+                        type="button"
+                        className="text-button"
+                        disabled={removingSucKhoeId === item.id}
+                        onClick={() => void handleRemoveSucKhoe(item)}
+                      >
+                        {removingSucKhoeId === item.id ? "Đang xoá..." : "Xoá"}
+                      </button>
+                    </td>
+                  ) : null}
+                </tr>
+              ))}
+
+              {sucKhoeList.length === 0 ? (
+                <tr>
+                  <td colSpan={canGhiNhanHocTap ? 7 : 6} className="empty-cell">
+                    Chưa có bản ghi sổ sức khỏe nào.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+
+        {canGhiNhanHocTap ? (
+          <form className="user-create-form" onSubmit={handleAddSucKhoe}>
+            <DateField
+              label="Ngày ghi nhận"
+              value={sucKhoeForm.ngayGhiNhan}
+              required
+              onChange={(value) => setSucKhoeForm({ ...sucKhoeForm, ngayGhiNhan: value })}
+            />
+
+            <SelectField
+              label="Kỳ ghi nhận"
+              value={sucKhoeForm.loaiGhiNhan}
+              required
+              options={Object.entries(LOAI_GHI_NHAN_SUC_KHOE_LABEL).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              onChange={(value) =>
+                setSucKhoeForm({
+                  ...sucKhoeForm,
+                  loaiGhiNhan: value as SucKhoeFormInput["loaiGhiNhan"],
+                })
+              }
+            />
+
+            <TextField
+              label="Chiều cao (cm)"
+              value={sucKhoeForm.chieuCaoCm}
+              placeholder="VD: 98.5"
+              onChange={(value) => setSucKhoeForm({ ...sucKhoeForm, chieuCaoCm: value })}
+            />
+
+            <TextField
+              label="Cân nặng (kg)"
+              value={sucKhoeForm.canNangKg}
+              placeholder="VD: 15.2"
+              onChange={(value) => setSucKhoeForm({ ...sucKhoeForm, canNangKg: value })}
+            />
+
+            <div className="field-span-full">
+              <TextField
+                label="Dị ứng / bệnh nền"
+                value={sucKhoeForm.diUngBenhNen}
+                placeholder="VD: Dị ứng tôm, hen suyễn..."
+                onChange={(value) => setSucKhoeForm({ ...sucKhoeForm, diUngBenhNen: value })}
+              />
+            </div>
+
+            <TextAreaField
+              label="Ghi chú"
+              value={sucKhoeForm.ghiChu}
+              rows={2}
+              className="field-span-full"
+              onChange={(value) => setSucKhoeForm({ ...sucKhoeForm, ghiChu: value })}
+            />
+
+            <button type="submit" className="primary-button" disabled={savingSucKhoe}>
+              {savingSucKhoe ? "Đang lưu..." : "Ghi nhận sức khỏe"}
+            </button>
+          </form>
+        ) : null}
+      </SectionCard>
       </>
+      ) : null}
+
+      {activeTab === "nhan-tin" ? (
+      <SectionCard
+        title="Nhắn tin với phụ huynh"
+        subtitle="Trao đổi trực tiếp, thay thế nhắn tin qua Zalo"
+      >
+        <ChatPanel hocSinhId={studentId} lopHocId={activeLopHocId} />
+      </SectionCard>
       ) : null}
 
       <ConfirmDialog

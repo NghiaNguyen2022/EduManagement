@@ -7,7 +7,9 @@ import {
   listEnrollmentsByHocSinh,
   listLopHocByGiaoVienId,
 } from "../db/lopHoc.repository.js";
+import { listHoatDongByLopHoc } from "../db/hoatDong.repository.js";
 import { listPhuHuynhByNguoiDungId, listHocSinhByPhuHuynhId } from "../db/phuHuynh.repository.js";
+import { listSucKhoeByHocSinh } from "../db/sucKhoe.repository.js";
 import { listKhoanPhaiThuByHocSinh } from "../db/taiChinh.repository.js";
 import { listThanhTichByHocSinh } from "../db/thanhTich.repository.js";
 import { countTraoDoiGanDayTheoLop } from "../db/traoDoi.repository.js";
@@ -216,9 +218,10 @@ export async function getParentPortalOverview(input: { userId: number }) {
             // qua /api/hoc-sinh/:id/thanh-tich|danh-gia (quyền hoc_tap.ghi_nhan
             // cho giáo viên/học vụ). Phạm vi hiển thị đã được chốt đúng con qua
             // guardian linkage ở trên, không cần kiểm quyền hoc_tap thêm ở đây.
-            const [thanhTichRows, danhGiaRows] = await Promise.all([
+            const [thanhTichRows, danhGiaRows, sucKhoeRows] = await Promise.all([
               listThanhTichByHocSinh(row.hocSinh.id),
               listDanhGiaByHocSinh(row.hocSinh.id),
+              listSucKhoeByHocSinh(row.hocSinh.id),
             ]);
 
             const thanhTich = thanhTichRows.map((item) => ({
@@ -235,7 +238,8 @@ export async function getParentPortalOverview(input: { userId: number }) {
 
             const danhGia = danhGiaRows.map((item) => ({
               id: item.danhGia.id,
-              enrollmentId: item.enrollmentId,
+              hocSinhId: item.danhGia.hocSinhId,
+              enrollmentId: item.danhGia.enrollmentId,
               loaiDanhGia: item.danhGia.loaiDanhGia,
               linhVucPhatTrien: item.danhGia.linhVucPhatTrien,
               diemSo: item.danhGia.diemSo,
@@ -244,6 +248,18 @@ export async function getParentPortalOverview(input: { userId: number }) {
               ngayDanhGia: item.danhGia.ngayDanhGia,
               lopHoc: item.lopHoc,
             }));
+
+            // Album ảnh hoạt động lớp — đúng (các) lớp con đang học hiện tại,
+            // chỉ giữ hoạt động không gắn thẻ ai (cả lớp) hoặc gắn đúng con này.
+            const hoatDong = (
+              await Promise.all(lopHocIds.map((id) => listHoatDongByLopHoc(id)))
+            )
+              .flat()
+              .filter(
+                (item) =>
+                  item.hocSinhIds.length === 0 || item.hocSinhIds.includes(row.hocSinh.id),
+              )
+              .sort((a, b) => (a.hoatDong.ngayHoatDong < b.hoatDong.ngayHoatDong ? 1 : -1));
 
             // F03: đơn xin phép đã gửi cho con này — chỉ xem, gửi đơn mới qua
             // POST /api/xin-phep riêng (xem xinPhep.router.ts).
@@ -293,6 +309,8 @@ export async function getParentPortalOverview(input: { userId: number }) {
               donXinPhep,
               thanhTich,
               danhGia,
+              sucKhoe: sucKhoeRows,
+              hoatDong,
             };
           }),
         );

@@ -120,6 +120,29 @@ export type ThanhTichFormInput = {
   ghiChu: string;
 };
 
+export type LoaiGhiNhanSucKhoe = "theo_tuan" | "theo_thang" | "theo_quy" | "khac";
+
+export type SucKhoeItem = {
+  id: number;
+  hocSinhId: number;
+  ngayGhiNhan: string;
+  loaiGhiNhan: LoaiGhiNhanSucKhoe;
+  chieuCaoCm: string | null;
+  canNangKg: string | null;
+  diUngBenhNen: string | null;
+  ghiChu: string | null;
+  createdAt: string;
+};
+
+export type SucKhoeFormInput = {
+  ngayGhiNhan: string;
+  loaiGhiNhan: LoaiGhiNhanSucKhoe;
+  chieuCaoCm: string;
+  canNangKg: string;
+  diUngBenhNen: string;
+  ghiChu: string;
+};
+
 export type LoaiDanhGia =
   | "giua_ky"
   | "cuoi_ky"
@@ -137,18 +160,20 @@ export type LinhVucPhatTrien =
 
 export type DanhGiaItem = {
   id: number;
-  enrollmentId: number;
+  hocSinhId: number;
+  enrollmentId: number | null;
   loaiDanhGia: LoaiDanhGia;
   linhVucPhatTrien: LinhVucPhatTrien | null;
   diemSo: string | null;
   xepLoai: string | null;
   nhanXet: string | null;
   ngayDanhGia: string;
+  // Ngữ cảnh lớp lúc đánh giá — có thể null nếu ghi không gắn lượt xếp lớp.
   lopHoc: {
     id: number;
     maLop: string;
     tenLop: string;
-  };
+  } | null;
 };
 
 export type DanhGiaFormInput = {

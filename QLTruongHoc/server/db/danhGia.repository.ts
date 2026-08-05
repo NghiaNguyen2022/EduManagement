@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 
 import {
+  hocSinh,
   hocSinhLopHoc,
   hocSinhLopHocDanhGia,
   lopHoc,
@@ -10,14 +11,17 @@ import { getDb } from "./connection.js";
 const now = () =>
   new Date().toISOString().slice(0, 19).replace("T", " ");
 
-/** Toàn bộ đánh giá của 1 học sinh, xuyên suốt mọi lượt xếp lớp — kèm tên lớp để hiển thị. */
+/**
+ * Toàn bộ đánh giá của 1 học sinh, gắn thẳng theo `hocSinhId` — liền mạch
+ * qua các lần chuyển lớp. LEFT JOIN qua enrollment/lớp chỉ để lấy nhãn lớp
+ * làm ngữ cảnh hiển thị khi có (`enrollmentId` không còn bắt buộc).
+ */
 export async function listDanhGiaByHocSinh(hocSinhId: number) {
   const db = getDb();
 
   return db
     .select({
       danhGia: hocSinhLopHocDanhGia,
-      enrollmentId: hocSinhLopHoc.id,
       lopHoc: {
         id: lopHoc.id,
         maLop: lopHoc.maLop,
@@ -25,12 +29,12 @@ export async function listDanhGiaByHocSinh(hocSinhId: number) {
       },
     })
     .from(hocSinhLopHocDanhGia)
-    .innerJoin(
+    .leftJoin(
       hocSinhLopHoc,
       eq(hocSinhLopHocDanhGia.enrollmentId, hocSinhLopHoc.id),
     )
-    .innerJoin(lopHoc, eq(hocSinhLopHoc.lopHocId, lopHoc.id))
-    .where(eq(hocSinhLopHoc.hocSinhId, hocSinhId))
+    .leftJoin(lopHoc, eq(hocSinhLopHoc.lopHocId, lopHoc.id))
+    .where(eq(hocSinhLopHocDanhGia.hocSinhId, hocSinhId))
     .orderBy(desc(hocSinhLopHocDanhGia.ngayDanhGia), desc(hocSinhLopHocDanhGia.id));
 }
 
@@ -40,14 +44,10 @@ export async function findDanhGiaById(id: number) {
   const rows = await db
     .select({
       danhGia: hocSinhLopHocDanhGia,
-      donViId: lopHoc.donViId,
+      donViId: hocSinh.donViId,
     })
     .from(hocSinhLopHocDanhGia)
-    .innerJoin(
-      hocSinhLopHoc,
-      eq(hocSinhLopHocDanhGia.enrollmentId, hocSinhLopHoc.id),
-    )
-    .innerJoin(lopHoc, eq(hocSinhLopHoc.lopHocId, lopHoc.id))
+    .innerJoin(hocSinh, eq(hocSinhLopHocDanhGia.hocSinhId, hocSinh.id))
     .where(eq(hocSinhLopHocDanhGia.id, id))
     .limit(1);
 
@@ -55,7 +55,8 @@ export async function findDanhGiaById(id: number) {
 }
 
 export async function createDanhGia(input: {
-  enrollmentId: number;
+  hocSinhId: number;
+  enrollmentId: number | null;
   loaiDanhGia:
     | "giua_ky"
     | "cuoi_ky"
@@ -80,6 +81,7 @@ export async function createDanhGia(input: {
   const timestamp = now();
 
   await db.insert(hocSinhLopHocDanhGia).values({
+    hocSinhId: input.hocSinhId,
     enrollmentId: input.enrollmentId,
     loaiDanhGia: input.loaiDanhGia,
     linhVucPhatTrien: input.linhVucPhatTrien,
@@ -95,7 +97,7 @@ export async function createDanhGia(input: {
   const rows = await db
     .select()
     .from(hocSinhLopHocDanhGia)
-    .where(eq(hocSinhLopHocDanhGia.enrollmentId, input.enrollmentId))
+    .where(eq(hocSinhLopHocDanhGia.hocSinhId, input.hocSinhId))
     .orderBy(desc(hocSinhLopHocDanhGia.id))
     .limit(1);
 

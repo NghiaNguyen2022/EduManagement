@@ -570,6 +570,17 @@ button {
   letter-spacing: 0.04em;
 }
 
+.stat-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease;
+}
+
+.stat-card-link:hover {
+  transform: translateY(-2px);
+}
+
 .stat-card {
   min-height: 142px;
   display: flex;
@@ -781,6 +792,25 @@ button {
   padding: 18px;
 }
 
+.portal-child-card--link {
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.portal-child-card--link:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--edu-shadow-soft);
+}
+
+.portal-child-summary-card__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 13px;
+  color: var(--edu-color-text-muted);
+}
+
 .portal-child-card__header {
   display: flex;
   align-items: flex-start;
@@ -829,6 +859,346 @@ button {
 .portal-exchange-box {
   display: grid;
   gap: 10px;
+}
+
+.chat-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.chat-panel__messages {
+  display: grid;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.chat-panel__bubble {
+  display: grid;
+  gap: 2px;
+  justify-self: start;
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: var(--edu-radius-medium);
+  background: var(--edu-color-surface-soft);
+  border: 1px solid var(--edu-color-border);
+}
+
+.chat-panel__bubble--mine {
+  justify-self: end;
+  background: var(--edu-color-primary-soft);
+  border-color: var(--edu-color-primary-soft);
+}
+
+.chat-panel__bubble small {
+  color: var(--edu-color-text-soft);
+  font-size: 11px;
+}
+
+.chat-panel__composer {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-panel__composer .form-control {
+  flex: 1;
+}
+
+/* ---- Hộp thư nhắn tin tổng hợp ---- */
+
+.tin-nhan-inbox {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.tin-nhan-inbox__list-card .section-card__body {
+  display: grid;
+  gap: 12px;
+}
+
+.tin-nhan-inbox__threads {
+  display: grid;
+  gap: 8px;
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.tin-nhan-inbox__thread {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--edu-color-border);
+  border-radius: var(--edu-radius-medium);
+  background: var(--edu-color-surface);
+  cursor: pointer;
+}
+
+.tin-nhan-inbox__thread--active {
+  border-color: color-mix(in srgb, var(--edu-color-primary) 42%, var(--edu-color-border));
+  background: color-mix(in srgb, var(--edu-color-primary) 10%, var(--edu-color-surface));
+}
+
+.tin-nhan-inbox__thread-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tin-nhan-inbox__thread p {
+  margin: 2px 0 0;
+  color: var(--edu-color-text-muted);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tin-nhan-inbox__thread-time {
+  color: var(--edu-color-text-soft);
+}
+
+.tin-nhan-inbox__group {
+  display: grid;
+  gap: 8px;
+}
+
+.tin-nhan-inbox__group-title {
+  padding: 4px 2px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--edu-color-text-soft);
+}
+
+.tin-nhan-inbox__unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--edu-color-primary);
+  flex-shrink: 0;
+}
+
+/* ---- Album ảnh hoạt động lớp — dùng chung phía giáo viên + phụ huynh ---- */
+
+.photo-gallery {
+  display: grid;
+  gap: 14px;
+}
+
+.photo-gallery__item {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--edu-color-border);
+  border-radius: var(--edu-radius-medium);
+  background: var(--edu-color-surface-soft);
+}
+
+.photo-gallery__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.photo-gallery__header strong {
+  display: block;
+  font-size: 15px;
+  color: var(--edu-color-text-strong);
+}
+
+.photo-gallery__date {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 10px;
+  border-radius: var(--edu-radius-pill);
+  background: var(--edu-color-primary-soft);
+  color: var(--edu-color-primary-strong);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.photo-gallery__desc {
+  margin: 0;
+  color: var(--edu-color-text-muted);
+  font-size: 13px;
+}
+
+.photo-gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.photo-gallery__thumb {
+  padding: 0;
+  border: 1px solid var(--edu-color-border);
+  border-radius: var(--edu-radius-small);
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  background: var(--edu-color-surface);
+  cursor: zoom-in;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.photo-gallery__thumb:hover {
+  transform: scale(1.03);
+  box-shadow: var(--edu-shadow-soft);
+}
+
+.photo-gallery__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---- Lightbox — xem ảnh phóng to ---- */
+
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 18, 26, 0.82);
+  padding: 40px;
+}
+
+.lightbox-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 90vw;
+  max-height: 80vh;
+}
+
+.lightbox-image {
+  max-width: min(86vw, 900px);
+  max-height: 78vh;
+  border-radius: var(--edu-radius-medium);
+  object-fit: contain;
+  background: #000;
+}
+
+.lightbox-close {
+  position: fixed;
+  top: 18px;
+  right: 24px;
+  z-index: 1001;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--edu-radius-pill);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.lightbox-nav {
+  border: none;
+  border-radius: var(--edu-radius-pill);
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.lightbox-nav:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.lightbox-caption {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 13px;
+}
+
+.lightbox-caption strong {
+  font-weight: 700;
+}
+
+.lightbox-caption span {
+  padding: 2px 10px;
+  border-radius: var(--edu-radius-pill);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ---- Sổ sức khỏe — hiển thị dạng thẻ gọn gàng thay vì hàng phẳng ---- */
+
+.health-log {
+  display: grid;
+  gap: 10px;
+}
+
+.health-log__item {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--edu-color-border);
+  border-radius: var(--edu-radius-medium);
+  background: var(--edu-color-surface-soft);
+}
+
+.health-log__item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.health-log__period {
+  padding: 2px 10px;
+  border-radius: var(--edu-radius-pill);
+  background: var(--edu-color-primary-soft);
+  color: var(--edu-color-primary-strong);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.health-log__stats {
+  display: flex;
+  gap: 16px;
+}
+
+.health-log__stats strong {
+  font-size: 16px;
+  color: var(--edu-color-text-strong);
+}
+
+.health-log__stats small {
+  display: block;
+  color: var(--edu-color-text-soft);
+  font-size: 11px;
+}
+
+.health-log__note {
+  margin: 0;
+  color: var(--edu-color-text-muted);
+  font-size: 13px;
 }
 
 .portal-class-chip,

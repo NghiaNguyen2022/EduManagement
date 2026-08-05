@@ -27,6 +27,7 @@ import {
   removeGuardianLink,
   updateGuardianLinkInfo,
 } from "../services/phuHuynh.service.js";
+import { addSucKhoe, listSucKhoe, removeSucKhoe } from "../services/sucKhoe.service.js";
 import { addThanhTich, listThanhTich, removeThanhTich } from "../services/thanhTich.service.js";
 
 export const hocSinhRouter = Router();
@@ -355,6 +356,78 @@ hocSinhRouter.delete(
   },
 );
 
+// Sổ sức khoẻ — lịch sử theo mốc thời gian, cùng quyền hoc_tap.xem/
+// hoc_tap.ghi_nhan như thành tích/đánh giá (giáo viên chủ nhiệm ghi định kỳ).
+hocSinhRouter.get(
+  "/:id/suc-khoe",
+  requirePermission("hoc_tap.xem"),
+  async (req, res) => {
+    try {
+      const rows = await listSucKhoe(
+        req.auth!.currentOrganization!.id,
+        Number(req.params.id),
+      );
+
+      res.json({ ok: true, data: rows });
+    } catch (error) {
+      res.status(404).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Không thể tải sổ sức khỏe.",
+      });
+    }
+  },
+);
+
+hocSinhRouter.post(
+  "/:id/suc-khoe",
+  requirePermission("hoc_tap.ghi_nhan"),
+  async (req, res) => {
+    try {
+      const created = await addSucKhoe({
+        donViId: req.auth!.currentOrganization!.id,
+        hocSinhId: Number(req.params.id),
+        ngayGhiNhan: String(req.body?.ngayGhiNhan ?? ""),
+        loaiGhiNhan: String(req.body?.loaiGhiNhan ?? "khac"),
+        chieuCaoCm: req.body?.chieuCaoCm ? String(req.body.chieuCaoCm) : null,
+        canNangKg: req.body?.canNangKg ? String(req.body.canNangKg) : null,
+        diUngBenhNen: req.body?.diUngBenhNen ? String(req.body.diUngBenhNen) : null,
+        ghiChu: req.body?.ghiChu ? String(req.body.ghiChu) : null,
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.status(201).json({ ok: true, data: created });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Không thể ghi nhận sổ sức khỏe.",
+      });
+    }
+  },
+);
+
+hocSinhRouter.delete(
+  "/suc-khoe/:sucKhoeId",
+  requirePermission("hoc_tap.ghi_nhan"),
+  async (req, res) => {
+    try {
+      await removeSucKhoe({
+        donViId: req.auth!.currentOrganization!.id,
+        id: Number(req.params.sucKhoeId),
+        actorUserId: req.auth!.user.id,
+        ipAddress: req.ip,
+      });
+
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Không thể xoá bản ghi sổ sức khỏe.",
+      });
+    }
+  },
+);
+
 // Kết quả học tập theo lượt xếp lớp — cùng quyền hoc_tap.xem/hoc_tap.ghi_nhan.
 hocSinhRouter.get(
   "/:id/danh-gia",
@@ -384,7 +457,12 @@ hocSinhRouter.post(
       const created = await addDanhGia({
         donViId: req.auth!.currentOrganization!.id,
         hocSinhId: Number(req.params.id),
-        enrollmentId: Number(req.body?.enrollmentId),
+        enrollmentId:
+          req.body?.enrollmentId === null ||
+          req.body?.enrollmentId === undefined ||
+          req.body?.enrollmentId === ""
+            ? null
+            : Number(req.body.enrollmentId),
         loaiDanhGia: String(req.body?.loaiDanhGia ?? ""),
         linhVucPhatTrien: req.body?.linhVucPhatTrien
           ? String(req.body.linhVucPhatTrien)

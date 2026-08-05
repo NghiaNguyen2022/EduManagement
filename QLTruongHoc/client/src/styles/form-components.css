@@ -129,3 +129,16 @@ textarea.form-control {
   object-fit: cover;
   background: var(--edu-color-surface);
 }
+
+.multi-file-upload-field__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.multi-file-upload-field__thumb-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}

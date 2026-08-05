@@ -189,14 +189,18 @@ export const phieuXepLop = mysqlTable(
   }),
 );
 
-// Kết quả học tập theo từng lượt xếp lớp — cho phép nhiều lần đánh giá/lượt
-// xếp lớp (giữa kỳ, cuối kỳ...), khác `HocSinhThanhTich` (chứng chỉ/thành
-// tích không gắn với 1 lớp cụ thể của trung tâm).
+// Kết quả học tập / đánh giá phát triển — gắn thẳng theo học sinh
+// (`hocSinhId`) để lịch sử liền mạch qua các lần chuyển lớp, thay vì chia cắt
+// theo từng lượt xếp lớp như trước. `enrollmentId` giữ lại làm NGỮ CẢNH tuỳ
+// chọn ("lúc đó học lớp nào") — không còn là khoá bắt buộc, không dùng để
+// join khi truy vấn theo học sinh nữa. Khác `HocSinhThanhTich` (chứng chỉ/
+// thành tích, không có chu kỳ/lĩnh vực phát triển).
 export const hocSinhLopHocDanhGia = mysqlTable(
   "HocSinhLopHocDanhGia",
   {
     id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
-    enrollmentId: bigint("enrollmentId", { mode: "number", unsigned: true }).notNull(),
+    hocSinhId: bigint("hocSinhId", { mode: "number", unsigned: true }).notNull(),
+    enrollmentId: bigint("enrollmentId", { mode: "number", unsigned: true }),
     // Mở rộng từ 3 giá trị gốc (giua_ky/cuoi_ky/khac) để hỗ trợ đánh giá định
     // kỳ theo tháng/quý/năm — chủ yếu dùng cho mầm non (đánh giá quá trình
     // thay vì chỉ 2 mốc giữa/cuối kỳ như phổ thông). Đơn vị nào không cần thì
@@ -229,6 +233,7 @@ export const hocSinhLopHocDanhGia = mysqlTable(
     updatedAt: datetime("updatedAt", { mode: "string" }).notNull()
   },
   (table) => ({
+    hocSinhIdx: index("IX_HocSinhLopHocDanhGia_hocSinhId").on(table.hocSinhId),
     enrollmentIdx: index("IX_HocSinhLopHocDanhGia_enrollmentId").on(table.enrollmentId)
   })
 );

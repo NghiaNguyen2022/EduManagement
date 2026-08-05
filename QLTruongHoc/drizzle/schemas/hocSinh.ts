@@ -187,6 +187,39 @@ export const phieuNhapHoc = mysqlTable(
   }),
 );
 
+// Sổ sức khoẻ — lịch sử đo chiều cao/cân nặng/dị ứng theo mốc thời gian
+// (tuần/tháng/quý), khác với 3 cột tĩnh trên HocSinh chỉ giữ giá trị hiện
+// tại. Giáo viên chủ nhiệm ghi định kỳ; service đồng bộ giá trị mới nhất
+// ngược lại 3 cột tĩnh để các màn hình đọc nhanh không bị lệch dữ liệu.
+export const hocSinhSucKhoe = mysqlTable(
+  "HocSinhSucKhoe",
+  {
+    id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
+    donViId: bigint("donViId", { mode: "number", unsigned: true }).notNull(),
+    hocSinhId: bigint("hocSinhId", { mode: "number", unsigned: true }).notNull(),
+    ngayGhiNhan: date("ngayGhiNhan", { mode: "string" }).notNull(),
+    loaiGhiNhan: mysqlEnum("loaiGhiNhan", [
+      "theo_tuan",
+      "theo_thang",
+      "theo_quy",
+      "khac"
+    ]).notNull().default("khac"),
+    chieuCaoCm: decimal("chieuCaoCm", { precision: 5, scale: 1 }),
+    canNangKg: decimal("canNangKg", { precision: 5, scale: 1 }),
+    diUngBenhNen: text("diUngBenhNen"),
+    ghiChu: text("ghiChu"),
+    actorUserId: bigint("actorUserId", { mode: "number", unsigned: true }),
+    createdAt: datetime("createdAt", { mode: "string" }).notNull(),
+  },
+  (table) => ({
+    donViIdx: index("IX_HocSinhSucKhoe_donViId").on(table.donViId),
+    hocSinhIdx: index("IX_HocSinhSucKhoe_hocSinhId_ngayGhiNhan").on(
+      table.hocSinhId,
+      table.ngayGhiNhan,
+    ),
+  }),
+);
+
 // Chứng chỉ/thành tích học sinh đạt được (vd IELTS 8.0) — không gắn với 1
 // lượt xếp lớp cụ thể, không có workflow duyệt (ghi là hiển thị ngay).
 export const hocSinhThanhTich = mysqlTable(

@@ -50,7 +50,7 @@ Tài liệu theo dõi trạng thái các nhóm chức năng từ nền tảng đ
 
 ## D. Học sinh và phụ huynh
 - [x] D01 Hồ sơ học sinh.
-- [ ] D02 Hồ sơ sức khỏe mầm non.
+- [x] D02 Hồ sơ sức khỏe mầm non.
 - [x] D03 Quan hệ phụ huynh/người giám hộ.
 - [x] D04 Người liên hệ chính và người đón trẻ.
 - [x] D05 Lịch sử trạng thái học tập.
@@ -81,7 +81,7 @@ Tài liệu theo dõi trạng thái các nhóm chức năng từ nền tảng đ
 - [ ] G04 Kết quả kiểm tra/đánh giá.
 - [ ] G05 Tiến độ theo chương trình.
 - [ ] G06 Ngoại ngữ: kỹ năng nghe/nói/đọc/viết.
-- [ ] G07 Mầm non: phát triển thể chất/nhận thức/ngôn ngữ/tình cảm-xã hội/thẩm mỹ.
+- [x] G07 Mầm non: phát triển thể chất/nhận thức/ngôn ngữ/tình cảm-xã hội/thẩm mỹ.
 
 ## H. Tài chính
 - [x] H01 Danh mục khoản thu.
@@ -106,7 +106,7 @@ Tài liệu theo dõi trạng thái các nhóm chức năng từ nền tảng đ
 - [x] J02 Portal giáo viên.
 - [x] J03 Lịch học và thông báo.
 - [x] J04 Xin phép nghỉ.
-- [ ] J05 Tiến độ và kết quả học tập.
+- [x] J05 Tiến độ và kết quả học tập.
 - [x] J06 Học phí và biên nhận.
 
 ## K. Tài liệu và chất lượng

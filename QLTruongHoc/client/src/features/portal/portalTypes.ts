@@ -1,7 +1,9 @@
+import type { HoatDongItem } from "../hoatDong/hoatDongTypes";
 import type {
   DanhGiaItem,
   GuardianLinkItem,
   HocSinhItem,
+  SucKhoeItem,
   ThanhTichItem,
 } from "../hocSinh/hocSinhTypes";
 import type { ThoiKhoaBieuItem } from "../lichHoc/lichHocTypes";
@@ -80,6 +82,8 @@ export type ParentPortalChild = {
   donXinPhep: ParentPortalLeaveRequest[];
   thanhTich: ThanhTichItem[];
   danhGia: DanhGiaItem[];
+  sucKhoe: SucKhoeItem[];
+  hoatDong: HoatDongItem[];
 };
 
 export type ParentPortalUpcomingSession = {

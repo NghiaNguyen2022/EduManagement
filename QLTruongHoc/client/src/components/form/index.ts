@@ -3,6 +3,7 @@ export * from "./DateField";
 export * from "./DateTimeField";
 export * from "./FileUploadField";
 export * from "./FormField";
+export * from "./MultiFileUploadField";
 export * from "./NumberInput";
 export * from "./SelectField";
 export * from "./TextAreaField";
