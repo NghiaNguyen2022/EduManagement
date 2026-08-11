@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { DateField, SelectField } from "../components/form";
 import { PageHeader } from "../components/shared/PageHeader";
@@ -29,7 +30,16 @@ function addDaysIso(iso: string, days: number) {
 
 export function SchedulePage() {
   const { auth } = useAuth();
+  const navigate = useNavigate();
   const isHeThong = auth?.currentOrganization?.loaiDonVi === "he_thong";
+  const canAttendance = useMemo(() => {
+    const permissions = auth?.currentOrganization?.quyen ?? [];
+    return (
+      permissions.includes("he_thong.quan_tri") ||
+      permissions.includes("diem_danh.xem") ||
+      permissions.includes("diem_danh.thuc_hien")
+    );
+  }, [auth]);
 
   const [items, setItems] = useState<ThoiKhoaBieuItem[]>([]);
   const [teachers, setTeachers] = useState<GiaoVienItem[]>([]);
@@ -175,6 +185,18 @@ export function SchedulePage() {
                     >
                       {TRANG_THAI_BUOI_HOC_LABEL[item.buoiHoc.trangThai]}
                     </span>
+
+                    {canAttendance ? (
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() =>
+                          navigate(`/attendance?buoiHocId=${item.buoiHoc.id}`)
+                        }
+                      >
+                        Điểm danh
+                      </button>
+                    ) : null}
                   </div>
                 ))}
               </div>

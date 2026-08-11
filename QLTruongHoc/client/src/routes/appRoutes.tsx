@@ -142,14 +142,14 @@ export const appRoutes: AppRouteDefinition[] = [
       {
             id: "classes",
             path: "/classes",
-            label: "Lớp học",
+            label: "Lớp & phân lớp",
             group: "Đào tạo",
             permissions: ["lop_hoc.xem", "lop_hoc.quan_ly"],
       },
       {
             id: "schedule",
             path: "/schedule",
-            label: "Lịch học",
+            label: "Lịch & điểm danh",
             group: "Đào tạo",
             permissions: ["lop_hoc.xem", "lop_hoc.quan_ly"],
             hideAtHeThong: true,
@@ -169,6 +169,7 @@ export const appRoutes: AppRouteDefinition[] = [
             group: "Đào tạo",
             permissions: ["diem_danh.xem", "diem_danh.thuc_hien"],
             hideAtHeThong: true,
+            hideFromSidebar: true,
       },
       {
             id: "finance",

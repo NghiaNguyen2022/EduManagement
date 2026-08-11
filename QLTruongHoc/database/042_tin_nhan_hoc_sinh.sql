@@ -7,9 +7,10 @@
 -- ============================================================
 
 SET NAMES utf8mb4;
-USE SchoolCenter;
 
-CREATE TABLE TinNhanHocSinh (
+-- Database dich duoc chon tu DATABASE_URL cua moi moi truong.
+-- IF NOT EXISTS giup migration co the chay lai an toan khi release/redeploy.
+CREATE TABLE IF NOT EXISTS TinNhanHocSinh (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   donViId BIGINT UNSIGNED NOT NULL,
   hocSinhId BIGINT UNSIGNED NOT NULL,

@@ -1,6 +1,6 @@
 import { openAppWindow } from "../utils/appUrl";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import {
   DateField,
@@ -231,11 +231,34 @@ const emptyHoatDongForm: HoatDongFormInput = {
 export function ClassDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { auth } = useAuth();
 
   const classId = Number(id);
 
-  const [activeTab, setActiveTab] = useState<TabId>("thong-tin");
+  const requestedTab = searchParams.get("tab") as TabId | null;
+  const validTabs: TabId[] = [
+    "thong-tin",
+    "giao-vien",
+    "hoc-sinh",
+    "lich-hoc",
+    "buoi-hoc",
+    "trao-doi",
+    "hoat-dong",
+  ];
+  const [activeTab, setActiveTab] = useState<TabId>(
+    requestedTab && validTabs.includes(requestedTab)
+      ? requestedTab
+      : "thong-tin",
+  );
+
+  function changeTab(tab: TabId) {
+    setActiveTab(tab);
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", tab);
+    next.delete("setup");
+    setSearchParams(next, { replace: true });
+  }
   const [detail, setDetail] = useState<LopHocDetail | null>(null);
   const [programs, setPrograms] = useState<ChuongTrinhItem[]>([]);
   const [teachers, setTeachers] = useState<GiaoVienItem[]>([]);
@@ -1050,6 +1073,37 @@ export function ClassDetailPage() {
       {error ? <div className="form-error">{error}</div> : null}
       {notice ? <div className="form-success">{notice}</div> : null}
 
+      {canManage ? (
+        <SectionCard
+          title="Thiết lập lớp nhanh"
+          subtitle="Hoàn thành ba bước để giáo viên có thể nhận lịch và điểm danh ngay."
+        >
+          <div className="table-actions">
+            <button
+              type="button"
+              className={activeTab === "giao-vien" ? "primary-button" : "secondary-button"}
+              onClick={() => changeTab("giao-vien")}
+            >
+              1. Phân giáo viên
+            </button>
+            <button
+              type="button"
+              className={activeTab === "hoc-sinh" ? "primary-button" : "secondary-button"}
+              onClick={() => changeTab("hoc-sinh")}
+            >
+              2. Xếp học sinh
+            </button>
+            <button
+              type="button"
+              className={activeTab === "lich-hoc" ? "primary-button" : "secondary-button"}
+              onClick={() => changeTab("lich-hoc")}
+            >
+              3. Tạo lịch học
+            </button>
+          </div>
+        </SectionCard>
+      ) : null}
+
       <TabBar
         tabs={[
           { id: "thong-tin", label: "Thông tin" },
@@ -1061,7 +1115,7 @@ export function ClassDetailPage() {
           { id: "hoat-dong", label: "Ảnh hoạt động", badge: hoatDongList.length },
         ]}
         activeId={activeTab}
-        onChange={(tabId) => setActiveTab(tabId as TabId)}
+        onChange={(tabId) => changeTab(tabId as TabId)}
       />
 
       {activeTab === "thong-tin" ? (

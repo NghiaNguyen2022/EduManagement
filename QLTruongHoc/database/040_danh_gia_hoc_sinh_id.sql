@@ -8,7 +8,8 @@
 -- ============================================================
 
 SET NAMES utf8mb4;
-USE SchoolCenter;
+
+-- Database dich duoc chon tu DATABASE_URL cua moi moi truong.
 
 ALTER TABLE HocSinhLopHocDanhGia
   ADD COLUMN hocSinhId BIGINT UNSIGNED NULL AFTER id;

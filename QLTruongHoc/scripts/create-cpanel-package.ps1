@@ -36,6 +36,7 @@ $zipPath = Join-Path $releaseRoot "$packageName.zip"
 
 New-Item -ItemType Directory -Path $packageRoot -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $packageRoot "deploy") -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $packageRoot "database") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $packageRoot "uploads") -Force | Out-Null
 
 Copy-Item "dist-client" $packageRoot -Recurse
@@ -46,6 +47,7 @@ Copy-Item "deploy\cpanel\package-lock.json" $packageRoot
 Copy-Item "deploy\cpanel\README_CPANEL.md" (Join-Path $packageRoot "deploy")
 Copy-Item "deploy\cpanel\fix-linux-table-case.sql" (Join-Path $packageRoot "deploy")
 Copy-Item "deploy\env.production.example" (Join-Path $packageRoot "deploy")
+Copy-Item "database\*.sql" (Join-Path $packageRoot "database")
 
 "Thư mục chứa file người dùng tải lên. Giữ nguyên thư mục này khi cập nhật." |
   Set-Content (Join-Path $packageRoot "uploads\README.txt") -Encoding UTF8

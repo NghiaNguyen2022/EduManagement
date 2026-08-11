@@ -9,9 +9,9 @@
 -- ============================================================
 
 SET NAMES utf8mb4;
-USE SchoolCenter;
 
-CREATE TABLE HocSinhSucKhoe (
+-- Database dich duoc chon tu DATABASE_URL cua moi moi truong.
+CREATE TABLE IF NOT EXISTS HocSinhSucKhoe (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   donViId BIGINT UNSIGNED NOT NULL,
   hocSinhId BIGINT UNSIGNED NOT NULL,

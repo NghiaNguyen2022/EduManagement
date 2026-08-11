@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 import {
   DateField,
@@ -60,8 +61,9 @@ type TabId = "chuong-trinh" | "lop-hoc";
 
 export function ClassesPage() {
   const { auth } = useAuth();
+  const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<TabId>("chuong-trinh");
+  const [activeTab, setActiveTab] = useState<TabId>("lop-hoc");
   const [classes, setClasses] = useState<LopHocItem[]>([]);
   const [programs, setPrograms] = useState<ChuongTrinhItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,10 +177,9 @@ export function ClassesPage() {
 
     try {
       const created = await createLopHocApi(classForm);
-      setNotice(`Đã tạo lớp ${created.maLop}.`);
       setClassForm(emptyLopForm);
       setShowClassForm(false);
-      await loadData();
+      navigate(`/classes/${created.id}?tab=giao-vien&setup=1`);
     } catch (classError) {
       setError(
         classError instanceof Error
@@ -376,8 +377,8 @@ export function ClassesPage() {
       <>
       {canManage ? (
         <SectionCard
-          title="Thêm lớp học"
-          subtitle="Mã lớp tự đặt theo quy ước của đơn vị."
+          title="Tạo lớp nhanh"
+          subtitle="Sau khi tạo, hệ thống chuyển ngay sang phân giáo viên, xếp học sinh và tạo lịch."
           actions={
             <button
               type="button"
@@ -500,6 +501,7 @@ export function ClassesPage() {
                 <th>Chương trình</th>
                 <th>Sĩ số tối đa</th>
                 <th>Trạng thái</th>
+                {!isHeThong ? <th>Thao tác nhanh</th> : null}
                 {isHeThong ? <th>Đơn vị</th> : null}
               </tr>
             </thead>
@@ -534,6 +536,31 @@ export function ClassesPage() {
                     </span>
                   </td>
 
+                  {!isHeThong ? (
+                    <td>
+                      <div className="table-actions">
+                        <Link
+                          className="text-button"
+                          to={`/classes/${item.id}?tab=giao-vien`}
+                        >
+                          Phân giáo viên
+                        </Link>
+                        <Link
+                          className="text-button"
+                          to={`/classes/${item.id}?tab=hoc-sinh`}
+                        >
+                          Xếp học sinh
+                        </Link>
+                        <Link
+                          className="text-button"
+                          to={`/classes/${item.id}?tab=lich-hoc`}
+                        >
+                          Tạo lịch
+                        </Link>
+                      </div>
+                    </td>
+                  ) : null}
+
                   {isHeThong ? (
                     <td>
                       <OrgLink donVi={item.donVi} to="/classes" />
@@ -544,7 +571,7 @@ export function ClassesPage() {
 
               {!loading && filteredClasses.length === 0 ? (
                 <tr>
-                  <td colSpan={isHeThong ? 5 : 4} className="empty-cell">
+                  <td colSpan={5} className="empty-cell">
                     Chưa có lớp học nào.
                   </td>
                 </tr>

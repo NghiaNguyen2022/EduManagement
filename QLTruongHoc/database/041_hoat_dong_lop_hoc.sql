@@ -6,9 +6,10 @@
 -- ============================================================
 
 SET NAMES utf8mb4;
-USE SchoolCenter;
 
-CREATE TABLE HoatDongLopHoc (
+-- Database dich duoc chon tu DATABASE_URL cua moi moi truong.
+-- IF NOT EXISTS giup migration co the chay lai an toan khi release/redeploy.
+CREATE TABLE IF NOT EXISTS HoatDongLopHoc (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   donViId BIGINT UNSIGNED NOT NULL,
   lopHocId BIGINT UNSIGNED NOT NULL,
@@ -23,7 +24,7 @@ CREATE TABLE HoatDongLopHoc (
   CONSTRAINT FK_HoatDongLopHoc_LopHoc FOREIGN KEY (lopHocId) REFERENCES LopHoc(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE HoatDongAnh (
+CREATE TABLE IF NOT EXISTS HoatDongAnh (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   hoatDongId BIGINT UNSIGNED NOT NULL,
   url VARCHAR(500) NOT NULL,
@@ -33,7 +34,7 @@ CREATE TABLE HoatDongAnh (
   CONSTRAINT FK_HoatDongAnh_HoatDong FOREIGN KEY (hoatDongId) REFERENCES HoatDongLopHoc(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE HoatDongHocSinh (
+CREATE TABLE IF NOT EXISTS HoatDongHocSinh (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   hoatDongId BIGINT UNSIGNED NOT NULL,
   hocSinhId BIGINT UNSIGNED NOT NULL,

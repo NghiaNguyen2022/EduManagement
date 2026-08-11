@@ -539,7 +539,11 @@ export function DashboardPage() {
                                                       <button
                                                             type="button"
                                                             className="secondary-button"
-                                                            onClick={() => navigate("/attendance")}
+                                                            onClick={() =>
+                                                                  navigate(
+                                                                        `/attendance?buoiHocId=${item.buoiHoc.id}`,
+                                                                  )
+                                                            }
                                                       >
                                                             Điểm danh
                                                       </button>
