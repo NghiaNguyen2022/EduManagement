@@ -1,0 +1,663 @@
+import { appUrl, openAppWindow } from "../utils/appUrl";
+import { useEffect, useMemo, useState } from "react";
+
+import {
+  DateField,
+  SelectField,
+  TextField,
+} from "../components/form";
+import { EntityLink, OrgLink } from "../components/shared/EntityLink";
+import { PageHeader } from "../components/shared/PageHeader";
+import { SectionCard } from "../components/shared/SectionCard";
+import { useAuth } from "../features/auth/AuthContext";
+import { listChuongTrinhApi } from "../features/chuongTrinh/chuongTrinhApi";
+import type { ChuongTrinhItem } from "../features/chuongTrinh/chuongTrinhTypes";
+import {
+  createHocSinhApi,
+  ghiNhanKetQuaTestDauVaoApi,
+  listHocSinhApi,
+  listHocSinhChoXepLopApi,
+} from "../features/hocSinh/hocSinhApi";
+import type {
+  HocSinhFormInput,
+  HocSinhItem,
+} from "../features/hocSinh/hocSinhTypes";
+import { listLopHocApi, xepHocSinhVaoLopApi } from "../features/lopHoc/lopHocApi";
+import type {
+  LopHocItem,
+  XepLopVaLapPhieuResult,
+} from "../features/lopHoc/lopHocTypes";
+import { useUnsavedChangesGuard } from "../features/navigation/UnsavedChangesContext";
+
+const LOP_HOC_CO_THE_XEP = new Set(["chuan_bi", "dang_hoc"]);
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+const TRANG_THAI_LABEL: Record<string, string> = {
+  tiep_nhan: "Tiếp nhận",
+  dang_hoc: "Đang học",
+  bao_luu: "Bảo lưu",
+  ngung_hoc: "Ngừng học",
+  hoan_thanh: "Hoàn thành",
+};
+
+const emptyForm: HocSinhFormInput = {
+  hoTen: "",
+  tenThuongGoi: "",
+  hinhAnhUrl: null,
+  ngaySinh: "",
+  gioiTinh: "",
+  soDinhDanh: "",
+  noiSinh: "",
+  danToc: "",
+  quocTich: "",
+  diaChi: "",
+  truongLopTruocDo: "",
+  ngayNhapHoc: "",
+  dienChinhSach: "",
+  chieuCaoCm: null,
+  canNangKg: null,
+  diUngBenhNen: "",
+  lienHeKhanCapHoTen: "",
+  lienHeKhanCapSdt: "",
+};
+
+export function StudentsPage() {
+  const { auth } = useAuth();
+
+  const [students, setStudents] = useState<HocSinhItem[]>([]);
+  const [choXepLop, setChoXepLop] = useState<HocSinhItem[]>([]);
+  const [classes, setClasses] = useState<LopHocItem[]>([]);
+  const [chuongTrinh, setChuongTrinh] = useState<ChuongTrinhItem[]>([]);
+  const [xepLopChon, setXepLopChon] = useState<Record<number, string>>({});
+  const [ketQuaTestChon, setKetQuaTestChon] = useState<Record<number, string>>(
+    {},
+  );
+  const [confirmXepLop, setConfirmXepLop] = useState<{
+    hocSinh: HocSinhItem;
+    lopHocId: string;
+    tenLop: string;
+    ngayVaoLop: string;
+    ghiChu: string;
+    kemPhieuNhapHoc: boolean;
+    ketQuaTest: string;
+  } | null>(null);
+  const [xepLopBusy, setXepLopBusy] = useState(false);
+  const [xepLopResult, setXepLopResult] = useState<XepLopVaLapPhieuResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [form, setForm] = useState<HocSinhFormInput>(emptyForm);
+
+  const isHeThong =
+    auth?.currentOrganization?.loaiDonVi === "he_thong";
+
+  const canManage = useMemo(() => {
+    const permissions = auth?.currentOrganization?.quyen ?? [];
+    return (
+      !isHeThong &&
+      (permissions.includes("he_thong.quan_tri") ||
+        permissions.includes("hoc_sinh.quan_ly"))
+    );
+  }, [auth, isHeThong]);
+
+  useUnsavedChangesGuard(
+    JSON.stringify(form) !== JSON.stringify(emptyForm),
+  );
+
+  const filteredStudents = useMemo(() => {
+    const keyword = searchText.trim().toLowerCase();
+
+    if (!keyword) return students;
+
+    return students.filter(
+      (student) =>
+        student.hoTen.toLowerCase().includes(keyword) ||
+        student.maHocSinh.toLowerCase().includes(keyword) ||
+        (student.tenThuongGoi ?? "")
+          .toLowerCase()
+          .includes(keyword),
+    );
+  }, [searchText, students]);
+
+  async function loadData() {
+    setLoading(true);
+    setError("");
+
+    try {
+      const rows = await listHocSinhApi();
+      setStudents(rows);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Không thể tải dữ liệu.",
+      );
+    }
+
+    // Tách riêng khỏi khối trên: panel "chờ xếp lớp" cần `lop_hoc.quan_ly` (gác
+    // ở server), khác với điều kiện hiển thị `canManage` (`hoc_sinh.quan_ly`).
+    // Vai trò nào có cái này mà thiếu cái kia thì panel chỉ ẩn đi, không được
+    // phép làm hỏng cả danh sách học sinh phía trên.
+    if (canManage) {
+      try {
+        const [choXepLopRows, classRows, chuongTrinhRows] = await Promise.all([
+          listHocSinhChoXepLopApi(),
+          listLopHocApi(),
+          listChuongTrinhApi(),
+        ]);
+        setChoXepLop(choXepLopRows);
+        setClasses(classRows);
+        setChuongTrinh(chuongTrinhRows);
+      } catch {
+        setChoXepLop([]);
+        setClasses([]);
+        setChuongTrinh([]);
+      }
+    }
+
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    void loadData();
+  }, [auth?.currentOrganization?.id, canManage]);
+
+  // Lớp có chương trình bật `coTestDauVao` — hiện thêm ô ghi kết quả test
+  // ngay lúc học vụ xếp lớp (tuỳ chọn, không bắt buộc). Xem
+  // docs/analysis/TUYEN_SINH_THEO_LOAI_HINH.md.
+  function lopCanTest(lopHocId: string) {
+    if (!lopHocId) return false;
+
+    const lop = classes.find((item) => String(item.id) === lopHocId);
+
+    if (!lop?.chuongTrinhDaoTaoId) return false;
+
+    return chuongTrinh.some(
+      (item) => item.id === lop.chuongTrinhDaoTaoId && item.coTestDauVao,
+    );
+  }
+
+  function openConfirmXepLop(student: HocSinhItem) {
+    const lopHocId = xepLopChon[student.id];
+
+    if (!lopHocId) {
+      setError("Vui lòng chọn lớp trước khi xếp.");
+      return;
+    }
+
+    const lop = classes.find((item) => String(item.id) === lopHocId);
+
+    setError("");
+    setNotice("");
+    setXepLopResult(null);
+    setConfirmXepLop({
+      hocSinh: student,
+      lopHocId,
+      tenLop: lop ? `${lop.tenLop} (${lop.maLop})` : "",
+      ngayVaoLop: today(),
+      ghiChu: "",
+      kemPhieuNhapHoc: student.trangThai === "tiep_nhan",
+      ketQuaTest: ketQuaTestChon[student.id] ?? "",
+    });
+  }
+
+  function closeConfirmXepLop() {
+    setConfirmXepLop(null);
+    setXepLopResult(null);
+  }
+
+  async function handleConfirmXepLop() {
+    if (!confirmXepLop) return;
+
+    setError("");
+    setXepLopBusy(true);
+
+    try {
+      const ketQuaTest = confirmXepLop.ketQuaTest.trim();
+
+      if (lopCanTest(confirmXepLop.lopHocId) && ketQuaTest) {
+        await ghiNhanKetQuaTestDauVaoApi(confirmXepLop.hocSinh.id, ketQuaTest);
+      }
+
+      const result = await xepHocSinhVaoLopApi(Number(confirmXepLop.lopHocId), {
+        hocSinhId: confirmXepLop.hocSinh.id,
+        ngayVaoLop: confirmXepLop.ngayVaoLop,
+        ghiChuPhieu: confirmXepLop.ghiChu.trim() || undefined,
+        kemPhieuNhapHoc: confirmXepLop.kemPhieuNhapHoc,
+        ngayNhapHoc: confirmXepLop.ngayVaoLop,
+      });
+
+      setXepLopResult(result);
+      await loadData();
+    } catch (xepLopError) {
+      setError(
+        xepLopError instanceof Error
+          ? xepLopError.message
+          : "Không thể xếp học sinh vào lớp.",
+      );
+    } finally {
+      setXepLopBusy(false);
+    }
+  }
+
+  async function handleCreate(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    setSubmitting(true);
+
+    try {
+      const created = await createHocSinhApi(form);
+      setNotice(`Đã tạo hồ sơ học sinh ${created.maHocSinh}.`);
+      setForm(emptyForm);
+      await loadData();
+    } catch (createError) {
+      setError(
+        createError instanceof Error
+          ? createError.message
+          : "Không thể tạo học sinh.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="page-stack">
+      <PageHeader
+        title="Học sinh · Học viên"
+        subtitle={
+          isHeThong
+            ? "Xem gộp học sinh của tất cả đơn vị (chỉ xem — đơn vị hệ thống không quản lý học sinh)"
+            : "Quản lý hồ sơ học sinh trong đơn vị đang làm việc"
+        }
+      />
+
+      {error ? <div className="form-error">{error}</div> : null}
+      {notice ? <div className="form-success">{notice}</div> : null}
+
+      {canManage ? (
+        <SectionCard
+          title="Thêm học sinh"
+          subtitle="Mã học sinh do hệ thống tự sinh theo năm."
+        >
+          <form className="user-create-form" onSubmit={handleCreate}>
+            <TextField
+              label="Họ tên"
+              value={form.hoTen}
+              required
+              onChange={(value) =>
+                setForm({ ...form, hoTen: value })
+              }
+            />
+
+            <TextField
+              label="Tên thường gọi"
+              value={form.tenThuongGoi}
+              onChange={(value) =>
+                setForm({ ...form, tenThuongGoi: value })
+              }
+            />
+
+            <DateField
+              label="Ngày sinh"
+              value={form.ngaySinh}
+              required
+              onChange={(value) =>
+                setForm({ ...form, ngaySinh: value })
+              }
+            />
+
+            <SelectField
+              label="Giới tính"
+              value={form.gioiTinh}
+              placeholder="Chọn giới tính"
+              options={[
+                { value: "nam", label: "Nam" },
+                { value: "nu", label: "Nữ" },
+                { value: "khac", label: "Khác" },
+              ]}
+              onChange={(value) =>
+                setForm({
+                  ...form,
+                  gioiTinh: value as HocSinhFormInput["gioiTinh"],
+                })
+              }
+            />
+
+            <TextField
+              label="Địa chỉ"
+              value={form.diaChi}
+              onChange={(value) =>
+                setForm({ ...form, diaChi: value })
+              }
+            />
+
+            <DateField
+              label="Ngày nhập học"
+              value={form.ngayNhapHoc}
+              onChange={(value) =>
+                setForm({ ...form, ngayNhapHoc: value })
+              }
+            />
+
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={submitting}
+            >
+              {submitting ? "Đang tạo..." : "Tạo hồ sơ"}
+            </button>
+          </form>
+        </SectionCard>
+      ) : null}
+
+      {canManage && choXepLop.length > 0 ? (
+        <SectionCard
+          title={`Học sinh chờ xếp lớp (${choXepLop.length})`}
+          subtitle="Đã nhập học nhưng chưa có lớp đang học — chọn lớp rồi xếp."
+        >
+          <div className="user-table-wrap">
+            <table className="user-table">
+              <thead>
+                <tr>
+                  <th>Học sinh</th>
+                  <th>Nguyện vọng</th>
+                  <th>Lớp</th>
+                  <th>Kết quả test đầu vào</th>
+                  <th></th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {choXepLop.map((student) => {
+                  const lopChon = xepLopChon[student.id] ?? "";
+                  const canTest = lopCanTest(lopChon);
+
+                  return (
+                    <tr key={student.id}>
+                      <td>
+                        <EntityLink to={`/students/${student.id}`}>
+                          <strong>{student.hoTen}</strong>
+                        </EntityLink>
+                        <small>{student.maHocSinh}</small>
+                      </td>
+
+                      <td>{student.nguyenVongLop ?? "—"}</td>
+
+                      <td>
+                        <SelectField
+                          value={lopChon}
+                          placeholder="Chọn lớp"
+                          options={classes
+                            .filter((item) => LOP_HOC_CO_THE_XEP.has(item.trangThai))
+                            .map((item) => ({
+                              value: String(item.id),
+                              label: `${item.tenLop} (${item.maLop})`,
+                            }))}
+                          onChange={(value) =>
+                            setXepLopChon({ ...xepLopChon, [student.id]: value })
+                          }
+                        />
+                      </td>
+
+                      <td>
+                        {canTest ? (
+                          <TextField
+                            value={ketQuaTestChon[student.id] ?? ""}
+                            placeholder="VD: A2 - Elementary"
+                            onChange={(value) =>
+                              setKetQuaTestChon({
+                                ...ketQuaTestChon,
+                                [student.id]: value,
+                              })
+                            }
+                          />
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+
+                      <td>
+                        <button
+                          type="button"
+                          className="primary-button"
+                          onClick={() => openConfirmXepLop(student)}
+                        >
+                          Xếp lớp
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
+      ) : null}
+
+      {confirmXepLop ? (
+        <SectionCard
+          title={`Xác nhận xếp lớp — ${confirmXepLop.hocSinh.hoTen}`}
+          actions={
+            <button type="button" className="text-button" onClick={closeConfirmXepLop}>
+              Đóng
+            </button>
+          }
+        >
+          {!xepLopResult ? (
+            <div className="user-create-form">
+              <TextField label="Học sinh" value={confirmXepLop.hocSinh.hoTen} disabled onChange={() => {}} />
+              <TextField label="Lớp" value={confirmXepLop.tenLop} disabled onChange={() => {}} />
+
+              <DateField
+                label="Ngày vào lớp"
+                value={confirmXepLop.ngayVaoLop}
+                required
+                onChange={(value) =>
+                  setConfirmXepLop({ ...confirmXepLop, ngayVaoLop: value })
+                }
+              />
+
+              {lopCanTest(confirmXepLop.lopHocId) ? (
+                <TextField
+                  label="Kết quả test đầu vào"
+                  value={confirmXepLop.ketQuaTest}
+                  placeholder="VD: A2 - Elementary"
+                  onChange={(value) =>
+                    setConfirmXepLop({ ...confirmXepLop, ketQuaTest: value })
+                  }
+                />
+              ) : null}
+
+              <TextField
+                label="Ghi chú"
+                value={confirmXepLop.ghiChu}
+                onChange={(value) => setConfirmXepLop({ ...confirmXepLop, ghiChu: value })}
+              />
+
+              <label className="checkbox-inline field-span-full">
+                <input
+                  type="checkbox"
+                  checked={confirmXepLop.kemPhieuNhapHoc}
+                  onChange={(event) =>
+                    setConfirmXepLop({ ...confirmXepLop, kemPhieuNhapHoc: event.target.checked })
+                  }
+                />
+                Kèm phiếu xác nhận nhập học
+              </label>
+
+              <button
+                type="button"
+                className="primary-button"
+                disabled={xepLopBusy}
+                onClick={() => void handleConfirmXepLop()}
+              >
+                {xepLopBusy ? "Đang lưu..." : "Xác nhận xếp lớp"}
+              </button>
+            </div>
+          ) : (
+            <div className="user-create-form">
+              <p className="form-success">
+                Đã xếp {confirmXepLop.hocSinh.hoTen} vào lớp {confirmXepLop.tenLop} — phiếu{" "}
+                {xepLopResult.phieuXepLop.soPhieu}
+                {xepLopResult.phieuNhapHoc
+                  ? ` · phiếu nhập học ${xepLopResult.phieuNhapHoc.soPhieu}`
+                  : ""}
+                .
+              </p>
+
+              <div className="row-actions">
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() =>
+                    openAppWindow(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}?in=1`, "_blank")
+                  }
+                >
+                  In phiếu xếp lớp
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() =>
+                    openAppWindow(`/classes/phieu-xep-lop/${xepLopResult.phieuXepLop.id}`, "_blank")
+                  }
+                >
+                  Xem trước
+                </button>
+
+                {xepLopResult.phieuNhapHoc ? (
+                  <>
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={() =>
+                        openAppWindow(
+                          `/students/phieu-nhap-hoc/${xepLopResult.phieuNhapHoc!.id}?in=1`,
+                          "_blank",
+                        )
+                      }
+                    >
+                      In phiếu nhập học
+                    </button>
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() =>
+                        openAppWindow(
+                          `/students/phieu-nhap-hoc/${xepLopResult.phieuNhapHoc!.id}`,
+                          "_blank",
+                        )
+                      }
+                    >
+                      Xem trước
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            </div>
+          )}
+        </SectionCard>
+      ) : null}
+
+      <SectionCard
+        title="Danh sách học sinh"
+        subtitle={
+          loading
+            ? "Đang tải dữ liệu..."
+            : `${filteredStudents.length} học sinh`
+        }
+      >
+        <div className="user-toolbar">
+          <TextField
+            type="search"
+            value={searchText}
+            placeholder="Tìm theo tên hoặc mã học sinh"
+            onChange={setSearchText}
+          />
+        </div>
+
+        <div className="user-table-wrap">
+          <table className="user-table">
+            <thead>
+              <tr>
+                <th>Học sinh</th>
+                <th>Ngày sinh</th>
+                <th>Ngày nhập học</th>
+                <th>Trạng thái</th>
+                {isHeThong ? <th>Đơn vị</th> : null}
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredStudents.map((student) => (
+                <tr key={student.id}>
+                  <td>
+                    <div className="student-row-identity">
+                      {student.hinhAnhUrl ? (
+                        <img
+                          src={appUrl(student.hinhAnhUrl)}
+                          alt=""
+                          className="profile-avatar profile-avatar--sm"
+                        />
+                      ) : (
+                        <div className="profile-avatar profile-avatar--sm profile-avatar--placeholder">
+                          🎒
+                        </div>
+                      )}
+
+                      <div>
+                        <EntityLink
+                          to={`/students/${student.id}`}
+                          donVi={student.donVi}
+                        >
+                          <strong>{student.hoTen}</strong>
+                        </EntityLink>
+                        <small>{student.maHocSinh}</small>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td>{student.ngaySinh ?? "—"}</td>
+                  <td>{student.ngayNhapHoc ?? "—"}</td>
+
+                  <td>
+                    <span
+                      className={`status-badge status-badge--${student.trangThai}`}
+                    >
+                      {TRANG_THAI_LABEL[student.trangThai]}
+                    </span>
+                  </td>
+
+                  {isHeThong ? (
+                    <td>
+                      <OrgLink donVi={student.donVi} to="/students" />
+                    </td>
+                  ) : null}
+                </tr>
+              ))}
+
+              {!loading && filteredStudents.length === 0 ? (
+                <tr>
+                  <td colSpan={isHeThong ? 5 : 4} className="empty-cell">
+                    Chưa có học sinh nào.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
+    </div>
+  );
+}

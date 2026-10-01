@@ -1,0 +1,165 @@
+import { fetchApp } from "../../utils/appUrl";
+import type {
+  LopHocDetail,
+  LopHocFormInput,
+  LopHocItem,
+  PhieuXepLopDetail,
+  TrangThaiLopHoc,
+  VaiTroGiaoVienLop,
+  XepLopVaLapPhieuResult,
+} from "./lopHocTypes";
+
+type ApiResponse<T> = {
+  ok: boolean;
+  data?: T;
+  error?: string;
+};
+
+async function request<T>(
+  url: string,
+  options?: RequestInit,
+): Promise<T> {
+  const response = await fetchApp(url, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options?.headers ?? {}),
+    },
+    ...options,
+  });
+
+  const payload = (await response.json()) as ApiResponse<T>;
+
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.error || "Yêu cầu thất bại.");
+  }
+
+  return payload.data as T;
+}
+
+export async function listLopHocApi() {
+  const rows = await request<
+    (LopHocItem | { lopHoc: LopHocItem; donVi: LopHocItem["donVi"] })[]
+  >("/api/lop-hoc");
+
+  return rows.map((row) =>
+    "lopHoc" in row ? { ...row.lopHoc, donVi: row.donVi } : row,
+  );
+}
+
+export function createLopHocApi(input: LopHocFormInput) {
+  return request<LopHocItem>("/api/lop-hoc", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function getLopHocDetailApi(id: number) {
+  return request<LopHocDetail>(`/api/lop-hoc/${id}`);
+}
+
+export function updateLopHocApi(
+  id: number,
+  input: LopHocFormInput,
+) {
+  return request<LopHocItem>(`/api/lop-hoc/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function setLopHocStatusApi(
+  id: number,
+  trangThai: TrangThaiLopHoc,
+) {
+  return request<LopHocItem>(`/api/lop-hoc/${id}/trang-thai`, {
+    method: "PATCH",
+    body: JSON.stringify({ trangThai }),
+  });
+}
+
+export function assignGiaoVienApi(
+  lopHocId: number,
+  input: {
+    giaoVienId: number;
+    vaiTro: VaiTroGiaoVienLop;
+    tuNgay: string;
+  },
+) {
+  return request(`/api/lop-hoc/${lopHocId}/giao-vien`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function endGiaoVienAssignmentApi(
+  lopHocId: number,
+  phanCongId: number,
+  denNgay: string,
+) {
+  return request(
+    `/api/lop-hoc/${lopHocId}/giao-vien/${phanCongId}/ket-thuc`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ denNgay }),
+    },
+  );
+}
+
+export function xepHocSinhVaoLopApi(
+  lopHocId: number,
+  input: {
+    hocSinhId: number;
+    ngayVaoLop: string;
+    ghiChuPhieu?: string;
+    kemPhieuNhapHoc?: boolean;
+    ngayNhapHoc?: string;
+  },
+) {
+  return request<XepLopVaLapPhieuResult>(`/api/lop-hoc/${lopHocId}/hoc-sinh`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function chuyenLopApi(
+  enrollmentId: number,
+  input: {
+    lopHocIdMoi: number;
+    ngayChuyen: string;
+    lyDo?: string;
+  },
+) {
+  return request(
+    `/api/lop-hoc/hoc-sinh/${enrollmentId}/chuyen-lop`,
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export function ketThucXepLopApi(
+  enrollmentId: number,
+  input: {
+    ngayRoiLop: string;
+    lyDoRoiLop?: string;
+    trangThai: "ngung_hoc" | "hoan_thanh";
+  },
+) {
+  return request(`/api/lop-hoc/hoc-sinh/${enrollmentId}/ket-thuc`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function lapPhieuXepLopApi(enrollmentId: number, input?: { ghiChu?: string }) {
+  return request<{ id: number }>(`/api/lop-hoc/hoc-sinh/${enrollmentId}/phieu-xep-lop`, {
+    method: "POST",
+    body: JSON.stringify(input ?? {}),
+  });
+}
+
+export function getPhieuXepLopDetailApi(id: number) {
+  return request<PhieuXepLopDetail>(`/api/lop-hoc/phieu-xep-lop/${id}`);
+}

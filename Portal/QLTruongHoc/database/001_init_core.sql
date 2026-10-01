@@ -1,0 +1,88 @@
+SET NAMES utf8mb4;
+SET time_zone = '+07:00';
+
+CREATE TABLE DonVi (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  donViChaId BIGINT UNSIGNED NULL,
+  maDonVi VARCHAR(30) NOT NULL,
+  tenDonVi VARCHAR(255) NOT NULL,
+  loaiDonVi VARCHAR(30) NOT NULL COMMENT 'he_thong, truong, trung_tam, co_so',
+  loaiHinhDaoTao VARCHAR(30) NOT NULL COMMENT 'mam_non, ngoai_ngu, tin_hoc, khac',
+  capDo INT NOT NULL DEFAULT 0,
+  duongDanCay VARCHAR(500) NULL,
+  diaChi VARCHAR(500) NULL,
+  dienThoai VARCHAR(30) NULL,
+  email VARCHAR(255) NULL,
+  muiGio VARCHAR(50) NOT NULL DEFAULT 'Asia/Ho_Chi_Minh',
+  trangThai VARCHAR(20) NOT NULL DEFAULT 'hoat_dong',
+  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_DonVi_maDonVi (maDonVi),
+  KEY ix_DonVi_donViChaId (donViChaId),
+  CONSTRAINT fk_DonVi_DonViCha FOREIGN KEY (donViChaId) REFERENCES DonVi(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE NguoiDung (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  tenDangNhap VARCHAR(100) NOT NULL,
+  matKhauHash VARCHAR(255) NOT NULL,
+  hoTen VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NULL,
+  dienThoai VARCHAR(30) NULL,
+  loaiTaiKhoan VARCHAR(30) NOT NULL COMMENT 'noi_bo, giao_vien, phu_huynh, quan_tri_he_thong',
+  mustChangePassword TINYINT(1) NOT NULL DEFAULT 1,
+  trangThai VARCHAR(20) NOT NULL DEFAULT 'hoat_dong',
+  lastLoginAt DATETIME NULL,
+  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_NguoiDung_tenDangNhap (tenDangNhap),
+  UNIQUE KEY uk_NguoiDung_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE VaiTro (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  maVaiTro VARCHAR(50) NOT NULL,
+  tenVaiTro VARCHAR(150) NOT NULL,
+  moTa VARCHAR(500) NULL,
+  phamVi VARCHAR(30) NOT NULL DEFAULT 'don_vi',
+  trangThai VARCHAR(20) NOT NULL DEFAULT 'hoat_dong',
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_VaiTro_maVaiTro (maVaiTro)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE NguoiDungDonViVaiTro (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  nguoiDungId BIGINT UNSIGNED NOT NULL,
+  donViId BIGINT UNSIGNED NOT NULL,
+  vaiTroId BIGINT UNSIGNED NOT NULL,
+  laMacDinh TINYINT(1) NOT NULL DEFAULT 0,
+  tuNgay DATE NULL,
+  denNgay DATE NULL,
+  trangThai VARCHAR(20) NOT NULL DEFAULT 'hoat_dong',
+  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_ND_DV_VT (nguoiDungId, donViId, vaiTroId),
+  KEY ix_NDDVVT_donViId (donViId),
+  CONSTRAINT fk_NDDVVT_NguoiDung FOREIGN KEY (nguoiDungId) REFERENCES NguoiDung(id),
+  CONSTRAINT fk_NDDVVT_DonVi FOREIGN KEY (donViId) REFERENCES DonVi(id),
+  CONSTRAINT fk_NDDVVT_VaiTro FOREIGN KEY (vaiTroId) REFERENCES VaiTro(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE NhatKyHeThong (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  donViId BIGINT UNSIGNED NULL,
+  nguoiDungId BIGINT UNSIGNED NULL,
+  hanhDong VARCHAR(100) NOT NULL,
+  doiTuong VARCHAR(100) NOT NULL,
+  doiTuongId VARCHAR(100) NULL,
+  duLieuCu JSON NULL,
+  duLieuMoi JSON NULL,
+  diaChiIp VARCHAR(64) NULL,
+  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY ix_NhatKy_donVi_createdAt (donViId, createdAt),
+  CONSTRAINT fk_NhatKy_DonVi FOREIGN KEY (donViId) REFERENCES DonVi(id),
+  CONSTRAINT fk_NhatKy_NguoiDung FOREIGN KEY (nguoiDungId) REFERENCES NguoiDung(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

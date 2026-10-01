@@ -1,0 +1,60 @@
+<<<<<<< HEAD
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/.vinext/
+/out/
+
+# local uploaded file storage (STORAGE_ROOT default)
+/.data/
+/.tools-data/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.dev-output.log
+.dev-error.log
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+next-env.d.ts
+/dist/
+/.wrangler/
+/outputs/
+/work/
+/.npm-cache
+/cpanel-bundle
+/deploy-lite
+/deploy-src
+/.claude
+/emergency-restore
+=======
+/QLTruongHoc/.claude
+/QLTruongHoc/.pnpm-store
+/QLTruongHoc/.tmp
+>>>>>>> 011b4fdda6585164eabb23685ad6ce4efaf91e0e

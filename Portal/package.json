@@ -1,0 +1,63 @@
+{
+  "name": "site-creator-vinext-starter",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "dev:workers": "vinext dev",
+    "build": "vinext build",
+    "build:cpanel": "next build --webpack",
+    "start:cpanel": "node .next/standalone/server.js",
+    "start": "vinext start",
+    "test": "node --test tests/pilot-api.test.cjs tests/tools-excel.test.cjs",
+    "test:tools": "node --test tests/tools-excel.test.cjs",
+    "test:tools:integration": "node --test tests/tools-integration.test.cjs",
+    "test:routes": "node --test tests/portal-routes.test.mjs",
+    "tools:migrate": "node server/tools/migrate.cjs",
+    "tools:worker": "node server/tools/worker.cjs",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "csv-parse": "7.0.3",
+    "drizzle-orm": "0.45.2",
+    "exceljs": "4.4.0",
+    "mysql2": "^3.23.2",
+    "next": "16.3.3",
+    "qrcode": "1.5.4",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "yauzl": "3.4.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.37.1",
+    "@tailwindcss/postcss": "4.2.1",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "@vitejs/plugin-rsc": "0.5.26",
+    "drizzle-kit": "0.31.10",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.3.3",
+    "react-server-dom-webpack": "19.2.6",
+    "tailwindcss": "4.2.1",
+    "typescript": "5.9.3",
+    "vinext": "0.0.50",
+    "vite": "8.0.13",
+    "wrangler": "4.92.0"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "11.1.1"
+    },
+    "postcss": {
+      "nanoid": "3.3.18"
+    },
+    "brace-expansion@<1.1.21": "1.1.21"
+  },
+  "type": "module"
+}

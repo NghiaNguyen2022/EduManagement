@@ -1,0 +1,49 @@
+import React from "react";
+import ReactDOM from "react-dom/client";
+import {
+  BrowserRouter,
+} from "react-router-dom";
+
+import {
+  App,
+} from "./App";
+import {
+  AuthProvider,
+} from "./features/auth/AuthContext";
+import {
+  UnsavedChangesProvider,
+} from "./features/navigation/UnsavedChangesContext";
+import {
+  routerBasename,
+} from "./utils/appUrl";
+import "./styles/theme.css";
+import "./styles.css";
+import "./styles/auth.css";
+import "./styles/user-management.css";
+import "./styles/sidebar-balance.css";
+import "./styles/role-permission.css";
+import "./styles/section-card-actions.css";
+import "./styles/audit-log.css";
+import "./styles/user-assignment.css";
+import "./styles/form-components.css";
+import "./styles/premium-date-picker.css";
+import "./styles/audit-filter-layout.css";
+import "./styles/dialog.css";
+import "./styles/notification.css";
+import "./styles/print.css";
+
+ReactDOM.createRoot(
+  document.getElementById(
+    "root",
+  )!,
+).render(
+  <React.StrictMode>
+    <BrowserRouter basename={routerBasename}>
+      <AuthProvider>
+        <UnsavedChangesProvider>
+          <App />
+        </UnsavedChangesProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  </React.StrictMode>,
+);

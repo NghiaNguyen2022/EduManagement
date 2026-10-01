@@ -1,0 +1,95 @@
+// Local-only browser acceptance test. Never connects to production databases.
+const assert = require('node:assert/strict');
+const { randomBytes } = require('node:crypto');
+const fs = require('node:fs');
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+process.loadEnvFile('outputs/tools.local.env');
+const base = 'http://127.0.0.1:3100';
+assert.equal(process.env.MYSQL_HOST, '127.0.0.1');
+assert.equal(process.env.MYSQL_DATABASE, 'tools_demo');
+const db = require('../server/tools/db.cjs'), settings = require('../server/tools/settings.cjs'), worker = require('../server/tools/worker.cjs');
+async function main() {
+  const original = await settings.get(), token = randomBytes(32).toString('hex');
+  let browser, jobId;
+  await db.query('INSERT INTO sessions(token,expires_at) VALUES (?,?)', [token, Date.now() + 3600000]);
+  try {
+    await settings.mutate(s => { s.values.driveEnabled = false; s.values.billingEnabled = false; });
+    await worker.tick();
+    browser = await chromium.launch({ channel: 'chrome', headless: true });
+    const guest = await browser.newContext(), admin = await browser.newContext();
+    const page = await guest.newPage(), adminPage = await admin.newPage(), errors = [];
+    for (const p of [page, adminPage]) p.on('pageerror', e => errors.push(e.message));
+    assert.equal((await guest.request.get(base + '/api/admin/tools/settings')).status(), 401);
+    assert.equal((await guest.request.get(base + '/api/admin/tools/jobs')).status(), 401);
+    await admin.addCookies([{ name: 'vireon_admin_session', value: token, url: base, httpOnly: true, sameSite: 'Lax' }]);
+    assert.equal((await admin.request.post(base + '/api/admin/tools/settings', { headers: { Origin: 'https://evil.invalid' }, data: {} })).status(), 403);
+    await adminPage.goto(base + '/admin/tools');
+    await adminPage.getByLabel('Giá mỗi lượt xử lý (VND)').fill('15000');
+    await adminPage.getByLabel('Số điện thoại MoMo').fill('0900000000');
+    await adminPage.getByLabel('Số Zalo liên hệ').fill('0900000000');
+    await adminPage.getByLabel('Tên người nhận').fill('Demo đối soát — không chuyển tiền');
+    await adminPage.getByLabel('Bật thu phí cho lượt mới').check();
+    await adminPage.getByRole('button', { name: 'Lưu cấu hình', exact: true }).click();
+    await adminPage.getByRole('status').filter({ hasText: 'Đã lưu' }).waitFor();
+    const exposed = await (await admin.request.get(base + '/api/admin/tools/settings')).json();
+    assert.equal('secrets' in exposed, false); assert.equal('clientSecret' in exposed, false);
+    await page.goto(base + '/tools/excel');
+    await page.getByLabel('Chọn file Excel hoặc CSV').setInputFiles({ name: 'payment-demo.csv', mimeType: 'text/csv', buffer: Buffer.from('ID,Value\n001,A\n001,B\n002,C\n') });
+    await page.getByRole('checkbox', { name: /Tôi có quyền/ }).check();
+    const created = page.waitForResponse(r => new URL(r.url()).pathname === '/api/tools/jobs' && r.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Tải file & đọc cấu trúc →' }).click();
+    jobId = (await (await created).json()).id; assert.ok(jobId);
+    await page.getByRole('heading', { name: 'Đang kiểm tra cấu trúc file' }).waitFor();
+    await db.locked('vireon-tools-worker', conn => worker.processJob(jobId, conn));
+    await page.getByRole('heading', { name: 'Chọn quy tắc xử lý' }).waitFor({ timeout: 20000 });
+    await page.getByRole('button', { name: 'Xử lý & xem kết quả →' }).click();
+    await page.getByRole('heading', { name: 'Đang xử lý theo quy tắc bạn chọn' }).waitFor();
+    await db.locked('vireon-tools-worker', conn => worker.processJob(jobId, conn));
+    await page.waitForURL(base + '/tools/checkout/' + jobId, { timeout: 20000 });
+    await page.getByRole('heading', { name: 'Thanh toán & liên hệ Zalo' }).waitFor();
+    await page.getByRole('heading', { name: 'Xem trước kết quả' }).waitFor();
+    assert.equal(await page.getByRole('link', { name: 'Liên hệ Zalo ↗' }).getAttribute('href'), 'https://zalo.me/0900000000');
+    const transaction = await page.getByLabel('Mã giao dịch', { exact: true }).inputValue();
+    assert.equal(transaction, 'VR' + jobId.replaceAll('-', '').toUpperCase());
+    assert.equal(await page.evaluate(async id => (await fetch('/api/tools/jobs/' + id + '/download')).status, jobId), 403);
+    const recoveryField = page.getByLabel('Liên kết mở lại'); await recoveryField.waitFor();
+    const recovery = await recoveryField.inputValue(); assert.match(recovery, /#resume=[a-f0-9]{64}$/);
+    assert.match(await page.getByAltText('QR giao dịch mở lại công việc').getAttribute('src'), /^data:image\/png/);
+    const other = await browser.newContext(), restored = await other.newPage(); restored.on('pageerror', e => errors.push(e.message));
+    await restored.goto(recovery);
+    await restored.getByRole('heading', { name: 'Thanh toán & liên hệ Zalo' }).waitFor({ timeout: 20000 });
+    assert.equal(await restored.getByRole('link', { name: 'Tải kết quả Excel ↓' }).count(), 0);
+    assert.equal(new URL(restored.url()).hash, ''); assert.equal(new URL(restored.url()).searchParams.get('job'), jobId);
+    await adminPage.getByLabel('Mã giao dịch', { exact: true }).fill(transaction);
+    await adminPage.getByRole('button', { name: 'Tìm giao dịch', exact: true }).click();
+    const row = adminPage.getByRole('row').filter({ hasText: transaction });
+    adminPage.once('dialog', d => d.accept());
+    await row.getByRole('button', { name: 'Kích hoạt tải file', exact: true }).click();
+    await adminPage.getByRole('heading', { name: 'Đã kích hoạt giao dịch', exact: true }).waitFor();
+    assert.ok((await adminPage.getByLabel('Nội dung gửi khách hàng').inputValue()).includes(transaction));
+    await restored.reload();
+    const downloadLink = restored.getByRole('link', { name: 'Tải kết quả Excel ↓', exact: true }); await downloadLink.waitFor({ timeout: 20000 });
+    assert.equal(await downloadLink.count(), 1);
+    assert.equal(await restored.getByLabel('Mã tải 8 ký tự do admin gửi').count(), 0);
+    const downloading = restored.waitForEvent('download'); await downloadLink.click();
+    const download = await downloading; assert.match(download.suggestedFilename(), /\.xlsx$/); assert.equal(await download.failure(), null);
+    // A new browser scanning the same QR after activation can immediately download.
+    const third = await browser.newContext(), rescanned = await third.newPage();
+    await rescanned.goto(recovery); await rescanned.getByRole('link', { name: 'Tải kết quả Excel ↓', exact: true }).waitFor({ timeout: 20000 });
+    fs.mkdirSync('outputs', { recursive: true });
+    await adminPage.setViewportSize({ width: 1440, height: 1000 }); await adminPage.screenshot({ path: 'outputs/tools-admin-commerce.png', fullPage: true });
+    await restored.setViewportSize({ width: 390, height: 844 });
+    assert.equal(await restored.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await restored.screenshot({ path: 'outputs/tools-payment-mobile.png', fullPage: true });
+    await adminPage.setViewportSize({ width: 390, height: 844 });
+    assert.equal(await adminPage.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    assert.deepEqual(errors, []);
+    console.log('PASS admin auth/CSRF, settings, transaction search/activation, QR cross-device, reload/rescan download, mobile layouts');
+  } finally {
+    if (browser) await browser.close();
+    if (jobId) { await db.query("UPDATE tool_jobs SET status='expired',expires_at=UTC_TIMESTAMP() WHERE id=?", [jobId]); await worker.cleanup(); }
+    await settings.mutate(s => { s.values = original.values; s.secrets = original.secrets; });
+    await db.query('DELETE FROM sessions WHERE token=?', [token]); await db.getPool().end();
+  }
+}
+main().catch(e => { console.error(e); process.exitCode = 1; });

@@ -1,0 +1,20 @@
+{
+  "name": "qltruonghoc-cpanel",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "main": "app_wrapper.cjs",
+  "scripts": {
+    "start": "node app_wrapper.cjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.45.2",
+    "express": "^5.1.0",
+    "multer": "^2.2.0",
+    "mysql2": "^3.14.1"
+  }
+}

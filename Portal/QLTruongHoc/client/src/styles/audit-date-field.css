@@ -1,0 +1,16 @@
+.audit-filter .form-field {
+  min-width: 0;
+}
+
+.audit-filter .date-control {
+  min-width: 180px;
+}
+
+.audit-filter .date-control .form-control {
+  letter-spacing: 0.01em;
+}
+
+.audit-filter .form-field__help {
+  margin-top: -2px;
+  color: var(--edu-color-text-muted);
+}

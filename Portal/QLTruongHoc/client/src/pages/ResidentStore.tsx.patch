@@ -1,0 +1,139 @@
+diff --git a/client/src/pages/ResidentStore.tsx b/client/src/pages/ResidentStore.tsx
+--- a/client/src/pages/ResidentStore.tsx
++++ b/client/src/pages/ResidentStore.tsx
+@@
+ function clearStoredAccess() {
+       if (typeof window !== "undefined") {
+             window.sessionStorage.removeItem("residentStoreAccess");
+       }
+ }
+
++function isStoreSessionError(error: unknown) {
++      const message = String(
++            (error as any)?.message ||
++                  (error as any)?.data?.message ||
++                  error ||
++                  "",
++      ).toLowerCase();
++
++      return [
++            "phiên quyền cửa hàng không hợp lệ",
++            "quyền cửa hàng đã hết",
++            "quyền cửa hàng đã hết hoặc chưa được mở",
++            "ca trực đã kết thúc",
++            "30 phút không hoạt động",
++            "mã chỉ được sử dụng trong thời gian ca trực",
++      ].some((keyword) => message.includes(keyword));
++}
++
+@@
+       const handoverData = handoverQuery.data as any;
+       const handover = handoverData?.handover;
+
++      const expireStoreSession = (message?: string) => {
++            clearStoredAccess();
++            toast.error(
++                  message ||
++                        "Phiên Cửa hàng đã hết. Vui lòng vào lại từ trang Công tác.",
++            );
++            window.location.replace("/my-duties");
++      };
++
++      const handleStoreActionError = (
++            error: any,
++            fallbackMessage: string,
++      ) => {
++            const message = error?.message || fallbackMessage;
++
++            if (isStoreSessionError(error)) {
++                  expireStoreSession(message);
++                  return;
++            }
++
++            toast.error(message);
++      };
++
+@@
+-            onError: (error: any) =>
+-                  toast.error(error?.message || "Không thể lưu bàn giao ca."),
++            onError: (error: any) =>
++                  handleStoreActionError(error, "Không thể lưu bàn giao ca."),
+@@
+-            onError: (error: any) =>
+-                  toast.error(error?.message || "Không thể ký giao ca."),
++            onError: (error: any) =>
++                  handleStoreActionError(error, "Không thể ký giao ca."),
+@@
+-            onError: (error: any) =>
+-                  toast.error(error?.message || "Không thể xác nhận nhận ca."),
++            onError: (error: any) =>
++                  handleStoreActionError(error, "Không thể xác nhận nhận ca."),
+@@
+             onError: (error: any) => {
+-                  toast.error(error?.message || "Không thể tạo phiếu bán hàng.");
++                  handleStoreActionError(
++                        error,
++                        "Không thể tạo phiếu bán hàng.",
++                  );
+             },
+@@
+             onError: (error: any) => {
+-                  toast.error(error?.message || "Không thể tạo phiếu nhập hàng.");
++                  handleStoreActionError(
++                        error,
++                        "Không thể tạo phiếu nhập hàng.",
++                  );
+             },
+@@
+             onError: (error: any) => {
+-                  toast.error(error?.message || "Không thể chốt ngày.");
++                  handleStoreActionError(error, "Không thể chốt ngày.");
+             },
+@@
+       useEffect(() => {
+-            if (!sessionQuery.error) return;
+-
+-            clearStoredAccess();
+-            toast.error(sessionQuery.error.message || "Quyền Cửa hàng đã hết hiệu lực.");
+-            window.location.href = "/my-duties";
+-      }, [sessionQuery.error]);
++            const accessError = [
++                  sessionQuery.error,
++                  ledgersQuery.error,
++                  productsQuery.error,
++                  transactionsQuery.error,
++                  saleDocumentsQuery.error,
++                  purchaseDocumentsQuery.error,
++                  handoverQuery.error,
++                  closingPreviewQuery.error,
++            ].find((error) => isStoreSessionError(error));
++
++            if (accessError) {
++                  expireStoreSession(
++                        (accessError as any)?.message ||
++                              "Phiên Cửa hàng đã hết. Vui lòng vào lại.",
++                  );
++                  return;
++            }
++
++            if (
++                  shiftSession &&
++                  shiftSession.active === false
++            ) {
++                  expireStoreSession(
++                        shiftSession.reason ||
++                              "Phiên Cửa hàng đã hết. Vui lòng vào lại.",
++                  );
++            }
++      }, [
++            sessionQuery.error,
++            ledgersQuery.error,
++            productsQuery.error,
++            transactionsQuery.error,
++            saleDocumentsQuery.error,
++            purchaseDocumentsQuery.error,
++            handoverQuery.error,
++            closingPreviewQuery.error,
++            shiftSession?.active,
++            shiftSession?.reason,
++      ]);

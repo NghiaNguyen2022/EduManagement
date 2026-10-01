@@ -1,0 +1,130 @@
+/* Reset ảnh hưởng từ các layout bộ lọc cũ */
+.audit-filter,
+.audit-filter--two-rows,
+.audit-filter__main,
+.audit-filter__dates {
+  display: initial;
+  grid-template-columns: initial;
+  gap: initial;
+  align-items: initial;
+  padding: initial;
+  border: initial;
+}
+
+.audit-filter-panel {
+  display: grid;
+  gap: 20px;
+}
+
+.audit-filter-panel__primary {
+  display: grid;
+  grid-template-columns:
+    minmax(320px, 1.55fr)
+    minmax(230px, 1fr)
+    minmax(190px, 0.8fr);
+  gap: 16px;
+  align-items: end;
+}
+
+.audit-filter-panel__secondary {
+  display: grid;
+  grid-template-columns:
+    minmax(210px, 240px)
+    minmax(210px, 240px)
+    minmax(190px, 1fr);
+  gap: 16px;
+  align-items: end;
+  padding-top: 18px;
+  border-top: 1px solid var(--edu-color-border);
+}
+
+.audit-filter-panel .form-field {
+  min-width: 0;
+  align-content: start;
+}
+
+.audit-filter-panel .form-field__label {
+  display: block;
+  min-height: 20px;
+  margin: 0 0 7px;
+  line-height: 20px;
+}
+
+.audit-filter-panel .form-control {
+  width: 100%;
+  min-width: 0;
+}
+
+.audit-filter-panel__date {
+  width: 100%;
+}
+
+.audit-filter-panel__buttons {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding-left: 4px;
+}
+
+.audit-filter-panel__buttons button {
+  min-height: 42px;
+  padding-inline: 18px;
+  white-space: nowrap;
+}
+
+.audit-filter-panel__buttons .primary-button {
+  min-width: 112px;
+}
+
+@media (max-width: 1120px) {
+  .audit-filter-panel__primary {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .audit-filter-panel__search {
+    grid-column: 1 / -1;
+  }
+
+  .audit-filter-panel__secondary {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .audit-filter-panel__buttons {
+    grid-column: 1 / -1;
+    padding-left: 0;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 720px) {
+  .audit-filter-panel {
+    gap: 16px;
+  }
+
+  .audit-filter-panel__primary,
+  .audit-filter-panel__secondary {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .audit-filter-panel__search,
+  .audit-filter-panel__buttons {
+    grid-column: auto;
+  }
+
+  .audit-filter-panel__secondary {
+    padding-top: 16px;
+  }
+
+  .audit-filter-panel__buttons {
+    justify-content: stretch;
+  }
+
+  .audit-filter-panel__buttons button {
+    flex: 1;
+  }
+}

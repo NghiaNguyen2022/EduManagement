@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="edu-favicon-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3aa8dd" />
+      <stop offset="1" stop-color="#166b9b" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#edu-favicon-bg)" />
+  <path
+    d="M32 15 L53 25.5 L32 36 L11 25.5 Z"
+    fill="#ffffff"
+  />
+  <path
+    d="M19 29.5 V38.5 C19 42 25 45 32 45 C39 45 45 42 45 38.5 V29.5"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="3.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <line x1="53" y1="25.5" x2="53" y2="40" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" />
+  <circle cx="53" cy="43" r="2.6" fill="#ffffff" />
+</svg>
