@@ -1,3 +1,9 @@
 /QLTruongHoc/.claude
 /QLTruongHoc/.pnpm-store
 /QLTruongHoc/.tmp
+
+# build output / backups / temp files
+/QLTruongHoc/releases/
+/QLTruongHoc/backups/
+~$*
+*.patch.md
