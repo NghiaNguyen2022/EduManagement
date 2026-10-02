@@ -7,3 +7,9 @@
 /QLTruongHoc/backups/
 ~$*
 *.patch.md
+
+# build output / backups / temp files
+/QLTruongHoc/releases/
+/QLTruongHoc/backups/
+~$*
+*.patch.md
