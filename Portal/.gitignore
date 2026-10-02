@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -53,8 +52,8 @@ next-env.d.ts
 /deploy-src
 /.claude
 /emergency-restore
-=======
-/QLTruongHoc/.claude
-/QLTruongHoc/.pnpm-store
-/QLTruongHoc/.tmp
->>>>>>> 011b4fdda6585164eabb23685ad6ce4efaf91e0e
+
+# archives / build cache
+*.zip
+*.tar.gz
+*.tsbuildinfo
